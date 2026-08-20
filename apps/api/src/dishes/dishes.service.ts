@@ -91,7 +91,7 @@ export class DishesService {
 
   async getPublic(id: string): Promise<DishResponse> {
     const db = this.database.requireDatabase();
-    const row = await this.selectDishRow(db, and(eq(dishes.id, id), eq(dishes.visibility, "public")));
+    const row = await this.selectDishRow(db, and(eq(dishes.id, id), eq(dishes.visibility, "public"))!,);
     if (!row) throw this.notFound();
     return this.loadSerializedDish(db, row, false);
   }
@@ -100,7 +100,7 @@ export class DishesService {
     const db = this.database.requireDatabase();
     const row = await this.selectDishRow(
       db,
-      and(eq(dishes.shareToken, token), ne(dishes.visibility, "private"))
+      and(eq(dishes.shareToken, token), ne(dishes.visibility, "private"))!,
     );
     if (!row) throw this.notFound();
     return this.loadSerializedDish(db, row, false);
@@ -117,7 +117,7 @@ export class DishesService {
     const db = this.database.requireDatabase();
     const row = await this.selectDishRow(
       db,
-      and(eq(dishes.id, id), eq(dishes.ownerId, ownerId))
+      and(eq(dishes.id, id), eq(dishes.ownerId, ownerId))!,
     );
     if (!row) throw this.notFound();
     return this.loadSerializedDish(db, row, true);
