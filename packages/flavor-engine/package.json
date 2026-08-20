@@ -25,7 +25,7 @@
     "@flavorpilot/contracts": "0.3.0"
   },
   "devDependencies": {
-    "typescript": "5.9.0",
+    "typescript": "5.9.2",
     "vitest": "4.1.11"
   }
 }
