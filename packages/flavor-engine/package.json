@@ -1,0 +1,31 @@
+{
+  "name": "@flavorpilot/flavor-engine",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Framework-independent deterministic culinary analysis engine and ingredient catalog.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run src/engine.test.ts"
+  },
+  "dependencies": {
+    "@flavorpilot/contracts": "0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.0",
+    "vitest": "4.1.11"
+  }
+}
