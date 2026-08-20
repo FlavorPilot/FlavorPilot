@@ -1,0 +1,34 @@
+{
+  "name": "tastecraft",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Bilingual culinary flavor-construction platform: Next.js web, NestJS API and shared deterministic Flavor Engine.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build:contracts": "npm run build --workspace @tastecraft/contracts",
+    "build:engine": "npm run build --workspace @tastecraft/flavor-engine",
+    "build:packages": "npm run build:contracts && npm run build:engine",
+    "build": "npm run clean && npm run build:packages && npm run build --workspace @tastecraft/api && npm run build --workspace @tastecraft/web",
+    "dev": "npm run build:packages && concurrently -n contracts,engine,api,web -c auto \"npm run dev --workspace @tastecraft/contracts\" \"npm run dev --workspace @tastecraft/flavor-engine\" \"npm run dev --workspace @tastecraft/api\" \"npm run dev --workspace @tastecraft/web\"",
+    "dev:api": "npm run build:packages && npm run dev --workspace @tastecraft/api",
+    "dev:web": "npm run build:packages && npm run dev --workspace @tastecraft/web",
+    "typecheck": "npm run build:packages && npm run typecheck --workspaces --if-present",
+    "test": "npm run build:packages && npm run test --workspaces --if-present",
+    "validate": "npm run validate:structure && npm run typecheck && npm run test",
+    "generate:seed": "npm run build:packages && node scripts/generate-supabase-seed.mjs",
+    "clean": "node scripts/clean.mjs",
+    "validate:structure": "node scripts/project-smoke.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "10.0.5",
+    "typescript": "5.9.0"
+  },
+  "engines": {
+    "node": ">=20.11.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@10.9.2"
+}

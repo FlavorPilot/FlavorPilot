@@ -1,0 +1,34 @@
+{
+  "name": "@tastecraft/web",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@supabase/ssr": "0.12.4",
+    "@supabase/supabase-js": "2.112.3",
+    "@tastecraft/contracts": "0.2.0",
+    "@tastecraft/flavor-engine": "0.2.0",
+    "next": "16.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "24.0.0",
+    "@types/react": "19.2.0",
+    "@types/react-dom": "19.2.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.0",
+    "vitest": "4.1.11"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  }
+}

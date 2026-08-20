@@ -1,0 +1,7 @@
+# License
+
+Copyright © 2026. All rights reserved.
+
+This source code and accompanying materials are provided to the project owner for evaluation, modification, and commercial development. No permission is granted to third parties to copy, redistribute, sublicense, publish, or sell this project or substantial portions of it without written authorization from the copyright holder.
+
+Third-party packages remain subject to their respective licenses.
