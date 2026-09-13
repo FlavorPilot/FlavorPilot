@@ -1,27 +1,23 @@
-import { Body, Controller, Post, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
-import {
-  aiExplainRequestSchema,
-  type AiExplainResponse
-} from "@flavorpilot/contracts";
-import { SupabaseAuthGuard } from "../auth/supabase-auth.guard";
-import { parseWithSchema } from "../common/zod";
-import { AiService } from "./ai.service";
-
-@ApiTags("ai")
+import { Body, Controller, Post, UseGuards, Header } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { aiExplainRequestSchema } from '@flavorpilot/contracts';
+import { parseInput } from '../common/zod';
+import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
+import { FlavorService } from '../flavor/flavor.service';
+import { AiService } from './ai.service';
+@ApiTags('ai')
 @ApiBearerAuth()
-@Controller("ai")
+@UseGuards(SupabaseAuthGuard)
+@Controller('ai')
 export class AiController {
-  constructor(private readonly aiService: AiService) {}
-
-  @Post("explain")
-  @UseGuards(SupabaseAuthGuard)
-  @ApiOperation({
-    summary: "Explain deterministic analysis in English or Ukrainian",
-    description: "The model is not allowed to create or modify scores."
-  })
-  explain(@Body() body: unknown): Promise<AiExplainResponse> {
-    const input = parseWithSchema(aiExplainRequestSchema, body);
-    return this.aiService.explain(input);
-  }
+    constructor(private readonly ai: AiService, private readonly flavor: FlavorService) { }
+    @Post('explain')
+    @Header('Cache-Control', 'no-store')
+    explain(
+    @Body()
+    body: unknown) {
+        const input = parseInput(aiExplainRequestSchema, body);
+        const analysis = this.flavor.analyze({ items: input.items, goal: input.goal, includeRecommendations: true });
+        return this.ai.explain({ locale: input.locale, dishName: input.dishName, analysis });
+    }
 }

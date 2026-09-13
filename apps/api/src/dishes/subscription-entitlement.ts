@@ -1,18 +1,8 @@
-export interface SubscriptionEntitlement {
-  tier: "free" | "pro" | "studio" | "kitchen";
-  status: string;
-  currentPeriodEnd: Date | null;
-}
-
-/**
- * A paid tier is not enough on its own: canceled, inactive, past-due or expired
- * subscriptions must fall back to Free-plan limits.
- */
-export function hasActivePaidEntitlement(
-  subscription: SubscriptionEntitlement | undefined,
-  now = new Date()
-): boolean {
-  if (!subscription || subscription.tier === "free") return false;
-  if (!new Set(["active", "trialing"]).has(subscription.status)) return false;
-  return !subscription.currentPeriodEnd || subscription.currentPeriodEnd.getTime() > now.getTime();
+/** Current plan state is trusted only when loaded on the server, never from a browser payload. */
+export function hasActivePaidEntitlement(subscription: {
+    tier: string;
+    status: string;
+    currentPeriodEnd: Date | null;
+} | null | undefined, now = new Date()): boolean {
+    return Boolean(subscription && subscription.tier !== 'free' && ['active', 'trialing'].includes(subscription.status) && (!subscription.currentPeriodEnd || subscription.currentPeriodEnd > now));
 }

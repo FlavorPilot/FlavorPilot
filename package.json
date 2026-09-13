@@ -2,7 +2,7 @@
   "name": "flavorpilot",
   "version": "0.3.0",
   "private": true,
-  "description": "Bilingual culinary flavor-construction platform: Next.js web, NestJS API and shared deterministic Flavor Engine.",
+  "description": "FlavorPilot complete widget-based monorepo \u2014 rebuild r2 (pre-release)",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -11,23 +11,29 @@
     "build:contracts": "npm run build --workspace @flavorpilot/contracts",
     "build:engine": "npm run build --workspace @flavorpilot/flavor-engine",
     "build:packages": "npm run build:contracts && npm run build:engine",
-    "build": "npm run clean && npm run build:packages && npm run build --workspace @flavorpilot/api && npm run build --workspace @flavorpilot/web",
-    "dev": "npm run build:packages && concurrently -n contracts,engine,api,web -c auto \"npm run dev --workspace @flavorpilot/contracts\" \"npm run dev --workspace @flavorpilot/flavor-engine\" \"npm run dev --workspace @flavorpilot/api\" \"npm run dev --workspace @flavorpilot/web\"",
-    "dev:api": "npm run build:packages && npm run dev --workspace @flavorpilot/api",
+    "build": "npm run build:packages && npm run build --workspace @flavorpilot/api && npm run build --workspace @flavorpilot/web",
+    "dev": "npm run build:packages && concurrently --kill-others-on-fail -n contracts,engine,api,web \"npm run dev --workspace @flavorpilot/contracts\" \"npm run dev --workspace @flavorpilot/flavor-engine\" \"npm run dev --workspace @flavorpilot/api\" \"npm run dev --workspace @flavorpilot/web\"",
     "dev:web": "npm run build:packages && npm run dev --workspace @flavorpilot/web",
+    "dev:api": "npm run build:packages && npm run dev --workspace @flavorpilot/api",
     "typecheck": "npm run build:packages && npm run typecheck --workspaces --if-present",
     "test": "npm run build:packages && npm run test --workspaces --if-present",
-    "validate": "npm run validate:structure && npm run typecheck && npm run test",
+    "validate:structure": "node scripts/check-project.mjs",
+    "check:widgets": "node scripts/check-widget-architecture.mjs",
+    "test:widgets": "node scripts/test-widgets.mjs",
+    "test:core": "node scripts/test-core.mjs",
+    "validate": "npm run validate:structure && npm run check:widgets && npm run test:widgets && npm run test:core && npm run typecheck && npm test",
     "generate:seed": "npm run build:packages && node scripts/generate-supabase-seed.mjs",
     "clean": "node scripts/clean.mjs",
-    "validate:structure": "node scripts/project-smoke.mjs"
+    "doctor": "node scripts/doctor.mjs",
+    "setup": "node scripts/setup.mjs",
+    "check:syntax": "node scripts/check-syntax.mjs"
   },
   "devDependencies": {
     "concurrently": "10.0.5",
     "typescript": "5.9.2"
   },
   "engines": {
-    "node": ">=20.11.0",
+    "node": ">=22.16.0 <23",
     "npm": ">=10.0.0"
   },
   "packageManager": "npm@10.9.2"

@@ -4,10 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:webpack": "next dev --webpack",
     "build": "next build",
+    "build:webpack": "next build --webpack",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.4",
@@ -20,15 +22,13 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.0.0",
     "@types/react": "19.2.0",
     "@types/react-dom": "19.2.0",
-    "tailwindcss": "4.3.3",
     "typescript": "5.9.2",
     "vitest": "4.1.11"
   },
   "engines": {
-    "node": ">=20.11.0"
+    "node": ">=22.16.0 <23"
   }
 }

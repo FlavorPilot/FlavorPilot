@@ -1,0 +1,8 @@
+{
+ "extends": "./tsconfig.base.json",
+ "compilerOptions": {
+  "module": "CommonJS", "moduleResolution": "Node", "rootDir": "packages", "outDir": ".core-test",
+  "baseUrl": ".", "paths": {"@flavorpilot/contracts/domain": ["packages/contracts/src/domain.ts"]}
+ },
+ "include": ["packages/contracts/src/domain.ts", "packages/flavor-engine/src/engine.ts", "packages/flavor-engine/src/ingredients.ts"]
+}

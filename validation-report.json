@@ -1,0 +1,112 @@
+{
+  "artifact": "FlavorPilot complete widget monorepo r2",
+  "preparedAt": "2026-09-05T15:39:33.354853+00:00",
+  "status": "technical-alpha; complete source archive; not a production-release certification",
+  "sources": {
+    "githubRepository": "FlavorPilot/FlavorPilot",
+    "commit": "78c1a533f9fde64512ee77645509ed753f28fbcd",
+    "frontend": "attached flavorpilot-widget-refactor-r1.zip",
+    "frontendSourceSha256": "484b2857a7677a20bb2b9e1f3549cf992f9a54ad9de7187fe280023b4bf8d4a4",
+    "reconstructionNotes": "docs/SOURCE_AUDIT.md"
+  },
+  "environment": {
+    "node": "22.16.0",
+    "npm": "10.9.2",
+    "availableTypescript": "5.8.3",
+    "projectPinnedTypescript": "5.9.2"
+  },
+  "executed": [
+    {
+      "check": "complete source structure and local relative imports",
+      "status": "passed",
+      "workspaces": 4,
+      "requiredPaths": 18,
+      "relativeImports": 108,
+      "log": "docs/validation/structure.log"
+    },
+    {
+      "check": "widget import/layer/public entry-point rules",
+      "status": "passed",
+      "frontendTsFiles": 90,
+      "widgetSlices": 11
+    },
+    {
+      "check": "TypeScript syntax parsing",
+      "status": "passed",
+      "files": 135,
+      "errors": 0,
+      "scope": "syntax only, not external dependency typechecking"
+    },
+    {
+      "check": "pure editor/localization runtime",
+      "status": "passed",
+      "tests": 16,
+      "log": "docs/validation/widgets.log"
+    },
+    {
+      "check": "strict actual pure-domain/kernel compilation",
+      "status": "passed",
+      "compiler": "TypeScript 5.8.3",
+      "config": "tsconfig.core.json"
+    },
+    {
+      "check": "actual compiled kernel runtime",
+      "status": "passed-with-known-todo",
+      "pass": 21,
+      "fail": 0,
+      "todo": 1,
+      "todoId": "CUL-001",
+      "log": "docs/validation/core.log"
+    },
+    {
+      "check": "static component CSS layout in Chromium",
+      "status": "passed",
+      "widths": [
+        320,
+        390,
+        768,
+        1440,
+        1920
+      ],
+      "locales": [
+        "en",
+        "uk"
+      ],
+      "cases": 10,
+      "horizontalOverflowCases": 0,
+      "scope": "inert JSX fixture; actual kernel numbers; no React lifecycle or Next runtime",
+      "report": "docs/previews/layout-report.json"
+    }
+  ],
+  "notExecuted": [
+    {
+      "check": "complete npm dependency install",
+      "status": "blocked",
+      "reason": "npm install --include=optional --ignore-scripts did not complete within 20 seconds; diagnostic npm view then returned EAI_AGAIN registry.npmjs.org"
+    },
+    {
+      "check": "full workspace dependency-aware typecheck / installed Vitest / Next and Nest builds",
+      "status": "not-run",
+      "reason": "dependencies unavailable"
+    },
+    {
+      "check": "live Next browser E2E / React hydration",
+      "status": "not-run"
+    },
+    {
+      "check": "Supabase Auth, PostgreSQL schema and migration, 2-user permissions",
+      "status": "not-run",
+      "reason": "no live database/provider environment"
+    },
+    {
+      "check": "Docker image / live hosting / payments / AI provider",
+      "status": "not-run"
+    }
+  ],
+  "lockfile": {
+    "included": false,
+    "reason": "not regenerated/verified via registry; do not fabricate lockfile integrity"
+  },
+  "knownLimitations": "docs/KNOWN_LIMITATIONS.md",
+  "repoWrites": false
+}

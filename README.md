@@ -1,135 +1,175 @@
-# FlavorPilot
+# FlavorPilot — complete widget monorepo, r2
 
-A bilingual (English/Ukrainian) culinary construction platform built as a TypeScript monorepo.
+**Полный исходный проект, а не патч и не набор файлов для наложения.**
+В архиве находятся Next.js frontend, NestJS/Fastify API, общие контракты,
+Flavor Engine, схема Supabase, данные, тесты и инструкции. Другой архив не нужен.
 
-The architecture is deliberately split:
+Статус: **pre-release / техническая альфа**. Версии внутренних npm-пакетов сохранены
+как `0.3.0`; `widget-monorepo-r2` — идентификатор этой пересборки, не коммерческого релиза.
+UI: English и українська (`en`, `uk`).
 
-- **Next.js** owns UI, SSR/SEO, i18n and the interactive browser experience.
-- **NestJS + Fastify** owns the authoritative API, authorization, persistence, privacy rules, AI access and future billing.
-- **`@flavorpilot/flavor-engine`** owns every deterministic culinary score.
-- **`@flavorpilot/contracts`** owns shared runtime validation and API types.
-- **PostgreSQL/Supabase** stores users, dishes, versions, remix lineage and subscriptions.
+## 1. Быстрый запуск
 
-The LLM never calculates compatibility. It may only explain an already calculated result.
+Распакуйте архив в **новую папку**, сохраняя вложенные каталоги. Не накладывайте его
+поверх старого проекта: иначе удалённые legacy-компоненты могут остаться рядом с новыми.
+Не переносите `node_modules`, `.next` или `dist` из StackBlitz.
 
-## Repository layout
-
-```text
-apps/
-  web/                    Next.js 16 / React 19 frontend
-  api/                    NestJS 11 / Fastify API
-packages/
-  contracts/              shared Zod contracts and TypeScript types
-  flavor-engine/          ingredient catalog and deterministic formulas
-supabase/
-  schema.sql              production-oriented PostgreSQL/RLS schema
-  seed.sql                current demo knowledge seed
-docs/
-  ARCHITECTURE.md
-  API.md
-  DATABASE.md
-  DEPLOYMENT.md
-  FLAVOR_ENGINE.md
-  MIGRATION.md
-  VALIDATION.md
-```
-
-## Requirements
-
-- Node.js 20.11 or newer
-- npm 10 or newer
-- optional Supabase/PostgreSQL project
-- optional OpenAI API key
-
-## Local start
+В терминале в папке, где находится этот README и корневой `package.json`:
 
 ```bash
-npm install
-cp apps/web/.env.example apps/web/.env.local
-cp apps/api/.env.example apps/api/.env
+node --version
+npm --version
+npm install --include=optional
+npm run setup
+npm run doctor
 npm run dev
 ```
 
-Open:
+Целевая среда — native Node.js **22.16+ в ветке 22.x**, npm 10;
 
-- Web: `http://localhost:3000`
-- API health: `http://localhost:4000/v1/health`
-- Swagger: `http://localhost:4000/docs`
+Открыть:
 
-The browser constructor and local library work without external services. The Nest API starts without a database: health and deterministic flavor analysis remain available, while persistence endpoints return `503 DATABASE_NOT_CONFIGURED`.
+- `http://localhost:3000/en` — английская версия;
+- `http://localhost:3000/uk` — украинская версия;
+- `http://localhost:3000/en/builder` — конструктор;
+- `http://localhost:4000/v1/health` — состояние API;
+- `http://localhost:4000/docs` — Swagger.
 
-## Useful commands
+`npm run setup` создаёт `.env` из `.env.example` только при отсутствии целевого файла.
+Он **не перезаписывает** существующие настройки и не подставляет настоящие ключи.
+Для интерфейса без backend достаточно `npm run dev:web`. API отдельно: `npm run dev:api`.
+
+### Ограничение воспроизводимости установки
+
+В среде подготовки был недоступен npm registry: проверочный запрос вернул
+`EAI_AGAIN registry.npmjs.org`. Полный `npm install` не завершился в отведённое время.
+Поэтому **в архиве нет сгенерированного и проверенного `package-lock.json`**.
+Прямые версии зависимостей перенесены из исходного проекта; их наличие и совместимость
+в текущем registry в этой среде не подтверждены. Lockfile не был выдуман или склеен вручную.
+
+После первого успешного `npm install` проверьте результат и закоммитьте lockfile.
+Далее используйте `npm ci --include=optional` для воспроизводимых установок.
+Не применяйте `--force`, `--legacy-peer-deps` и случайные SWC bindings ради обхода ошибок.
+Полная установка, typecheck, сборка и запуск должны пройти **до деплоя**.
+
+## 2. Что означает «frontend на виджетах»
+
+```text
+apps/web/src/
+  app/        маршруты Next.js и корневые providers
+  screens/    составление страниц и координация сценариев
+  widgets/    самостоятельные блоки пользовательской задачи
+  features/   действия: редактирование, поиск, сессия, сохранение
+  entities/   модель блюда, адаптеры API и локального хранения
+  shared/     UI-примитивы, CSS-токены, i18n, HTTP-клиент
+```
+
+`DishComposition`, `DishAnalysis`, `DishRecommendations`, `ChangePreview` и остальные
+виджеты получают данные и команды через явные props. Они не сохраняют собственную копию
+блюда, не импортируют соседние виджеты и не выполняют `fetch` напрямую.
+Один reducer редактора — единственный источник рабочего состояния.
+
+**Это не микрофронтенды и не панель с обязательным перетаскиванием блоков.**
+Порядок виджетов определяется сценарием повара; режим «Основне / Докладно» раскрывает
+профессиональные детали, не перегружая начальный экран.
+
+Описание каждого виджета: [WIDGET_CATALOG.md](docs/WIDGET_CATALOG.md).
+Правила зависимостей: [WIDGET_ARCHITECTURE.md](docs/WIDGET_ARCHITECTURE.md).
+Проверка: `npm run check:widgets`.
+
+## 3. Реализованные в исходниках сценарии
+
+- Пустая композиция и явная загрузка примера, до 24 пар «ингредиент + обработка».
+- Поиск, граммы с точкой или запятой, смена обработки, удаление.
+- Мгновенный расчёт исходной детерминированной моделью.
+- Предпросмотр добавления: отдельное состояние «до / после», явное применение.
+- Undo/Redo, до 50 шагов; подтверждение перед началом нового блюда.
+- Автосохранение рабочего черновика в браузере, экспорт и импорт JSON.
+- Локальная библиотека и отдельная библиотека аккаунта, API-адаптеры CRUD.
+- Формы входа, регистрации, восстановления пароля и PKCE callback Supabase.
+- Публичный просмотр и ссылки; отдельное согласие на публикацию точных граммовок.
+- Примеры отделены от реального сообщества, нет выдуманных счётчиков популярности.
+- Реальные ошибки API отображаются явно и не подменяются «успешными» демо-данными.
+- Адаптивные EN/UK виджеты, native dialog, клавиатурные состояния и error boundaries.
+
+Наличие исходников сценария **не означает пройденный сквозной тест** с Supabase.
+Фактический объём проверки указан в [VALIDATION.md](docs/VALIDATION.md).
+
+## 4. Подключение API и Supabase
+
+Для server-check и облачных рецептов в `apps/web/.env.local`:
+
+```dotenv
+NEXT_PUBLIC_API_URL=http://localhost:4000/v1
+NEXT_PUBLIC_SUPABASE_URL=<project-url>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable-or-anon-key>
+```
+
+В `apps/api/.env` — серверные параметры из примера:
+
+```dotenv
+DATABASE_URL=<server-only-postgresql-connection>
+SUPABASE_URL=<project-url>
+SUPABASE_PUBLISHABLE_KEY=<publishable-or-anon-key>
+CORS_ORIGINS=http://localhost:3000
+AI_ENABLED=false
+```
+
+Новый Supabase-проект: сначала `supabase/schema.sql`, затем `supabase/seed.sql`.
+Уже существующая база v0.3.0: **не запускайте свежую схему повторно**; используйте
+инструкцию миграции в [DATABASE.md](docs/DATABASE.md).
+Добавьте redirect URLs `/en/auth/callback` и `/uk/auth/callback` на вашем домене
+в настройках Auth. Для восстановления — также варианты с `?mode=recovery`.
+
+CRUD идёт через Nest с Bearer token. Прямой доступ anon/authenticated к продуктовым
+таблицам через Supabase Data API намеренно закрыт в новой схеме/миграции; Nest использует
+отдельное доверенное серверное подключение. Это описанное изменение относительно исходника.
+Никогда не помещайте `DATABASE_URL` или service-role/OpenAI ключ в `NEXT_PUBLIC_*`.
+
+Без базы API может запуститься, но persistence возвращает `503`.
+**`/health` со статусом процесса `ok` не означает исправную/подключённую базу**:
+проверяйте поле `database` и реальные операции перед выкладкой.
+
+## 5. Проверки
 
 ```bash
-npm run dev              # web + API + package watchers
-npm run dev:web          # Next only
-npm run dev:api          # Nest only
-npm run build            # packages, API, web
-npm run validate:structure # dependency-free repository checks
+npm run validate:structure
+npm run check:syntax
+npm run check:widgets
+npm run test:widgets
+npm run test:core
 npm run typecheck
 npm test
-npm run validate
-npm run generate:seed
+npm run build
 ```
 
-## Environment separation
+`test:core` компилирует настоящие `domain.ts`, `engine.ts`, `ingredients.ts` с `strict`
+и выполняет их через Node test runner. Он не эмулирует Next или Nest.
+Есть один явно отмеченный TODO — унаследованная проблема предупреждения о дозировке
+ароматического ингредиента. Подробности: [KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md).
 
-Only the web app receives `NEXT_PUBLIC_*` values. Secrets belong exclusively to `apps/api/.env` or the backend hosting provider.
+`npm run validate` объединяет основные проверки, но **не заменяет** `npm run build`,
+тесты настоящей БД, браузерные E2E и проверку деплоя.
 
-### Web
+Статические иллюстрации из реальных исходников виджетов и данных модели:
+[desktop EN](docs/previews/studio-en-1440.png), [mobile UK](docs/previews/studio-uk-390.png).
+Это CSS-превью без React lifecycle и сети, **не скриншоты запущенного Next.js приложения**.
 
-```dotenv
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_API_URL=http://localhost:4000/v1
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-```
+## 6. Что сознательно не заявляется готовым
 
-### API
+Платёжный провайдер, реальные Pro-подписки, лимиты AI, модерация, аналитика,
+нагрузочные испытания, backup/restore и коммерческая валидация гастрономической базы.
+AI по умолчанию выключен; production-включение заблокировано до реализации квот.
+Нынешние 38 профилей и коэффициенты — исходные гипотезы, не измеренная совместимость,
+не рекомендации по безопасности приготовления и не проценты успеха блюда.
 
-```dotenv
-# Optional platform-assigned port; takes precedence over API_PORT.
-PORT=
-API_PORT=4000
-CORS_ORIGINS=http://localhost:3000
-DATABASE_URL=
-SUPABASE_URL=
-SUPABASE_PUBLISHABLE_KEY=
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-5-mini
-```
+## 7. Файлы для продолжения работы
 
-Never expose `DATABASE_URL`, an OpenAI key or a Supabase service-role secret to Next.js client code.
+- [SOURCE_AUDIT.md](docs/SOURCE_AUDIT.md): источники и осознанные изменения.
+- [MIGRATION.md](docs/MIGRATION.md): переход со старого проекта без смешивания папок.
+- [DEVELOPMENT.md](docs/DEVELOPMENT.md): команды, тесты, дисциплина lockfile.
+- [DEPLOYMENT.md](docs/DEPLOYMENT.md): Vercel / Nest-контейнер / Supabase.
+- [ACCEPTANCE.md](docs/ACCEPTANCE.md): реальные сценарии приёмки.
+- [AGENT.md](AGENT.md): правила для дальнейшей разработки с агентом.
 
-## Database setup
-
-1. Create a Supabase project.
-2. Run `supabase/schema.sql` in the SQL editor.
-3. Run `supabase/seed.sql`.
-4. Put the pooler/direct PostgreSQL URL into `apps/api/.env` as `DATABASE_URL`.
-5. Put the project URL and publishable key into both applications as documented above.
-
-The SQL trigger and Nest service both enforce the Free plan limit of three private dishes. The API also rejects unknown ingredients, unknown or unsupported preparations, and duplicate ingredient/preparation rows before persistence or analysis.
-
-## Current integration state
-
-- The constructor calculates immediately in the browser using the shared package.
-- `POST /v1/flavor/analyze` repeats the calculation authoritatively on the server.
-- Discover reads public API dishes when the database is connected and falls back to bundled examples otherwise.
-- Protected dish CRUD and AI endpoints validate Supabase bearer tokens.
-- The existing UI still keeps a local-storage fallback until the sign-in screens are connected.
-
-This is intentional: moving the backend does not make the visual MVP dependent on external infrastructure.
-
-## Deployment
-
-- Deploy `apps/web` to Vercel.
-- Deploy the root `apps/api/Dockerfile` to Railway, Render, Fly.io or a VPS.
-- Point `NEXT_PUBLIC_API_URL` at the public Nest URL.
-- Restrict `CORS_ORIGINS` to the production web domain.
-
-For a local API container, copy `apps/api/.env.example` to `apps/api/.env` and run `docker compose up --build api`. See `docs/DEPLOYMENT.md` for the full checklist.
-
-## Data warning
-
-The initial ingredient profiles and explicit pair adjustments are product hypotheses, not a validated scientific or culinary dataset. They must be independently reviewed, sourced and versioned before commercial claims are made. See `docs/VALIDATION.md` for the checks already performed and the remaining build limitation.
+Архив ничего не пушит в GitHub, не меняет remote и не переносит private `.env` автоматически.

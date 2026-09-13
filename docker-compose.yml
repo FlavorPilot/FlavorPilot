@@ -5,6 +5,12 @@ services:
       dockerfile: apps/api/Dockerfile
     env_file:
       - apps/api/.env
+    environment:
+      API_HOST: 0.0.0.0
+      API_PORT: 4000
+      PORT: 4000
+      AI_ENABLED: 'false'
     ports:
-      - "4000:4000"
+      - '127.0.0.1:4000:4000'
+    init: true
     restart: unless-stopped

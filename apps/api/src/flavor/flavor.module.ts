@@ -1,10 +1,6 @@
-import { Module } from "@nestjs/common";
-import { FlavorController } from "./flavor.controller";
-import { FlavorService } from "./flavor.service";
-
-@Module({
-  controllers: [FlavorController],
-  providers: [FlavorService],
-  exports: [FlavorService]
-})
-export class FlavorModule {}
+import { Module } from '@nestjs/common';
+import { FlavorService } from './flavor.service';
+import { FlavorController } from './flavor.controller';
+@Module({ providers: [FlavorService], controllers: [FlavorController], exports: [FlavorService] })
+export class FlavorModule {
+}

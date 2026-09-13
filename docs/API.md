@@ -1,69 +1,42 @@
-# API
+# API contract — widget rebuild r2
 
-Base URL in development: `http://localhost:4000/v1`
+Default prefix `/v1`; protected routes require a Supabase `Authorization: Bearer <access-token>`.
+The browser never sends a trusted user ID, plan or score. The API verifies bearer tokens via
+Supabase's user endpoint with a timeout. A decode-only JWT implementation is not acceptable.
 
-Swagger UI: `http://localhost:4000/docs`
+Public: GET /health, POST /flavor/analyze, GET /dishes/public, GET /dishes/public/:id,
+GET /dishes/share/:token. Protected: GET /dishes/me, GET /dishes/me/:id, POST /dishes,
+PATCH /dishes/:id, DELETE /dishes/:id, POST /dishes/:id/remix, POST /ai/explain.
 
-## Public endpoints
+Requests/response structures are in packages/contracts/src. Every ingredient/preparation pair
+must resolve in the kernel catalogue. Save requires 1–24 items; live analysis accepts an empty
+composition. Per-row grams must be finite, positive and <=5000. Existing canonical IDs do not
+change with the interface language. Exact repeat ingredient/method rows are rejected.
 
-```text
-GET    /health
-POST   /flavor/analyze
-GET    /dishes/public
-GET    /dishes/public/:id
-GET    /dishes/share/:token
-```
+## AI request change
 
-## Authenticated endpoints
-
-Send a Supabase access token:
-
-```http
-Authorization: Bearer <access-token>
-```
-
-```text
-POST   /ai/explain
-GET    /dishes/me
-GET    /dishes/me/:id
-POST   /dishes
-PATCH  /dishes/:id
-DELETE /dishes/:id
-POST   /dishes/:id/remix
-```
-
-## Flavor analysis
+The r2 request is composition-based, NOT the old `analysis` object:
 
 ```json
 {
+  "locale": "en",
+  "dishName": "A working composition",
   "goal": "fresh",
-  "includeRecommendations": true,
   "items": [
-    { "ingredientId": "salmon", "grams": 180, "preparationId": "raw" },
-    { "ingredientId": "avocado", "grams": 80, "preparationId": "raw" },
-    { "ingredientId": "lime", "grams": 12, "preparationId": "raw" }
+    {"ingredientId":"salmon","grams":180,"preparationId":"raw"},
+    {"ingredientId":"lime","grams":12,"preparationId":"raw"}
   ]
 }
 ```
 
-The response contains overall, compatibility, balance, quantity and texture scores, confidence, sensory profile, pair results, issues and recommendations. The server rejects catalog references it cannot evaluate: unknown ingredients, unknown preparations, preparations unsupported by a selected ingredient, and duplicate ingredient/preparation rows.
+The controller parses and validates, computes server analysis and only then invokes AiService.
+Default `AI_ENABLED=false`; enabling it under production is rejected pending actual quotas.
+Response keeps `summary`, `main_problem`, `actions`. Text does not become a trusted recipe or
+score. `store:false`, timeout and output token limit are safeguards, not a complete cost policy.
 
-## Error shape
+## Privacy and known limits
 
-```json
-{
-  "statusCode": 400,
-  "code": "VALIDATION_ERROR",
-  "message": "Request validation failed",
-  "details": {},
-  "requestId": "req-1",
-  "timestamp": "2026-08-20T00:00:00.000Z",
-  "path": "/v1/flavor/analyze"
-}
-```
-
-## Authentication implementation
-
-The current guard validates a bearer token through Supabase's authenticated-user endpoint. It is intentionally simple for the first release. At higher traffic, replace the network call with local verification against Supabase JWKS plus a short-lived key cache.
-
-Dish updates cannot change `parentDishId`; remix ancestry is assigned only when the dish is created.
+Public/shared serializers omit shareToken; owners receive it. All dish reads use no-store.
+Public cursor remains timestamp-only, so equal publication timestamps need future tie-breaking.
+Mine currently returns up to 100 recipes. No version-history browsing or token-rotation endpoint
+is claimed. API/DB tests with two distinct accounts are still required before external usage.

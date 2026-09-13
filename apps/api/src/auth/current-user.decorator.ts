@@ -1,7 +1,8 @@
-import { createParamDecorator, type ExecutionContext } from "@nestjs/common";
-import type { AuthenticatedRequest } from "./auth.types";
-
-export const CurrentUser = createParamDecorator(
-  (_data: unknown, context: ExecutionContext) =>
-    context.switchToHttp().getRequest<AuthenticatedRequest>().user
-);
+import { createParamDecorator, type ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import type { AuthenticatedRequest } from './supabase-auth.guard';
+export const CurrentUser = createParamDecorator((_data: unknown, ctx: ExecutionContext) => {
+    const user = ctx.switchToHttp().getRequest<AuthenticatedRequest>().user;
+    if (!user)
+        throw new UnauthorizedException();
+    return user;
+});

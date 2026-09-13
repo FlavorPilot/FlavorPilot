@@ -1,28 +1,17 @@
-# Project status — v0.3.0
+# FlavorPilot — widget-monorepo-r2
 
-## Completed
+Complete source distribution; technical alpha. Internal packages retain version 0.3.0.
+Source baselines and intentional changes: docs/SOURCE_AUDIT.md.
 
-- Product and internal package scope renamed to FlavorPilot.
-- Correct npm-workspace monorepo structure restored.
-- Next.js frontend lives in `apps/web`.
-- NestJS/Fastify API lives in `apps/api`.
-- Flavor Engine is isolated in a framework-independent package.
-- Shared Zod contracts are isolated in a dedicated package.
-- Health, flavor, AI, auth, database and dish modules are implemented.
-- PostgreSQL/Drizzle query layer and Supabase authorization are scaffolded.
-- Public/private/unlisted dishes, versions and remix lineage are implemented server-side.
-- English and Ukrainian interfaces are included.
-- Docker, Railway and Vercel deployment scaffolding is included.
-- Dependency-free repository structure validation is included.
+Implemented in source: a layered widget frontend, editor/history/preview/autosave, EN/UK,
+local/cloud adapters and auth forms; Nest authenticated CRUD, deterministic analysis and optional
+AI wrapper; shared schemas; Supabase fresh schema and an explicit hardening migration.
 
-## Required before production
+Proved here: see validation-report.json. Not proved here: full dependency installation, actual
+framework builds, live UI React state lifecycle, real database/auth/provider integration or deployment.
+The build remains blocked by unavailable npm access in this environment; no verified lockfile
+was generated. One inherited culinary warning TODO is preserved openly.
 
-- install dependencies and commit the generated `package-lock.json`;
-- run the full TypeScript, test and production build pipeline;
-- add sign-in/sign-up screens and callback flow;
-- connect builder save/update/delete to authenticated endpoints;
-- add payment provider and subscription webhooks;
-- add rate limiting, observability and error monitoring;
-- add moderation for public content;
-- independently validate and source the ingredient knowledge base;
-- add browser end-to-end tests.
+Next gate: install in native Node 22, commit lockfile, run actual typecheck/tests/build, set up
+staging Supabase, execute docs/ACCEPTANCE.md, then work through known commercial blockers.
+No percentages, fake users, payment success or production-readiness badge are justified yet.

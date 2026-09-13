@@ -1,0 +1,94 @@
+/** Pure domain values/types. No framework, validation, network or storage side effects. */
+export const locales = ['en', 'uk'] as const;
+export type Locale = typeof locales[number];
+export type LocalizedText = Record<Locale, string>;
+export const sensoryDimensions = ['sweetness', 'acidity', 'saltiness', 'bitterness', 'umami', 'fat', 'pungency', 'freshness', 'aromaIntensity', 'moisture'] as const;
+export type SensoryDimension = typeof sensoryDimensions[number];
+export type SensoryProfile = Record<SensoryDimension, number>;
+export const dishGoals = ['balanced', 'fresh', 'rich', 'spicy', 'sweetSour', 'smoky', 'umami', 'light', 'creamy', 'crunchy'] as const;
+export type DishGoal = typeof dishGoals[number];
+export const ingredientRoles = ['base', 'acid', 'fat', 'sweetener', 'aromatic', 'spice', 'umami', 'freshness', 'texture', 'sauce'] as const;
+export type IngredientRole = typeof ingredientRoles[number];
+export const textureTags = ['tender', 'creamy', 'crisp', 'crunchy', 'juicy', 'fibrous', 'silky', 'firm', 'flaky', 'sticky', 'crumbly'] as const;
+export type TextureTag = typeof textureTags[number];
+export interface PreparationMethod {
+    id: string;
+    name: LocalizedText;
+    profileMultiplier: Partial<Record<SensoryDimension, number>>;
+    intensityMultiplier: number;
+    addAromas?: string[];
+    addTextures?: TextureTag[];
+}
+export interface Ingredient {
+    id: string;
+    name: LocalizedText;
+    category: LocalizedText;
+    profile: SensoryProfile;
+    intensity: number;
+    textureIntensity: number;
+    aromas: string[];
+    textures: TextureTag[];
+    roles: IngredientRole[];
+    share: {
+        min: number;
+        ideal: number;
+        max: number;
+    };
+    preparations: string[];
+}
+export interface DishItem {
+    ingredientId: string;
+    grams: number;
+    preparationId: string;
+}
+export const issueCodes = ['emptyDish', 'singleIngredient', 'fatNeedsAcid', 'tooSweet', 'tooIntense', 'lowFreshness', 'dominantIngredient', 'flatTexture', 'highSalt', 'lowUmami'] as const;
+export type IssueCode = typeof issueCodes[number];
+export interface DishIssue {
+    code: IssueCode;
+    severity: 'info' | 'warning' | 'critical';
+    ingredientId?: string;
+    value?: number;
+}
+export interface PairResult {
+    ingredientAId: string;
+    ingredientBId: string;
+    score: number;
+    aromaOverlap: number;
+    complementScore: number;
+    explicitAdjustment: number;
+}
+export const recommendationReasons = ['strongPairing', 'addsAcidity', 'balancesFat', 'addsFreshness', 'addsUmami', 'addsSweetness', 'addsPungency', 'addsCrunch', 'supportsGoal', 'improvesBalance'] as const;
+export type RecommendationReason = typeof recommendationReasons[number];
+export interface IngredientRecommendation {
+    ingredientId: string;
+    compatibility: number;
+    utility: number;
+    recommendedGrams: number;
+    balanceDelta: number;
+    reasons: RecommendationReason[];
+}
+export interface DishAnalysis {
+    overallScore: number;
+    compatibilityScore: number;
+    balanceScore: number;
+    quantityScore: number;
+    textureScore: number;
+    confidence: number;
+    profile: SensoryProfile;
+    totalWeight: number;
+    dominantIngredientId?: string;
+    pairResults: PairResult[];
+    issues: DishIssue[];
+    recommendations: IngredientRecommendation[];
+}
+export const dishVisibilities = ['public', 'unlisted', 'private'] as const;
+export type DishVisibility = typeof dishVisibilities[number];
+export interface SavedDish {
+    id: string;
+    name: string;
+    items: DishItem[];
+    goal: DishGoal;
+    visibility: DishVisibility;
+    createdAt: string;
+    parentDishId?: string;
+}

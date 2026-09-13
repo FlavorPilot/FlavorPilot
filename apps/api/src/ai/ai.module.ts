@@ -1,9 +1,7 @@
-import { Module } from "@nestjs/common";
-import { AiController } from "./ai.controller";
-import { AiService } from "./ai.service";
-
-@Module({
-  controllers: [AiController],
-  providers: [AiService]
-})
-export class AiModule {}
+import { Module } from '@nestjs/common';
+import { FlavorModule } from '../flavor/flavor.module';
+import { AiService } from './ai.service';
+import { AiController } from './ai.controller';
+@Module({ imports: [FlavorModule], providers: [AiService], controllers: [AiController] })
+export class AiModule {
+}

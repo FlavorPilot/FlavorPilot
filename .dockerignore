@@ -1,12 +1,14 @@
 node_modules
 **/node_modules
+.git
 **/dist
 **/.next
-.git
+.core-test
 .env
+.env.*
 **/.env
 **/.env.*
 !**/.env.example
 *.zip
-coverage
-*.log
+previews
+test-results

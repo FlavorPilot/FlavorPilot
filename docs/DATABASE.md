@@ -1,44 +1,45 @@
-# Database
+# Database setup and migration
 
-Canonical SQL is in `supabase/schema.sql`. Drizzle declarations in `apps/api/src/database/schema.ts` are the typed query layer, not a second migration source.
+## Fresh Supabase project
 
-## Main tables
+Run `supabase/schema.sql`, then `supabase/seed.sql` in a new project. The schema needs Supabase
+`auth.users`, `auth.uid()`, `anon` and `authenticated` roles; it is not a standalone PostgreSQL
+bootstrap. Do not run it on a nonempty existing database: types and tables are created afresh.
 
-- `profiles`
-- `ingredients`
-- `preparation_methods`
-- `ingredient_pairings`
-- `dishes`
-- `dish_items`
-- `dish_versions`
-- `favorites`
-- `subscriptions`
+Tables: profiles, ingredients, preparation_methods, ingredient_pairings, dishes, dish_items,
+dish_versions, favorites, subscriptions. No paying users, fake accounts or public recipes are
+seeded. The seed inserts unreviewed catalogue hypotheses with `confidence=0` and does not replace
+existing records. The application currently calculates from the bundled catalogue, not live DB
+edits: change the catalogue through review, rebuild packages, then regenerate/reconcile seed.
 
+## Existing v0.3.0 database
 
-## Knowledge-source authority
+Back up and verify a restorable copy first. Test on a separate staging copy with two users.
+Apply `supabase/migrations/0002_widget_hardening.sql` once, in a maintenance window. It changes
+capacity enforcement and grants; it does not delete stored dishes. It is included but was not
+executed against a PostgreSQL/Supabase server in the build environment.
 
-The current runtime Flavor Engine reads its ingredient, preparation and explicit-pair data from `packages/flavor-engine/src/ingredients.ts`. `supabase/seed.sql` is generated from that source with `npm run generate:seed`. Editing knowledge rows only in PostgreSQL does **not** change calculations in this MVP; keep the TypeScript catalog and generated seed synchronized until a versioned database-backed knowledge service replaces this arrangement.
+Critical behavior change: anon/authenticated cannot directly CRUD dishes/items/versions,
+favorites/subscriptions through Supabase Data API. Use Nest endpoints. `get_shared_dish` stays
+defined for compatibility but direct client EXECUTE is revoked. Do not blindly regrant it.
+The browser uses Supabase for Auth only; the API holds a trusted server-only DB connection.
+No service-role key or database password belongs in frontend variables.
 
-## Visibility
+## Verification after migration
 
-- `public`: discoverable and readable by everyone;
-- `unlisted`: readable with an opaque share token;
-- `private`: owner only.
+Create two test users. As A save a private recipe; B and anonymous clients must not read or edit
+it by ID. Public recipes can be read but only A can edit. A valid unlisted token can read its
+recipe; a guessed UUID cannot. Making a recipe private disables token access. Verify the owner
+can keep/edit existing private recipes after downgrade; new private entries are limited. Send
+concurrent create requests to validate the owner lock. Verify snapshots commit with item changes.
 
-The API never returns `shareToken` from public endpoints. Owners receive it from authenticated endpoints. PostgreSQL owns `published_at`: it is set when a dish first becomes public, preserved on later edits, and cleared for non-public visibility, so a direct client cannot boost feed rank with an arbitrary timestamp.
+The API service applies explicit filters even when direct DB sessions bypass RLS. RLS policy
+presence alone is not proof of tenant isolation. Database and auth provider errors must never
+expose full connection strings, query parameters or recipes in logs.
 
-## Versions and remixes
+## Rollback
 
-Each create/update writes a snapshot to `dish_versions`. `parent_dish_id` preserves attribution and enables a future remix tree. The parent can be selected only during creation, must be public or owned by the author, and is immutable through both the update contract and a PostgreSQL trigger. Deleting an original dish sets the child reference to `null` rather than deleting the remix; the trigger permits only this referential cleanup.
-
-## Free-plan privacy limit
-
-Nest checks the limit before writing for a friendly error. PostgreSQL repeats the check in `enforce_private_dish_limit()` so alternate trusted writers cannot bypass it. A non-Free tier bypasses the limit only while the subscription status is `active` or `trialing` and its period has not expired.
-
-## RLS and server access
-
-RLS remains useful for defense in depth and any direct Supabase clients. The Nest API also enforces ownership explicitly because a trusted PostgreSQL connection can use a role that bypasses RLS.
-
-The database also verifies that every dish-item preparation is allowed by the ingredient catalog and caps each dish at 24 rows, matching the shared transport contract.
-
-Never put `DATABASE_URL` or service-role credentials in the browser.
+Do not reverse grants automatically on a production database. Roll back the API application and
+review whether old clients still require direct Data API access. Keep private access closed until
+review. Restore from the tested backup only with an explicit data-loss/window decision. No
+migration is automatically applied by this archive, setup script or Docker build.

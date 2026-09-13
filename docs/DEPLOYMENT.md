@@ -1,61 +1,30 @@
-# Deployment
+# Deployment handoff — not a completed deployment
 
-## Local Docker API
+## Web / Vercel
 
-```bash
-cp apps/api/.env.example apps/api/.env
-docker compose up --build api
-```
+Use the monorepo repository with project Root Directory `apps/web`; include source files outside
+that directory in the build. Install from the repository root with the actual committed lockfile.
+An explicit command from apps/web is `cd ../.. && npm ci --include=optional` for installation and
+`cd ../.. && npm run build:packages && npm run build --workspace @flavorpilot/web` for build.
+Use the Next.js framework preset; environment values NEXT_PUBLIC_* must exist at build time.
+Platform UI/monorepo settings need verification in the real project; no live deployment was run.
 
-The Compose file reads `apps/api/.env`; the Next development app continues to read `apps/web/.env.local`.
+## Nest container
 
+Build from root: `docker build -f apps/api/Dockerfile -t flavorpilot-api .`.
+The image builds actual workspaces and prunes dev dependencies. It runs as non-root node.
+For development, after setup: `docker compose up --build api`. The local compose bind is loopback.
+Set real DB/Auth values using the hosting provider's secret storage, never image build args.
+Dockerfile supports the first unlocked install for bootstrapping; require a committed lockfile
+for any release. Docker was not built/tested in this preparation environment.
 
-## Frontend: Vercel
+Nest binds API_HOST 0.0.0.0 and uses platform PORT before API_PORT. Default health path /v1/health.
+Specify allowed CORS origins. trustProxy is false: configure explicit trusted hops/networks only
+after the actual ingress topology is known. Forwarded client-IP headers alone are untrusted.
 
-Configure the repository as a monorepo. The included `vercel.json` builds shared packages and `@flavorpilot/web`.
+## Release gate
 
-Required production variables:
-
-```dotenv
-NEXT_PUBLIC_APP_URL=https://your-domain.example
-NEXT_PUBLIC_API_URL=https://api.your-domain.example/v1
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
-```
-
-## Backend: Railway/Render/Fly/VPS
-
-Use `apps/api/Dockerfile`. Railway configuration is included at `railway.json`.
-
-Required variables:
-
-```dotenv
-NODE_ENV=production
-API_HOST=0.0.0.0
-# Railway/Render may inject PORT automatically. It takes precedence over API_PORT.
-PORT=
-API_PORT=4000
-CORS_ORIGINS=https://your-domain.example
-DATABASE_URL=postgresql://...
-DATABASE_SSL=require
-SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-SUPABASE_PUBLISHABLE_KEY=...
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-5-mini
-```
-
-`OPENAI_API_KEY` is optional until the explanation feature is enabled. Leave `PORT` empty locally; container platforms may populate it automatically.
-
-## Production checklist
-
-- run SQL through versioned migrations;
-- use a Supabase pooler URL appropriate for the hosting model;
-- restrict CORS exactly;
-- configure rate limiting for AI and mutation endpoints;
-- add structured logs/error monitoring;
-- configure database backups and PITR;
-- test owner/non-owner/public/unlisted/private access and immutable remix lineage;
-- add payment webhooks before trusting subscription status;
-- rotate all secrets after staging;
-- load-test public discovery and analysis separately;
-- run `npm run validate && npm run build` from a clean checkout before release.
+Require native green build/test, tested schema migration, real 2-user permission tests,
+private/share token checks, session callback tests, monitored readiness (not just process health),
+backups with restoration, rollback, redacted logs, abuse/rate limits and domain/HTTPS configuration.
+Do not enable production AI or payments just to show a working button. Neither is release-ready.

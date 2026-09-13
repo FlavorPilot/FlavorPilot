@@ -1,43 +1,39 @@
-# Validation
+# Actual validation — widget-monorepo-r2
 
-## Dependency-free repository checks
+## Executed successfully
 
-Run:
+| Check | Evidence |
+|---|---|
+| Complete source/workspace boundaries | 4 workspaces, 18 required paths, 108 relative imports |
+| Widget architecture | 90 frontend TypeScript/TSX files, 11 widget slices |
+| TypeScript syntax | 135 files, no parser errors |
+| Pure editor and localization runtime | 16 checks passed |
+| Pure kernel strict compilation | Real domain/engine/catalog source, available TS 5.8.3 |
+| Kernel runtime | 21 passed, 0 failed, **1 known TODO (CUL-001)** |
+| Static CSS render | 10 viewport/locale combinations; no document-width overflow |
 
-```bash
-npm run validate:structure
-```
+The project pins TypeScript 5.9.2, but only global 5.8.3 was available in this environment.
+The kernel check uses real source and emitted JavaScript, not third-party type shims. The
+separate widget check runs pure reducer/locale code in an isolated JS context. Neither proves
+the correctness of React hooks, Next routes, Nest integration, Zod/Drizzle versions or PostgreSQL.
 
-Current result: **30/30 checks passed**. The script verifies:
+The visual harness uses inert hooks and a small JSX-to-HTML serializer. It displays **actual
+experimental kernel output**, but cannot execute application buttons or network requests.
+The resulting HTML/screenshots are layout previews, not an interactive deployed prototype.
 
-- required monorepo files and workspace declarations;
-- valid JSON manifests;
-- FlavorPilot package names and aligned workspace versions;
-- npm-compatible local workspace dependency versions;
-- absence of generated `dist`, `.next`, `node_modules` and `*.tsbuildinfo` artifacts;
-- absence of product API routes inside Next.js;
-- English and Ukrainian locale declarations;
-- relative TypeScript import resolution;
-- presence of Nest modules and server-side catalog validation;
-- PostgreSQL privacy, publication and remix safeguards;
-- example environment files contain no populated secrets.
+## Blocked or not run
 
-## Full validation after installing dependencies
+Full npm install did not finish within the tool's 20-second deadline. A subsequent real registry
+diagnostic returned `EAI_AGAIN registry.npmjs.org`. Therefore no complete dependency tree,
+verified lockfile, full installed typecheck/Vitest, Next build or Nest build is claimed.
+No database, auth-provider, migration, live E2E, Docker or deployment test was executed.
 
-Run from a clean checkout:
+Commands and outputs: `../validation-report.json` and `validation/*.log`.
+CUL-001 is intentionally left as TODO; it is not counted as a passing test. See
+[KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md) for the reproducible aromatic warning gap.
 
-```bash
-npm install
-npm run validate
-npm run build
-```
+## Required next verification
 
-`npm run validate` adds TypeScript project checks and Vitest suites for shared contracts, the Flavor Engine and the API. Browser-level end-to-end coverage remains a roadmap item.
-
-## Current limitation
-
-The repository was prepared in an environment where npm registry requests timed out. A complete dependency installation, production build and installed test suite could not be executed during this commit.
-
-No partial lockfile, `node_modules` directory or generated build output is committed. Run `npm install`, execute the commands above, then commit the generated `package-lock.json` after the first successful network-enabled installation.
-
-The initial culinary data is still a product hypothesis rather than a production-validated scientific dataset. It must be independently reviewed, sourced and versioned before commercial claims are made.
+On native Node 22, install dependencies successfully, commit the actual lockfile, run
+`npm run validate` and `npm run build`, then execute `docs/ACCEPTANCE.md` with real staging users.
+Adding more source files or passing static scans does not replace this gate.

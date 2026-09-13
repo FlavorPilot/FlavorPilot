@@ -1,3 +1,3 @@
-export * from "./api";
-export * from "./dishes";
-export * from "./flavor";
+export * from './flavor';
+export * from './dishes';
+export * from './api';
