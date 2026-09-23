@@ -78,7 +78,63 @@
       "report": "docs/previews/layout-report.json"
     }
   ],
-  "notExecuted": [
+  "repositoryVerification": {
+    "verifiedAt": "2026-09-23T05:12:00Z",
+    "parentCommit": "ad95487b012ebd2b043f9ee4a3259e67a02604b1",
+    "environment": {
+      "node": "24.21.0",
+      "npm": "11.19.0",
+      "requiredNode": ">=22.16.0 <23",
+      "requiredNpm": ">=10.0.0",
+      "note": "npm ci completed with EBADENGINE warnings because this machine is Node 24. GitHub Actions uses Node 22."
+    },
+    "executed": [
+      {
+        "command": "npm ci --include=optional",
+        "status": "passed",
+        "result": "added 475 packages; existing package-lock.json was not rewritten"
+      },
+      {
+        "command": "node scripts/check-project.mjs",
+        "status": "passed",
+        "condition": "apps/web/.next absent, matching a clean checkout",
+        "workspaces": 4,
+        "requiredPaths": 18,
+        "relativeImports": 108
+      },
+      {
+        "command": "npm run validate",
+        "status": "passed",
+        "structure": "passed",
+        "widgets": "90 TS/TSX files, 11 slices",
+        "pureEditorLocaleChecks": 16,
+        "kernel": { "pass": 21, "fail": 0, "todo": 1, "todoId": "CUL-001", "typescript": "5.9.2" },
+        "typecheck": "passed for api, web, contracts and flavor-engine",
+        "vitest": {
+          "api": { "files": 4, "passed": 17 },
+          "web": { "files": 4, "passed": 21 },
+          "contracts": { "files": 1, "passed": 8 },
+          "flavorEngine": { "files": 1, "passed": 4, "todo": 1 }
+        }
+      },
+      {
+        "command": "npm run build",
+        "status": "passed",
+        "contracts": "tsc",
+        "flavorEngine": "tsc",
+        "api": "nest build",
+        "web": "Next.js 16.3.1 production build, 23 static pages"
+      }
+    ],
+    "notExecuted": [
+      "Node 22 runtime",
+      "browser E2E",
+      "Supabase Auth and PostgreSQL",
+      "Docker image and deployment"
+    ]
+  },
+  "historicalArchiveNote": "The top-level executed array and historicalArchiveNotExecuted record the 2026-09-05 source archive. Current repository results are repositoryVerification.",
+  "historicalArchiveNotExecuted": [
     {
       "check": "complete npm dependency install",
       "status": "blocked",
@@ -104,8 +160,8 @@
     }
   ],
   "lockfile": {
-    "included": false,
-    "reason": "not regenerated/verified via registry; do not fabricate lockfile integrity"
+    "included": true,
+    "verifiedBy": "npm ci --include=optional on 2026-09-23; lockfile content was already committed and was not regenerated"
   },
   "knownLimitations": "docs/KNOWN_LIMITATIONS.md",
   "repoWrites": false
