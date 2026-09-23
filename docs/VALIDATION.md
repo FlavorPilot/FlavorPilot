@@ -21,11 +21,20 @@ The visual harness uses inert hooks and a small JSX-to-HTML serializer. It displ
 experimental kernel output**, but cannot execute application buttons or network requests.
 The resulting HTML/screenshots are layout previews, not an interactive deployed prototype.
 
-## Blocked or not run
+## Repository check — 2026-09-23
+
+`npm ci --include=optional`, `npm run validate` and `npm run build` passed on Node 24.21.0 /
+npm 11.19.0. The structure check also passed with `apps/web/.next` absent. Node 22, browser E2E,
+Supabase and Docker were not run. Current evidence is `repositoryVerification` in
+[validation-report.json](../validation-report.json).
+
+## Historical archive record
+
+The checks below describe the 2026-09-05 source archive, not the repository check above.
 
 Full npm install did not finish within the tool's 20-second deadline. A subsequent real registry
-diagnostic returned `EAI_AGAIN registry.npmjs.org`. Therefore no complete dependency tree,
-verified lockfile, full installed typecheck/Vitest, Next build or Nest build is claimed.
+diagnostic returned `EAI_AGAIN registry.npmjs.org`. That archive therefore did not claim a
+complete dependency tree, verified lockfile, installed typecheck/Vitest, Next build or Nest build.
 No database, auth-provider, migration, live E2E, Docker or deployment test was executed.
 
 Commands and outputs: `../validation-report.json` and `validation/*.log`.

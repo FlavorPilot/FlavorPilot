@@ -241,7 +241,6 @@ export const en = {
         "serverHint": "Local analysis is immediate. Server availability does not imply that a recipe has been saved.",
         "networkOffline": "Offline — working locally",
         "copied": "Link copied.",
-        "copyLink": "Copy sharing link",
         "copyFailed": "Could not copy the link.",
         "uiError": "This part of the workspace could not be displayed.",
         "uiErrorText": "Reload the page. A successfully saved browser draft remains in storage.",
