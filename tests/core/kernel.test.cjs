@@ -67,6 +67,16 @@ test('USDA foods that are not in the transcribed 38 change the dish score',()=>{
  const salted=analyzeDish([{ingredientId:'salmon',grams:180,preparationId:'raw'},{ingredientId:'salt',grams:4,preparationId:'raw'}],'balanced',false);
  assert.ok(salted.profile.saltiness>plain.profile.saltiness);
  assert.notEqual(salted.overallScore,plain.overallScore);
+ const beef=scoring.hypothesisIngredients.find(item=>item.id==='beef');
+ const onion=scoring.hypothesisIngredients.find(item=>item.id==='onion');
+ assert.ok(beef.profile.umami>5&&beef.profile.fat>2);
+ assert.ok(onion.profile.pungency>3);
+ for(const item of scoring.hypothesisIngredients){
+  assert.equal(item.scoredDimensions,undefined);
+  assert.ok(item.preparations.includes('raw'));
+  for(const dimension of domain.sensoryDimensions)assert.ok(item.profile[dimension]>=0&&item.profile[dimension]<=10);
+  for(const preparation of item.preparations)assert.ok(preparationById.has(preparation));
+ }
 });
 test('catalogue identifiers are unique',()=>{assert.equal(ingredientById.size,38);assert.equal(preparationById.size,12);});
 test('every profile is finite and every preparation reference resolves',()=>{

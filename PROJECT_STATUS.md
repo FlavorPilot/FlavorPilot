@@ -11,9 +11,9 @@ Proved on 2026-09-23 against parent `ad95487`: `npm ci --include=optional`, `npm
 and `npm run build` completed. The committed lockfile was used and not regenerated. Evidence is
 in validation-report.json. The local runtime was Node 24.21.0 / npm 11.19.0, so this is not a
 Node 22 certification; CI remains the Node 22 check. CUL-001 is a range warning, separate
-from impact dominance. The scoring catalogue remains 38 unreviewed ingredients. 119 USDA identity citations are stored separately, with empty sensory fields and no review.
-`nutrient-proxy-1` hypotheses cover saltiness, fat, sweetness and moisture only where USDA
-publishes the nutrient. 82 foods outside the transcribed 38 now enter the score on those axes.
+from impact dominance. The original 38 profiles stay the composed, unreviewed hypotheses. 119 USDA identity citations are stored separately, with empty sensory fields and no review.
+`nutrient-proxy-1` remains a nutrient-density table and is not the scoring scale. 82 foods
+outside those 38 enter the score through composed `product-hypothesis-1` profiles on all ten axes.
 
 Not proved here: live UI interaction, Supabase Auth, PostgreSQL, two-user permissions, browser
 E2E, Docker or deployment. Changes reach main only through a pull request.

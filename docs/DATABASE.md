@@ -30,7 +30,8 @@ the table from `schema.sql` and the rows from the identity seed after `seed.sql`
 `supabase/migrations/0005_nutrient_hypotheses.sql` stores `nutrient-proxy-1` scores beside
 those identities. Apply it after 0004, then `supabase/seed-nutrient-hypotheses.sql`.
 `supabase/seed-scoring-hypotheses.sql` inserts the 82 USDA foods that are not already in
-`ingredients`, so a saved dish can reference them. It does not overwrite the transcribed 38.
+`ingredients`, so a saved dish can reference them. It refreshes an unreviewed row and does not overwrite a reviewed one. The transcribed 38 are not in that file.
+`supabase/migrations/0006_product_hypotheses.sql` replaces earlier nutrient-density placeholders on an existing database. Apply it after 0005.
 
 ## Existing v0.3.0 database
 

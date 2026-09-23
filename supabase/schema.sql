@@ -1,5 +1,5 @@
 -- FlavorPilot widget monorepo r2 — FRESH Supabase database only.
--- Existing v0.3 databases: do NOT rerun this file. See migrations/0002_widget_hardening.sql and migrations/0003_knowledge_provenance.sql.
+-- Existing v0.3 databases: do NOT rerun this file. See migrations/0002_widget_hardening.sql through migrations/0006_product_hypotheses.sql.
 -- This schema follows the pinned v0.3 table/column model. RLS is not a substitute for API checks.
 begin;
 create extension if not exists pgcrypto;

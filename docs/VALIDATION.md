@@ -36,8 +36,8 @@ the same suite is 5 cases: the fifth checks that seeded catalogue rows stay unre
 that PostgreSQL rejects `reviewed` without a reviewer, source and review time.
 
 119 USDA FoodData Central identity citations are in the knowledge catalogue. They are CC0
-records of food identity, not reviewed sensory profiles. `nutrient-proxy-1` adds unreviewed hypotheses for saltiness, fat, sweetness and moisture.
-82 USDA foods that were outside the transcribed 38 now change the dish score. The transcribed
+records of food identity, not reviewed sensory profiles. `nutrient-proxy-1` adds unreviewed hypotheses for saltiness, fat, sweetness and moisture and does not feed the dish score.
+82 foods outside the transcribed 38 change the dish score through composed `product-hypothesis-1` profiles. The transcribed
 38 profiles are unchanged.
 
 CUL-001 is no longer a TODO. The kernel check for this change is 26 passed, 0 failed, 0 todo.
