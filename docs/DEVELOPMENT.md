@@ -16,6 +16,8 @@ Use root workspace commands; do not flatten package.json files out of their dire
 | npm run test:core | strict actual domain/kernel compilation + Node tests |
 | npm run typecheck | shared build + actual workspace compiler checks |
 | npm test | installed Vitest suites in all workspaces |
+| npm run test:integration | Nest against a local `flavorpilot_test` Postgres. Refuses any other database |
+| npm run test:e2e | Playwright critical path against that database, a local auth stub and `next dev` |
 | npm run build | actual shared/API/Next production builds |
 | npm run generate:seed | builds packages and emits reviewable SQL seed |
 | npm run clean | removes generated outputs only |
