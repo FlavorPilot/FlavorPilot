@@ -70,6 +70,12 @@ export interface NutrientHypothesis {
     sugarsNutrientId: 2000 | 1063 | null;
     waterG: number | null;
     waterNutrientId: 1051 | null;
+    proteinG: number | null;
+    proteinNutrientId: 1003 | null;
+    carbohydrateG: number | null;
+    carbohydrateNutrientId: 1005 | 1050 | null;
+    energyKcal: number | null;
+    energyNutrientId: 1008 | 2047 | 2048 | null;
     saltiness: number | null;
     fat: number | null;
     sweetness: number | null;
@@ -129,6 +135,20 @@ export interface IngredientRecommendation {
     balanceDelta: number;
     reasons: RecommendationReason[];
 }
+export const compositionNutrients = ['protein', 'fat', 'carbohydrate', 'sugars', 'sodium', 'energy'] as const;
+export type CompositionNutrientId = typeof compositionNutrients[number];
+/** Published USDA amounts scaled by dish grams. Missing amounts stay out of the sum. */
+export interface CompositionAmount {
+    nutrient: CompositionNutrientId;
+    unit: 'g' | 'mg' | 'kcal';
+    amount: number | null;
+    coveredItems: number;
+    totalItems: number;
+}
+export interface DishComposition {
+    totalItems: number;
+    nutrients: CompositionAmount[];
+}
 export interface DishAnalysis {
     overallScore: number;
     compatibilityScore: number;
@@ -142,6 +162,7 @@ export interface DishAnalysis {
     pairResults: PairResult[];
     issues: DishIssue[];
     recommendations: IngredientRecommendation[];
+    composition: DishComposition;
 }
 export const dishVisibilities = ['public', 'unlisted', 'private'] as const;
 export type DishVisibility = typeof dishVisibilities[number];

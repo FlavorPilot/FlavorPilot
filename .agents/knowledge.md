@@ -14,6 +14,6 @@ fat, sugars and water. That table is evidence beside the identity, not the scori
 its grams-per-10 scale is not the sensory scale of the transcribed 38. Foods outside those 38
 enter the score through `product-hypothesis-1`: a composed profile on all ten axes, with aroma,
 texture, role, share and preparation, in the same way the original profiles were composed.
-They stay unreviewed. Alpha coverage is 80–120 reviewed ingredients; 1.0
+They stay unreviewed. A separate composition reference may sum published USDA protein, fat, carbohydrate, sugars, sodium and energy by dish grams. Leave a missing amount out of that sum. Do not fold it into the model score. Alpha coverage is 80–120 reviewed ingredients; 1.0
 coverage is 300–500. Do not mark those targets met by generating numbers or by counting
 unreviewed citations.

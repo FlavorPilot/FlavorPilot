@@ -1,3 +1,4 @@
+import { dishComposition } from './composition';
 import { getPairAdjustment, goalDefinitions, ingredients, preparationById } from './ingredients';
 import { catalogueById } from './scoring-catalogue';
 import { sensoryDimensions, type DishAnalysis, type DishGoal, type DishIssue, type DishItem, type Ingredient, type IngredientRecommendation, type PairResult, type RecommendationReason, type SensoryProfile, type TextureTag } from '@flavorpilot/contracts/domain';
@@ -263,6 +264,6 @@ const generateRecommendations = (items: DishItem[], goal: DishGoal, current: Ret
 };
 export const analyzeDish = (items: DishItem[], goal: DishGoal = 'balanced', includeRecommendations = true): DishAnalysis => {
     const core = coreAnalysis(items, goal);
-    return { overallScore: round(core.overallScore), compatibilityScore: round(core.compatibilityScore), balanceScore: round(core.balanceScore), quantityScore: round(core.quantityScore), textureScore: round(core.textureScore), confidence: round(core.confidence), profile: core.profile, totalWeight: round(core.totalWeight, 1), dominantIngredientId: core.dominant?.ingredientId, pairResults: core.pairs.map(({ weight: _weight, ...pair }) => pair), issues: core.issues, recommendations: includeRecommendations ? generateRecommendations(items, goal, core) : [] };
+    return { overallScore: round(core.overallScore), compatibilityScore: round(core.compatibilityScore), balanceScore: round(core.balanceScore), quantityScore: round(core.quantityScore), textureScore: round(core.textureScore), confidence: round(core.confidence), profile: core.profile, totalWeight: round(core.totalWeight, 1), dominantIngredientId: core.dominant?.ingredientId, pairResults: core.pairs.map(({ weight: _weight, ...pair }) => pair), issues: core.issues, recommendations: includeRecommendations ? generateRecommendations(items, goal, core) : [], composition: dishComposition(items) };
 };
 export const scoreCandidateForDish = (items: DishItem[], candidateId: string, goal: DishGoal = 'balanced') => analyzeDish(items, goal, true).recommendations.find(item => item.ingredientId === candidateId);

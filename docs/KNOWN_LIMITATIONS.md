@@ -30,7 +30,7 @@ project translations. Sensory profile, preparation effects, recommended range an
 evidence are empty, and the database rejects filling them on that table. A separate `nutrient-proxy-1` hypothesis maps published sodium, fat, sugars and water per
 100 g onto four 0–10 axes and stays out of the dish score. Foods already in the transcribed 38 keep those composed profiles. The other
 82 enter the score through `product-hypothesis-1`: composed values on all ten sensory axes, plus aroma, texture, role, share and preparation. They are the same kind of unreviewed product hypothesis as the original 38, not USDA measurements.
-None of the 119 is `reviewed`. Pair adjustments are still empty for the 82. Rice vinegar has no row in those two releases, so it is not cited. Closed alpha
+The dish assessment also shows a separate composition reference: protein, fat, carbohydrate, sugars, sodium and energy from the published USDA amounts, scaled by the grams in the dish. A missing amount stays out of that sum. It is not a laboratory result for the cooked dish and it does not change the model score. None of the 119 is `reviewed`. Pair adjustments are still empty for the 82. Rice vinegar has no row in those two releases, so it is not cited. Closed alpha
 still aims for 80–120 reviewed core ingredients. Commercial 1.0 aims for 300–500 reviewed
 ingredients. Neither target is met. Composed hypotheses do not count as reviewed coverage.
 

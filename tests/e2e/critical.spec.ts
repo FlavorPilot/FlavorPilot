@@ -169,6 +169,14 @@ test('keeps the mobile builder usable', async ({ page }) => {
     expect(overflow).toBeLessThanOrEqual(1);
 });
 
+test('shows published composition beside the model score', async ({ page }) => {
+    await page.goto('/en/builder');
+    await addSalmon(page);
+    await expect(page.getByRole('heading', { name: 'Published composition' })).toBeVisible();
+    await expect(page.getByText('Protein', { exact: true })).toBeVisible();
+    await expect(page.getByText('Add at least two ingredients for a composition assessment.')).toBeVisible();
+});
+
 test('warns when rosemary is above its working maximum', async ({ page }) => {
     await page.goto('/en/builder');
     for (const [name, grams] of [['Duck', '220'], ['Cherry', '70'], ['Rosemary', '35']] as const) {

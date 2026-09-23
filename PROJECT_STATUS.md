@@ -14,6 +14,7 @@ Node 22 certification; CI remains the Node 22 check. CUL-001 is a range warning,
 from impact dominance. The original 38 profiles stay the composed, unreviewed hypotheses. 119 USDA identity citations are stored separately, with empty sensory fields and no review.
 `nutrient-proxy-1` remains a nutrient-density table and is not the scoring scale. 82 foods
 outside those 38 enter the score through composed `product-hypothesis-1` profiles on all ten axes.
+A separate composition reference sums published USDA protein, fat, carbohydrate, sugars, sodium and energy.
 
 Not proved here: live UI interaction, Supabase Auth, PostgreSQL, two-user permissions, browser
 E2E, Docker or deployment. Changes reach main only through a pull request.

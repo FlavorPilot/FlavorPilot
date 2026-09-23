@@ -60,6 +60,20 @@ test('nutrient hypotheses recompute from stored USDA amounts',()=>{
  assert.ok(honey.sweetness>8);
  assert.equal(oil.fatNutrientId,1085);assert.ok(oil.fat>9);
 });
+test('published composition sums USDA amounts and leaves missing nutrients out',()=>{
+ const salmon=hypotheses.nutrientHypotheses.find(row=>row.identityId==='salmon');
+ const only=analyzeDish([{ingredientId:'salmon',grams:180,preparationId:'raw'}],'balanced',false);
+ const withSalt=analyzeDish([{ingredientId:'salmon',grams:180,preparationId:'raw'},{ingredientId:'salt',grams:4,preparationId:'raw'}],'balanced',false);
+ const withVinegar=analyzeDish([{ingredientId:'salmon',grams:100,preparationId:'raw'},{ingredientId:'rice_vinegar',grams:10,preparationId:'sauce'}],'balanced',false);
+ const protein=(analysis)=>analysis.composition.nutrients.find(item=>item.nutrient==='protein');
+ const sodium=(analysis)=>analysis.composition.nutrients.find(item=>item.nutrient==='sodium');
+ assert.equal(protein(withSalt).amount,protein(only).amount);
+ assert.equal(protein(withSalt).coveredItems,1);assert.equal(protein(withSalt).totalItems,2);
+ assert.equal(protein(withVinegar).coveredItems,1);assert.equal(protein(withVinegar).totalItems,2);
+ assert.equal(protein(withVinegar).amount,Math.round(salmon.proteinG*10)/10);
+ assert.equal(sodium(withSalt).coveredItems,2);
+ assert.ok(sodium(withSalt).amount>sodium(only).amount);
+});
 test('USDA foods that are not in the transcribed 38 change the dish score',()=>{
  assert.equal(scoring.hypothesisIngredients.length,82);
  assert.equal(scoring.catalogueIngredients.length,120);

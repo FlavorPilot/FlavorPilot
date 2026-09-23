@@ -66,7 +66,7 @@ function parseCsv(text) {
 }
 const identitiesText = readFileSync(path.join(root, 'packages/flavor-engine/src/sourced-identities.ts'), 'utf8');
 const identities = JSON.parse(identitiesText.slice(identitiesText.indexOf('= [') + 2, identitiesText.lastIndexOf(']') + 1));
-const wanted = new Set(['1004', '1085', '1051', '1063', '1093', '2000']);
+const wanted = new Set(['1003', '1004', '1005', '1008', '1050', '1051', '1063', '1085', '1093', '2000', '2047', '2048']);
 const amounts = new Map();
 for (const file of [
     path.join(dir, 'FoodData_Central_sr_legacy_food_csv_2018-04/food_nutrient.csv'),
@@ -104,6 +104,9 @@ const records = identities.map(identity => {
     const fat = prefer(identity.fdcId, ['1004', '1085']);
     const sugars = prefer(identity.fdcId, ['2000', '1063']);
     const water = prefer(identity.fdcId, ['1051']);
+    const protein = prefer(identity.fdcId, ['1003']);
+    const carbohydrate = prefer(identity.fdcId, ['1005', '1050']);
+    const energy = prefer(identity.fdcId, ['1008', '2047', '2048']);
     return {
         identityId: identity.id,
         formula: FORMULA,
@@ -115,6 +118,12 @@ const records = identities.map(identity => {
         sugarsNutrientId: sugars?.nutrientId ?? null,
         waterG: water?.amount ?? null,
         waterNutrientId: water?.nutrientId ?? null,
+        proteinG: protein?.amount ?? null,
+        proteinNutrientId: protein?.nutrientId ?? null,
+        carbohydrateG: carbohydrate?.amount ?? null,
+        carbohydrateNutrientId: carbohydrate?.nutrientId ?? null,
+        energyKcal: energy?.amount ?? null,
+        energyNutrientId: energy?.nutrientId ?? null,
         saltiness: saltinessOf(sodium?.amount ?? null),
         fat: densityOf(fat?.amount ?? null),
         sweetness: densityOf(sugars?.amount ?? null),
@@ -123,7 +132,7 @@ const records = identities.map(identity => {
         reviewStatus: 'unreviewed',
         confidence: 0,
         sourceLicense: 'CC0-1.0',
-        raw: { sodium: sodium?.text ?? null, fat: fat?.text ?? null, sugars: sugars?.text ?? null, water: water?.text ?? null },
+        raw: { sodium: sodium?.text ?? null, fat: fat?.text ?? null, sugars: sugars?.text ?? null, water: water?.text ?? null, protein: protein?.text ?? null, carbohydrate: carbohydrate?.text ?? null, energy: energy?.text ?? null },
     };
 });
 if (records.length !== identities.length)
@@ -139,11 +148,39 @@ export const nutrientHypotheses: NutrientHypothesis[] = ${JSON.stringify(publish
 writeFileSync(path.join(root, 'packages/flavor-engine/src/nutrient-hypotheses.ts'), ts);
 const q = (value) => value === null || value === undefined ? 'null' : `'${String(value).replaceAll("'", "''")}'`;
 const num = (value) => value === null || value === undefined ? 'null' : String(value);
+const compositionColumns = 'protein_g,protein_nutrient_id,carbohydrate_g,carbohydrate_nutrient_id,energy_kcal,energy_nutrient_id';
 let sql = '-- GENERATED nutrient-proxy-1 hypotheses. Not taste measurements and not scoring-engine input.\nbegin;\n';
+let migration = `-- Existing databases only. Do not rerun supabase/schema.sql.
+-- Published protein, carbohydrate and energy amounts for the composition reference. They do not change scoring coefficients.
+begin;
+alter table public.ingredient_nutrient_hypotheses
+ add column if not exists protein_g numeric,
+ add column if not exists protein_nutrient_id integer,
+ add column if not exists carbohydrate_g numeric,
+ add column if not exists carbohydrate_nutrient_id integer,
+ add column if not exists energy_kcal numeric,
+ add column if not exists energy_nutrient_id integer;
+do $$ begin
+ alter table public.ingredient_nutrient_hypotheses add constraint hypotheses_composition_amounts_nonnegative check ((protein_g is null or protein_g >= 0) and (carbohydrate_g is null or carbohydrate_g >= 0) and (energy_kcal is null or energy_kcal >= 0));
+exception when duplicate_object then null; end $$;
+do $$ begin
+ alter table public.ingredient_nutrient_hypotheses add constraint hypotheses_protein_id_follows check ((protein_nutrient_id is null) = (protein_g is null) and (protein_nutrient_id is null or protein_nutrient_id = 1003));
+exception when duplicate_object then null; end $$;
+do $$ begin
+ alter table public.ingredient_nutrient_hypotheses add constraint hypotheses_carbohydrate_id_follows check ((carbohydrate_nutrient_id is null) = (carbohydrate_g is null) and (carbohydrate_nutrient_id is null or carbohydrate_nutrient_id in (1005, 1050)));
+exception when duplicate_object then null; end $$;
+do $$ begin
+ alter table public.ingredient_nutrient_hypotheses add constraint hypotheses_energy_id_follows check ((energy_nutrient_id is null) = (energy_kcal is null) and (energy_nutrient_id is null or energy_nutrient_id in (1008, 2047, 2048)));
+exception when duplicate_object then null; end $$;
+`;
 for (const record of records) {
-    sql += `insert into public.ingredient_nutrient_hypotheses(identity_id,formula,sodium_mg,sodium_nutrient_id,fat_g,fat_nutrient_id,sugars_g,sugars_nutrient_id,water_g,water_nutrient_id,saltiness,fat_score,sweetness,moisture,review_status,confidence,source_license) values(${[q(record.identityId), q(record.formula), num(record.raw.sodium), num(record.sodiumNutrientId), num(record.raw.fat), num(record.fatNutrientId), num(record.raw.sugars), num(record.sugarsNutrientId), num(record.raw.water), num(record.waterNutrientId), num(record.saltiness), num(record.fat), num(record.sweetness), num(record.moisture), q(record.reviewStatus), record.confidence, q(record.sourceLicense)].join(',')}) on conflict (identity_id) do nothing;\n`;
+    const compositionValues = [num(record.raw.protein), num(record.proteinNutrientId), num(record.raw.carbohydrate), num(record.carbohydrateNutrientId), num(record.raw.energy), num(record.energyNutrientId)];
+    sql += `insert into public.ingredient_nutrient_hypotheses(identity_id,formula,sodium_mg,sodium_nutrient_id,fat_g,fat_nutrient_id,sugars_g,sugars_nutrient_id,water_g,water_nutrient_id,${compositionColumns},saltiness,fat_score,sweetness,moisture,review_status,confidence,source_license) values(${[q(record.identityId), q(record.formula), num(record.raw.sodium), num(record.sodiumNutrientId), num(record.raw.fat), num(record.fatNutrientId), num(record.raw.sugars), num(record.sugarsNutrientId), num(record.raw.water), num(record.waterNutrientId), ...compositionValues, num(record.saltiness), num(record.fat), num(record.sweetness), num(record.moisture), q(record.reviewStatus), record.confidence, q(record.sourceLicense)].join(',')}) on conflict (identity_id) do update set ${compositionColumns.split(',').map((column, index) => `${column}=excluded.${column}`).join(',')} where public.ingredient_nutrient_hypotheses.review_status='unreviewed';\n`;
+    migration += `update public.ingredient_nutrient_hypotheses set ${compositionColumns.split(',').map((column, index) => `${column}=${compositionValues[index]}`).join(',')} where identity_id=${q(record.identityId)} and review_status='unreviewed';\n`;
 }
 sql += 'commit;\n';
+migration += 'commit;\n';
 writeFileSync(path.join(root, 'supabase/seed-nutrient-hypotheses.sql'), sql);
+writeFileSync(path.join(root, 'supabase/migrations/0007_composition_nutrients.sql'), migration);
 const filled = (key) => records.filter(record => record[key] !== null).length;
-console.log(`Hypotheses: ${records.length}. saltiness ${filled('saltiness')}, fat ${filled('fat')}, sweetness ${filled('sweetness')}, moisture ${filled('moisture')}.`);
+console.log(`Hypotheses: ${records.length}. saltiness ${filled('saltiness')}, fat ${filled('fat')}, sweetness ${filled('sweetness')}, moisture ${filled('moisture')}, protein ${filled('proteinG')}, carbohydrate ${filled('carbohydrateG')}, energy ${filled('energyKcal')}.`);

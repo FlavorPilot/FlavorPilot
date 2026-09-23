@@ -32,6 +32,7 @@ those identities. Apply it after 0004, then `supabase/seed-nutrient-hypotheses.s
 `supabase/seed-scoring-hypotheses.sql` inserts the 82 USDA foods that are not already in
 `ingredients`, so a saved dish can reference them. It refreshes an unreviewed row and does not overwrite a reviewed one. The transcribed 38 are not in that file.
 `supabase/migrations/0006_product_hypotheses.sql` replaces earlier nutrient-density placeholders on an existing database. Apply it after 0005.
+`supabase/migrations/0007_composition_nutrients.sql` adds published protein, carbohydrate and energy amounts. Apply it after 0006. Those amounts feed the composition reference, not the dish score.
 
 ## Existing v0.3.0 database
 
