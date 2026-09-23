@@ -5,7 +5,9 @@
 Use the monorepo repository with project Root Directory `apps/web` and enable inclusion of source
 files outside that directory. `apps/web/vercel.json` sets the Next.js preset and runs installation
 and the build from the repository root with the committed lockfile. `NEXT_PUBLIC_*` values must
-exist at build time. No Vercel project has been created from this environment.
+exist at build time. `output: 'standalone'` remains for a self-hosted Next server. On Vercel it is
+disabled because Next.js 16.3 does not emit `.next/next-server.js.nft.json` for the injected deploy
+adapter. No completed Vercel deployment is claimed here.
 
 ## Nest container
 
