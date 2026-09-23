@@ -17,6 +17,8 @@
     "dev:api": "npm run build:packages && npm run dev --workspace @flavorpilot/api",
     "typecheck": "npm run build:packages && npm run typecheck --workspaces --if-present",
     "test": "npm run build:packages && npm run test --workspaces --if-present",
+    "test:integration": "npm run build:packages && npm run test:integration --workspace @flavorpilot/api",
+    "test:e2e": "npm run build:packages && npm run build --workspace @flavorpilot/api && playwright test",
     "validate:structure": "node scripts/check-project.mjs",
     "check:widgets": "node scripts/check-widget-architecture.mjs",
     "test:widgets": "node scripts/test-widgets.mjs",
@@ -29,6 +31,7 @@
     "check:syntax": "node scripts/check-syntax.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "concurrently": "10.0.5",
     "typescript": "5.9.2"
   },

@@ -24,9 +24,14 @@ The resulting HTML/screenshots are layout previews, not an interactive deployed 
 ## Repository check — 2026-09-23
 
 `npm ci --include=optional`, `npm run validate` and `npm run build` passed on Node 24.21.0 /
-npm 11.19.0. The structure check also passed with `apps/web/.next` absent. Node 22, browser E2E,
-Supabase and Docker were not run. Current evidence is `repositoryVerification` in
+npm 11.19.0. The structure check also passed with `apps/web/.next` absent. Node 22 and staging
+Supabase were not part of that pass. Current evidence is `repositoryVerification` in
 [validation-report.json](../validation-report.json).
+
+On the same day, `npm run test:integration` passed 4 Nest cases against a local
+`flavorpilot_test` Postgres, and `npx playwright test` passed 9 browser cases against that
+database plus a local auth stub. CI runs the same commands on Node 22. The stub confirms
+accounts immediately, so this is not a staging email-confirmation pass.
 
 ## Historical archive record
 
