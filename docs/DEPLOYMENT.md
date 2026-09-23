@@ -2,12 +2,10 @@
 
 ## Web / Vercel
 
-Use the monorepo repository with project Root Directory `apps/web`; include source files outside
-that directory in the build. Install from the repository root with the actual committed lockfile.
-An explicit command from apps/web is `cd ../.. && npm ci --include=optional` for installation and
-`cd ../.. && npm run build:packages && npm run build --workspace @flavorpilot/web` for build.
-Use the Next.js framework preset; environment values NEXT_PUBLIC_* must exist at build time.
-Platform UI/monorepo settings need verification in the real project; no live deployment was run.
+Use the monorepo repository with project Root Directory `apps/web` and enable inclusion of source
+files outside that directory. `apps/web/vercel.json` sets the Next.js preset and runs installation
+and the build from the repository root with the committed lockfile. `NEXT_PUBLIC_*` values must
+exist at build time. No Vercel project has been created from this environment.
 
 ## Nest container
 
@@ -15,12 +13,25 @@ Build from root: `docker build -f apps/api/Dockerfile -t flavorpilot-api .`.
 The image builds actual workspaces and prunes dev dependencies. It runs as non-root node.
 For development, after setup: `docker compose up --build api`. The local compose bind is loopback.
 Set real DB/Auth values using the hosting provider's secret storage, never image build args.
-Dockerfile supports the first unlocked install for bootstrapping; require a committed lockfile
-for any release. Docker was not built/tested in this preparation environment.
+Require the committed lockfile for any release. On 2026-09-23 the image `flavorpilot-api` built
+from this Dockerfile and started with `NODE_ENV=production` and `AI_ENABLED=false`. Without
+`DATABASE_URL`, `GET /v1/health` returned `status: ok` and `database: not_configured`. The same
+image exited when `AI_ENABLED=true`. The image was not pushed to a registry or deployed.
 
 Nest binds API_HOST 0.0.0.0 and uses platform PORT before API_PORT. Default health path /v1/health.
 Specify allowed CORS origins. trustProxy is false: configure explicit trusted hops/networks only
 after the actual ingress topology is known. Forwarded client-IP headers alone are untrusted.
+
+## Staging values
+
+Keep `AI_ENABLED=false`. Production startup rejects `AI_ENABLED=true` until usage quotas exist.
+Set `CORS_ORIGINS` to the exact web origin, for example `https://staging.flavorpilot.example`.
+A wildcard is rejected in production. Put `DATABASE_URL`, `SUPABASE_URL` and
+`SUPABASE_PUBLISHABLE_KEY` only in the API host's secret storage. The web build receives
+`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+After creating the Supabase project, add `/en/auth/callback`, `/uk/auth/callback` and the same
+paths with `?mode=recovery` to the Auth redirect URLs. Apply `supabase/schema.sql`, then
+`supabase/seed.sql`, on an empty project. Readiness is `database: connected`, not merely HTTP 200.
 
 ## Release gate
 
