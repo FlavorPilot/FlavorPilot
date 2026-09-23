@@ -285,6 +285,7 @@ export const en = {
         "tooIntense": "Several strong flavours may compete.",
         "lowFreshness": "This rich composition may benefit from a fresher element.",
         "dominantIngredient": "One ingredient may dominate the current proportions.",
+        "outsideRecommendedRange": "This amount is above the working maximum for this ingredient.",
         "flatTexture": "The model detects little textural contrast.",
         "highSalt": "The model flags high saltiness.",
         "lowUmami": "The current composition has little umami in this model."

@@ -11,13 +11,26 @@
 - Supabase Auth, PostgreSQL SQL/migration, permissions, callbacks and Docker deployment need real
   staging tests. There is no live database, provider account, published domain or payment setup.
 
-## CUL-001 — inherited aromatic warning gap
+## CUL-001 — range warning is separate from impact dominance
 
-The source model penalizes 35 g rosemary in duck 220 g + cherry 70 g (quantity score falls),
-but can fail to produce `dominantIngredient` for the rosemary. Its dominance function examines
-the highest total-impact ingredient first, which can still be the duck. The old intended test
-for that specific warning does not hold. One explicit TODO remains in kernel/Vitest tests.
-No numeric coefficients were changed to hide this issue during a widget architecture task.
+35 g rosemary with duck 220 g and cherry 70 g still lowers the quantity score. That row can
+also be above its working maximum while duck remains the highest-impact ingredient, so
+`dominantIngredient` is not the rosemary warning. The analysis now emits
+`outsideRecommendedRange` for any ingredient whose gram share exceeds `share.max`. Impact
+formula, dominance thresholds, and score coefficients are unchanged. The default dish still
+has no range warning.
+
+## Catalogue review coverage
+
+The scoring catalogue is still 38 ingredients, 12 preparations and 64 explicit pair adjustments.
+Those rows stay `unreviewed` hypotheses. A separate identity list cites 119 staple foods from
+USDA FoodData Central (Foundation Foods CSV 2026-04-30 and SR Legacy CSV 2018-04), license
+CC0 1.0. Each citation copies the USDA description, category and fdc id. Ukrainian labels are
+project translations. Sensory profile, preparation effects, recommended range and pairing
+evidence are empty, and the database rejects filling them on that table. None of the 119 is
+`reviewed`. Rice vinegar has no row in those two releases, so it is not cited. Closed alpha
+still aims for 80–120 reviewed core ingredients. Commercial 1.0 aims for 300–500 reviewed
+ingredients. Neither target is met. Do not fill the gap with generated numbers.
 
 All 38 profiles, working ratios, pair adjustments and transformations remain unvalidated
 hypotheses. Repeated calculations and passing regressions cannot establish sensory correctness.

@@ -1,5 +1,5 @@
 -- FlavorPilot widget monorepo r2 — FRESH Supabase database only.
--- Existing v0.3 databases: do NOT rerun this file. See migrations/0002_widget_hardening.sql.
+-- Existing v0.3 databases: do NOT rerun this file. See migrations/0002_widget_hardening.sql and migrations/0003_knowledge_provenance.sql.
 -- This schema follows the pinned v0.3 table/column model. RLS is not a substitute for API checks.
 begin;
 create extension if not exists pgcrypto;
@@ -17,14 +17,27 @@ create table public.ingredients (
  sensory_profile jsonb not null,intensity numeric(4,2) not null check (intensity between 0 and 10),texture_intensity numeric(4,2) not null check (texture_intensity between 0 and 10),
  aromas text[] not null default '{}',textures text[] not null default '{}',roles text[] not null default '{}',
  min_share numeric(6,2) not null,ideal_share numeric(6,2) not null,max_share numeric(6,2) not null,preparation_ids text[] not null default '{}',
- source_note text,confidence numeric(4,3) not null default 0.6 check (confidence between 0 and 1),created_at timestamptz not null default now(),updated_at timestamptz not null default now()
+ source_note text,source text,source_license text,reviewer text,
+ review_status text not null default 'unreviewed' check (review_status in ('unreviewed','in_review','reviewed','rejected')),
+ model_version text not null default '0.3.0-hypothesis',preparation_effect_overrides jsonb,last_reviewed_at timestamptz,
+ confidence numeric(4,3) not null default 0.6 check (confidence between 0 and 1),created_at timestamptz not null default now(),updated_at timestamptz not null default now(),
+ constraint ingredients_reviewed_requires_attribution check (review_status<>'reviewed' or (reviewer is not null and char_length(btrim(reviewer))>=2 and last_reviewed_at is not null and source is not null and char_length(btrim(source))>=3))
 );
 create table public.preparation_methods (
- id text primary key,name_en text not null,name_uk text not null,profile_multiplier jsonb not null default '{}',intensity_multiplier numeric(5,3) not null default 1,add_aromas text[] not null default '{}',add_textures text[] not null default '{}'
+ id text primary key,name_en text not null,name_uk text not null,profile_multiplier jsonb not null default '{}',intensity_multiplier numeric(5,3) not null default 1,add_aromas text[] not null default '{}',add_textures text[] not null default '{}',
+ source text,source_license text,reviewer text,
+ review_status text not null default 'unreviewed' check (review_status in ('unreviewed','in_review','reviewed','rejected')),
+ model_version text not null default '0.3.0-hypothesis',last_reviewed_at timestamptz,
+ constraint preparation_methods_reviewed_requires_attribution check (review_status<>'reviewed' or (reviewer is not null and char_length(btrim(reviewer))>=2 and last_reviewed_at is not null and source is not null and char_length(btrim(source))>=3))
 );
 create table public.ingredient_pairings (
  ingredient_a_id text not null references public.ingredients(id) on delete cascade,ingredient_b_id text not null references public.ingredients(id) on delete cascade,
- explicit_adjustment numeric(6,2) not null default 0,confidence numeric(4,3) not null default 0.6 check (confidence between 0 and 1),source_note text,created_at timestamptz not null default now(),primary key (ingredient_a_id,ingredient_b_id),check (ingredient_a_id<ingredient_b_id)
+ explicit_adjustment numeric(6,2) not null default 0,confidence numeric(4,3) not null default 0.6 check (confidence between 0 and 1),source_note text,
+ source text,source_license text,reviewer text,
+ review_status text not null default 'unreviewed' check (review_status in ('unreviewed','in_review','reviewed','rejected')),
+ model_version text not null default '0.3.0-hypothesis',last_reviewed_at timestamptz,
+ created_at timestamptz not null default now(),primary key (ingredient_a_id,ingredient_b_id),check (ingredient_a_id<ingredient_b_id),
+ constraint ingredient_pairings_reviewed_requires_attribution check (review_status<>'reviewed' or (reviewer is not null and char_length(btrim(reviewer))>=2 and last_reviewed_at is not null and source is not null and char_length(btrim(source))>=3))
 );
 create table public.dishes (
  id uuid primary key default gen_random_uuid(),owner_id uuid not null references public.profiles(id) on delete cascade,
@@ -162,6 +175,21 @@ create policy "Users create own favorites" on public.favorites for insert with c
 create policy "Users delete own favorites" on public.favorites for delete using(user_id=auth.uid());
 create policy "Users read own subscription" on public.subscriptions for select using(user_id=auth.uid());
 
+create table public.ingredient_identities (
+ id text primary key,catalog_ingredient_id text,name_en text not null,name_uk text not null,
+ name_uk_origin text not null default 'project-translation' check (name_uk_origin='project-translation'),
+ fdc_id integer not null unique,fdc_description text not null,
+ fdc_data_type text not null check (fdc_data_type in ('foundation_food','sr_legacy_food')),
+ fdc_food_category text,fdc_publication_date date,dataset text not null,source text not null,source_url text not null,
+ source_license text not null,license_url text not null,
+ sensory_profile jsonb,preparation_effects jsonb,recommended_range jsonb,pairing_evidence jsonb,
+ reviewer text,review_status text not null default 'unreviewed' check (review_status in ('unreviewed','in_review','reviewed','rejected')),
+ confidence numeric(4,3) not null default 0 check (confidence between 0 and 1),model_version text not null,last_reviewed_at timestamptz,
+ constraint ingredient_identities_reviewed_requires_attribution check (review_status<>'reviewed' or (reviewer is not null and char_length(btrim(reviewer))>=2 and last_reviewed_at is not null and source is not null and char_length(btrim(source))>=3)),
+ constraint ingredient_identities_sensory_unfilled check (sensory_profile is null and preparation_effects is null and recommended_range is null and pairing_evidence is null)
+);
+alter table public.ingredient_identities enable row level security;
+create policy "Identity citations are public" on public.ingredient_identities for select using(true);
 create or replace function public.get_shared_dish(p_share_token uuid) returns table(dish jsonb,items jsonb) language sql security definer set search_path=public as $$
  select to_jsonb(d.*)-'share_token',coalesce(jsonb_agg(to_jsonb(di.*) order by di.position) filter(where di.id is not null),'[]'::jsonb)
  from public.dishes d left join public.dish_items di on di.dish_id=d.id where d.share_token=p_share_token and d.visibility='unlisted' group by d.id;
@@ -169,5 +197,6 @@ $$;
 revoke all on function public.get_shared_dish(uuid) from public;
 -- Product records are served by Nest. Do not leave a second writable public REST path around it.
 revoke all on public.dishes,public.dish_items,public.dish_versions,public.favorites,public.subscriptions from anon,authenticated;
+revoke insert,update,delete,truncate on public.ingredient_identities from anon,authenticated;
 revoke execute on function public.get_shared_dish(uuid) from anon,authenticated;
 commit;

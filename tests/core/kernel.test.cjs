@@ -4,6 +4,8 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {analyzeDish,calculatePair}=require('../../.core-test/flavor-engine/src/engine.js');
 const catalog=require('../../.core-test/flavor-engine/src/ingredients.js');
+const knowledge=require('../../.core-test/flavor-engine/src/knowledge.js');
+const identities=require('../../.core-test/flavor-engine/src/sourced-identities.js');
 const domain=require('../../.core-test/contracts/src/domain.js');
 const {ingredients,ingredientById,preparationMethods,preparationById,defaultDish,publicDishSeeds,explicitPairAdjustments}=catalog;
 const base=[{ingredientId:'salmon',grams:180,preparationId:'raw'},{ingredientId:'avocado',grams:90,preparationId:'raw'},{ingredientId:'mayonnaise',grams:45,preparationId:'sauce'}];
@@ -13,6 +15,29 @@ function assertAnalysis(a){
  for(const v of Object.values(a.profile))assert.ok(Number.isFinite(v)&&v>=0&&v<=10);
 }
 test('source catalogue contains 38 ingredients, 12 methods and 64 explicit pairs',()=>{assert.equal(ingredients.length,38);assert.equal(preparationMethods.length,12);assert.equal(explicitPairAdjustments.size,64);});
+test('knowledge rows stay unreviewed hypotheses until a person records a source',()=>{
+ const coverage=knowledge.knowledgeCoverage();
+ assert.equal(coverage.ingredients,38);assert.equal(coverage.preparations,12);assert.equal(coverage.pairings,64);
+ assert.equal(coverage.reviewedIngredients,0);assert.equal(coverage.reviewedPreparations,0);assert.equal(coverage.reviewedPairings,0);
+ assert.equal(coverage.sourcedIdentities,119);assert.equal(coverage.reviewedSourcedIdentities,0);
+ assert.deepEqual(coverage.alphaTarget,{min:80,max:120});assert.deepEqual(coverage.releaseTarget,{min:300,max:500});
+ assert.equal(knowledge.isReviewedRecordComplete({source:'x',sourceLicense:null,reviewer:null,reviewStatus:'reviewed',confidence:1,modelVersion:'0.3.0-hypothesis',lastReviewedAt:null}),false);
+});
+test('USDA identity rows cite a public-domain record and leave the sensory model empty',()=>{
+ const rows=identities.sourcedIdentities;
+ const engineIds=new Set(ingredients.map(item=>item.id));
+ assert.equal(rows.length,119);
+ assert.equal(new Set(rows.map(row=>row.fdcId)).size,rows.length);
+ assert.equal(rows.some(row=>row.id==='rice_vinegar'),false);
+ for(const row of rows){
+  assert.equal(row.reviewStatus,'unreviewed');assert.equal(row.reviewer,null);assert.equal(row.confidence,0);
+  assert.equal(row.sensoryProfile,null);assert.equal(row.preparationEffects,null);assert.equal(row.recommendedRange,null);assert.equal(row.pairingEvidence,null);
+  assert.equal(row.sourceLicense,'CC0-1.0');assert.equal(row.nameUkOrigin,'project-translation');
+  assert.ok(row.source.includes('FoodData Central'));assert.ok(row.sourceUrl.endsWith(`/${row.fdcId}/nutrients`));
+  assert.ok(row.fdcDescription.length>1);
+  if(row.catalogIngredientId)assert.ok(engineIds.has(row.catalogIngredientId));
+ }
+});
 test('catalogue identifiers are unique',()=>{assert.equal(ingredientById.size,38);assert.equal(preparationById.size,12);});
 test('every profile is finite and every preparation reference resolves',()=>{
  for(const item of ingredients){
@@ -31,7 +56,7 @@ test('legacy qualitative pairing regression',()=>{assert.ok(calculatePair(prepar
 test('empty composition produces the explicit empty state',()=>{const a=analyzeDish([], 'balanced');assert.equal(a.overallScore,0);assert.equal(a.totalWeight,0);assert.equal(a.recommendations.length,0);assert.ok(a.issues.some(x=>x.code==='emptyDish'));});
 test('one ingredient produces the single-ingredient marker',()=>{assert.ok(analyzeDish([base[0]],'balanced').issues.some(x=>x.code==='singleIngredient'));});
 test('analysis is deterministic and does not mutate its input',()=>{const items=JSON.parse(JSON.stringify(defaultDish)),copy=JSON.stringify(items);assert.deepEqual(analyzeDish(items,'fresh'),analyzeDish(items,'fresh'));assert.equal(JSON.stringify(items),copy);});
-test('default-dish source output regression is unchanged',()=>{const a=analyzeDish(defaultDish,'fresh');assert.deepEqual([a.overallScore,a.compatibilityScore,a.balanceScore,a.quantityScore,a.textureScore,a.totalWeight],[74,76,61,97,71,313]);assert.equal(a.pairResults.length,6);});
+test('default-dish source output regression is unchanged',()=>{const a=analyzeDish(defaultDish,'fresh');assert.deepEqual([a.overallScore,a.compatibilityScore,a.balanceScore,a.quantityScore,a.textureScore,a.totalWeight],[74,76,61,97,71,313]);assert.equal(a.pairResults.length,6);assert.equal(a.issues.some(issue=>issue.code==='outsideRecommendedRange'),false);});
 test('fatty sample flags acidity and adding the test quantity of lime improves model balance',()=>{
  const a=analyzeDish(base,'balanced'),b=analyzeDish([...base,{ingredientId:'lime',grams:14,preparationId:'raw'}],'balanced');
  assert.ok(a.issues.some(x=>x.code==='fatNeedsAcid'));assert.ok(b.balanceScore>a.balanceScore);
@@ -42,7 +67,16 @@ test('excess rosemary lowers quantity score in the inherited model',()=>{
  const excess=analyzeDish([...items,{ingredientId:'rosemary',grams:35,preparationId:'roasted'}],'rich');
  assert.ok(excess.quantityScore<normal.quantityScore);
 });
-test.todo('CUL-001: the inherited model misses an explicit rosemary-dominance warning at 35 g; see docs/KNOWN_LIMITATIONS.md');
+test('CUL-001: excess rosemary warns about its working range while duck can remain the higher-impact ingredient',()=>{
+ const items=[{ingredientId:'duck',grams:220,preparationId:'seared'},{ingredientId:'cherry',grams:70,preparationId:'sauce'}];
+ const normal=analyzeDish([...items,{ingredientId:'rosemary',grams:1.2,preparationId:'roasted'}],'rich');
+ const excess=analyzeDish([...items,{ingredientId:'rosemary',grams:35,preparationId:'roasted'}],'rich');
+ assert.ok(excess.quantityScore<normal.quantityScore);
+ const firstWarning=excess.issues.find(issue=>issue.severity==='warning');
+ assert.equal(firstWarning.code,'outsideRecommendedRange');assert.equal(firstWarning.ingredientId,'rosemary');
+ assert.notEqual(excess.dominantIngredientId,'rosemary');
+ assert.equal(normal.issues.some(issue=>issue.code==='outsideRecommendedRange'&&issue.ingredientId==='rosemary'),false);
+});
 test('all example dishes reference supported methods',()=>{for(const d of publicDishSeeds){for(const i of d.items)assert.ok(ingredientById.get(i.ingredientId).preparations.includes(i.preparationId));assertAnalysis(analyzeDish(d.items,d.goal));}});
 test('all 10 directions return finite bounded scores',()=>{for(const goal of domain.dishGoals)assertAnalysis(analyzeDish(defaultDish,goal));});
 test('recommendations never duplicate an existing ingredient',()=>{const ids=new Set(defaultDish.map(x=>x.ingredientId));for(const r of analyzeDish(defaultDish,'fresh').recommendations)assert.ok(!ids.has(r.ingredientId));});

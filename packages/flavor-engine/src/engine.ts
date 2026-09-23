@@ -157,6 +157,18 @@ const buildIssues = (items: WeightedItem[], profile: SensoryProfile, textureScor
     const issues: DishIssue[] = [];
     if (items.length === 1)
         issues.push({ code: 'singleIngredient', severity: 'info' });
+    // A breached working range is independent of which ingredient has the highest impact.
+    // It is listed before other warnings because the analysis card shows one warning.
+    const totalGrams = items.reduce((sum, item) => sum + item.item.grams, 0);
+    if (totalGrams > 0) {
+        const overages = items.flatMap(item => {
+            const share = item.item.grams / totalGrams * 100;
+            const excess = share - item.ingredient.share.max;
+            return excess > 0 ? [{ ingredientId: item.ingredient.id, share, excess }] : [];
+        }).sort((left, right) => right.excess - left.excess);
+        for (const overage of overages)
+            issues.push({ code: 'outsideRecommendedRange', severity: 'warning', ingredientId: overage.ingredientId, value: round(overage.share, 1) });
+    }
     if (profile.fat > 5.2 && profile.acidity < profile.fat * .55)
         issues.push({ code: 'fatNeedsAcid', severity: profile.fat > 7 ? 'critical' : 'warning', value: round(profile.fat * .62 - profile.acidity, 1) });
     if (profile.sweetness > 6.2 && profile.acidity < profile.sweetness * .48)

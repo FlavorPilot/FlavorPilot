@@ -12,6 +12,21 @@ seeded. The seed inserts unreviewed catalogue hypotheses with `confidence=0` and
 existing records. The application currently calculates from the bundled catalogue, not live DB
 edits: change the catalogue through review, rebuild packages, then regenerate/reconcile seed.
 
+## Knowledge provenance
+
+`supabase/migrations/0003_knowledge_provenance.sql` adds source, license, reviewer, review
+status, model version and last-reviewed time to ingredients, preparation methods and pairings.
+Ingredients also gain `preparation_effect_overrides`, which stays null until a review records
+an ingredient-specific effect. A `reviewed` row must name a reviewer, a source and a review
+time. Existing rows stay `unreviewed`. Apply 0003 once to a database created from the older
+schema. A fresh database already includes these columns in `supabase/schema.sql`. Do not rerun
+`schema.sql` on a nonempty database, and do not regenerate `seed.sql` over reviewed rows.
+
+`supabase/migrations/0004_ingredient_identities.sql` adds public identity citations.
+`supabase/seed-identities.sql` inserts the USDA rows and does not overwrite an existing id.
+Apply 0004, then the identity seed, on a database that already has 0003. Fresh installs get
+the table from `schema.sql` and the rows from the identity seed after `seed.sql`.
+
 ## Existing v0.3.0 database
 
 Back up and verify a restorable copy first. Test on a separate staging copy with two users.
