@@ -228,7 +228,6 @@ export const en = {
         "freeFeature1": "Ingredient composition and local analysis",
         "freeFeature2": "Three private browser recipes",
         "freeFeature3": "JSON export and import",
-        "freeFeature4": "English and Ukrainian interfaces",
         "proFeature1": "Expanded private recipe library",
         "proFeature2": "Version history and controlled sharing",
         "proFeature3": "Metered AI explanations",
