@@ -7,11 +7,14 @@ Implemented in source: a layered widget frontend, editor/history/preview/autosav
 local/cloud adapters and auth forms; Nest authenticated CRUD, deterministic analysis and optional
 AI wrapper; shared schemas; Supabase fresh schema and an explicit hardening migration.
 
-Proved here: see validation-report.json. Not proved here: full dependency installation, actual
-framework builds, live UI React state lifecycle, real database/auth/provider integration or deployment.
-The build remains blocked by unavailable npm access in this environment; no verified lockfile
-was generated. One inherited culinary warning TODO is preserved openly.
+Proved on 2026-09-23 against parent `ad95487`: `npm ci --include=optional`, `npm run validate`
+and `npm run build` completed. The committed lockfile was used and not regenerated. Evidence is
+in validation-report.json. The local runtime was Node 24.21.0 / npm 11.19.0, so this is not a
+Node 22 certification; CI remains the Node 22 check. One inherited culinary warning TODO,
+CUL-001, is preserved openly.
 
-Next gate: install in native Node 22, commit lockfile, run actual typecheck/tests/build, set up
-staging Supabase, execute docs/ACCEPTANCE.md, then work through known commercial blockers.
+Not proved here: live UI interaction, Supabase Auth, PostgreSQL, two-user permissions, browser
+E2E, Docker or deployment. Changes reach main only through a pull request.
+
+Next gate: green CI on Node 22, then staging Supabase and docs/ACCEPTANCE.md.
 No percentages, fake users, payment success or production-readiness badge are justified yet.

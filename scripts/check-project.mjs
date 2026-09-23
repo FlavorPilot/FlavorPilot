@@ -23,7 +23,7 @@ function walk(dir){for(const x of fs.readdirSync(dir,{withFileTypes:true})){
  function visit(n){
   if((ts.isImportDeclaration(n)||ts.isExportDeclaration(n))&&n.moduleSpecifier&&ts.isStringLiteral(n.moduleSpecifier)){
    const spec=n.moduleSpecifier.text;
-   if(spec.startsWith('.')){
+   if(spec.startsWith('.')&&!(path.basename(file)==='next-env.d.ts'&&spec.split(/[\\/]/).includes('.next'))){
     internalImports++;const base=path.resolve(path.dirname(file),spec);
     assert.ok([base,base+'.ts',base+'.tsx',base+'.json',path.join(base,'index.ts'),path.join(base,'index.tsx')].some(p=>fs.existsSync(p)&&fs.statSync(p).isFile()),`Unresolved local import ${spec} in ${file}`);
    }
