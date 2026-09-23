@@ -38,6 +38,9 @@ export async function resetTestDatabase(databaseUrl) {
     `);
         await sql.unsafe(readFileSync(path.join(root, 'supabase/schema.sql'), 'utf8'));
         await sql.unsafe(readFileSync(path.join(root, 'supabase/seed.sql'), 'utf8'));
+        await sql.unsafe(readFileSync(path.join(root, 'supabase/seed-identities.sql'), 'utf8'));
+        await sql.unsafe(readFileSync(path.join(root, 'supabase/seed-nutrient-hypotheses.sql'), 'utf8'));
+        await sql.unsafe(readFileSync(path.join(root, 'supabase/seed-scoring-hypotheses.sql'), 'utf8'));
     }
     finally {
         await sql.end();

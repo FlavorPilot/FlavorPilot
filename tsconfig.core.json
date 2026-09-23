@@ -1,8 +1,8 @@
 {
  "extends": "./tsconfig.base.json",
  "compilerOptions": {
-  "module": "CommonJS", "moduleResolution": "Node", "rootDir": "packages", "outDir": ".core-test",
-  "baseUrl": ".", "paths": {"@flavorpilot/contracts/domain": ["packages/contracts/src/domain.ts"]}
+  "module": "node16", "moduleResolution": "node16", "rootDir": "packages", "outDir": ".core-test",
+  "paths": {"@flavorpilot/contracts/domain": ["./packages/contracts/src/domain.ts"]}
  },
- "include": ["packages/contracts/src/domain.ts", "packages/flavor-engine/src/engine.ts", "packages/flavor-engine/src/ingredients.ts"]
+ "include": ["packages/contracts/src/domain.ts", "packages/flavor-engine/src/engine.ts", "packages/flavor-engine/src/ingredients.ts", "packages/flavor-engine/src/knowledge.ts", "packages/flavor-engine/src/sourced-identities.ts", "packages/flavor-engine/src/nutrient-hypothesis.ts", "packages/flavor-engine/src/nutrient-hypotheses.ts", "packages/flavor-engine/src/product-hypotheses.ts", "packages/flavor-engine/src/scoring-catalogue.ts"]
 }

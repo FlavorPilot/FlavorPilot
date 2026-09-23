@@ -31,7 +31,20 @@ Supabase were not part of that pass. Current evidence is `repositoryVerification
 On the same day, `npm run test:integration` passed 4 Nest cases against a local
 `flavorpilot_test` Postgres, and `npx playwright test` passed 9 browser cases against that
 database plus a local auth stub. CI runs the same commands on Node 22. The stub confirms
-accounts immediately, so this is not a staging email-confirmation pass.
+accounts immediately, so this is not a staging email-confirmation pass. A later local run of
+the same suite is 5 cases: the fifth checks that seeded catalogue rows stay unreviewed and
+that PostgreSQL rejects `reviewed` without a reviewer, source and review time.
+
+119 USDA FoodData Central identity citations are in the knowledge catalogue. They are CC0
+records of food identity, not reviewed sensory profiles. `nutrient-proxy-1` adds unreviewed hypotheses for saltiness, fat, sweetness and moisture and does not feed the dish score.
+82 foods outside the transcribed 38 change the dish score through composed `product-hypothesis-1` profiles. The transcribed
+38 profiles are unchanged. A separate composition reference sums published USDA protein, fat, carbohydrate, sugars, sodium and energy by dish grams and does not change those scores.
+
+CUL-001 is no longer a TODO. The kernel check for this change is 27 passed, 0 failed, 0 todo.
+Excess rosemary emits `outsideRecommendedRange` while duck can remain the dominant-impact
+ingredient. Catalogue provenance is stored separately, and the current 38 ingredients stay
+unreviewed. The closed-alpha target of 80–120 reviewed ingredients and the 1.0 target of
+300–500 are not counts in this repository.
 
 ## Historical archive record
 

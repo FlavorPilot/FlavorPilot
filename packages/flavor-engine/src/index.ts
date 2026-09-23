@@ -1,3 +1,10 @@
 export * from './engine';
-export * from './ingredients';
+export { dishComposition } from './composition';
+export { preparationMethods, preparationById, explicitPairAdjustments, getPairAdjustment, goalDefinitions, defaultDish, publicDishSeeds, allPreparationIds, ingredients as transcribedIngredients, ingredientById as transcribedIngredientById, } from './ingredients';
+export type { GoalDefinition } from './ingredients';
+export { catalogueIngredients as ingredients, catalogueById as ingredientById, hypothesisIngredients, SHARE_HYPOTHESIS } from './scoring-catalogue';
+export * from './knowledge';
+export * from './sourced-identities';
+export * from './nutrient-hypothesis';
+export * from './nutrient-hypotheses';
 export * from '@flavorpilot/contracts';

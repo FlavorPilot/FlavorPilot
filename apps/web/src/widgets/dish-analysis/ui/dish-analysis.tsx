@@ -1,8 +1,18 @@
 import type { CSSProperties } from 'react';
-import type { DishAnalysis as Analysis } from '@flavorpilot/contracts';
+import type { CompositionAmount, DishAnalysis as Analysis } from '@flavorpilot/contracts';
 import { ingredientById } from '@/entities/ingredient';
 import { getDictionary, formatNumber, type Locale } from '@/shared/i18n';
 import { Badge, EmptyState, Icon, WidgetFrame } from '@/shared/ui';
+const nutrientLabel = { protein: 'compositionProtein', fat: 'compositionFat', carbohydrate: 'compositionCarbohydrate', sugars: 'compositionSugars', sodium: 'compositionSodium', energy: 'compositionEnergy' } as const;
+const unitLabel = { g: 'unitG', mg: 'unitMg', kcal: 'unitKcal' } as const;
+function CompositionReference({ nutrients, locale }: { nutrients: CompositionAmount[]; locale: Locale }) {
+    const t = getDictionary(locale).messages;
+    return <section className="composition-reference" aria-labelledby="published-composition">
+      <h3 id="published-composition">{t.publishedComposition}</h3>
+      <p className="muted small">{t.compositionNote}</p>
+      <dl className="composition-list">{nutrients.map(item => <div key={item.nutrient}><dt>{t[nutrientLabel[item.nutrient]]}</dt><dd>{item.amount === null ? t.compositionMissing : <>{formatNumber(item.amount, locale, item.unit === 'g' ? 1 : 0)} {t[unitLabel[item.unit]]}</>}<small>{item.coveredItems} {t.compositionOf} {item.totalItems}</small></dd></div>)}</dl>
+    </section>;
+}
 export function DishAnalysis({ analysis, locale, itemCount }: {
     analysis: Analysis;
     locale: Locale;
@@ -20,5 +30,6 @@ export function DishAnalysis({ analysis, locale, itemCount }: {
       <div className={`primary-issue ${issue ? 'primary-issue--warning' : ''}`}><Icon name={issue ? 'warning' : 'check'} size={18}/><div><strong>{issue ? t.attention : t.noIssues}</strong><p>{issue ? d.issues[issue.code] : t.noIssuesNote}</p>{issue?.ingredientId && <small>{ingredientById.get(issue.ingredientId)?.name[locale]}</small>}</div></div>
       <details className="disclosure"><summary>{t.details}</summary><p>{t.scoreExplanation}</p><p><strong>{t.confidence}: {formatNumber(analysis.confidence, locale, 0)}</strong> / 100. {t.confidenceNote}</p><p>{t.knowledgeNote}</p></details>
     </>}
+    {analysis.composition.totalItems > 0 && <CompositionReference nutrients={analysis.composition.nutrients} locale={locale}/>}
   </WidgetFrame>;
 }

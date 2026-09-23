@@ -162,4 +162,53 @@ describe('dish ownership on PostgreSQL', () => {
             }), /permission denied/);
         }
     });
+
+    it('keeps catalogue rows unreviewed and rejects a reviewed row without attribution', async () => {
+        const counts = await sql`select
+          (select count(*)::int from public.ingredients) as ingredients,
+          (select count(*)::int from public.ingredients where review_status = 'unreviewed' and reviewer is null and last_reviewed_at is null) as unreviewed_ingredients,
+          (select count(*)::int from public.preparation_methods where review_status = 'unreviewed') as preparations,
+          (select count(*)::int from public.ingredient_pairings where review_status = 'unreviewed') as pairings`;
+        assert.equal(counts[0].ingredients, 120);
+        assert.equal(counts[0].unreviewed_ingredients, 120);
+        assert.equal(counts[0].preparations, 12);
+        assert.equal(counts[0].pairings, 64);
+        await assert.rejects(sql`update public.ingredients set review_status = 'reviewed' where id = 'rosemary'`, /ingredients_reviewed_requires_attribution/);
+        await sql.begin(async (tx) => {
+            await tx`update public.ingredients set review_status = 'reviewed', reviewer = 'reviewer', source = 'recorded source', last_reviewed_at = now() where id = 'rosemary'`;
+            throw new Error('rollback-review-probe');
+        }).catch(error => assert.equal(error.message, 'rollback-review-probe'));
+        const rosemary = await sql`select review_status from public.ingredients where id = 'rosemary'`;
+        assert.equal(rosemary[0].review_status, 'unreviewed');
+    });
+
+    it('stores USDA identity citations with empty sensory fields', async () => {
+        const counts = await sql`select count(*)::int as n,
+          count(*) filter (where review_status = 'unreviewed' and reviewer is null and confidence = 0 and sensory_profile is null and preparation_effects is null and recommended_range is null and pairing_evidence is null and source_license = 'CC0-1.0')::int as cited
+          from public.ingredient_identities`;
+        assert.equal(counts[0].n, 119);
+        assert.equal(counts[0].cited, 119);
+        await assert.rejects(sql`update public.ingredient_identities set sensory_profile = '{}'::jsonb where id = 'salt'`, /ingredient_identities_sensory_unfilled/);
+        await assert.rejects(sql.begin(async (tx) => {
+            await tx.unsafe('set local role authenticated');
+            await tx`insert into public.ingredient_identities(id,name_en,name_uk,fdc_id,fdc_description,fdc_data_type,dataset,source,source_url,source_license,license_url,model_version) values('fake','Fake','Фейк',1,'x','foundation_food','x','x','https://example.invalid','CC0-1.0','https://example.invalid','x')`;
+        }), /permission denied/);
+    });
+
+    it('stores nutrient hypotheses without using them as sensory measurements', async () => {
+        const counts = await sql`select count(*)::int as n,
+          count(*) filter (where review_status = 'unreviewed' and confidence = 0 and formula = 'nutrient-proxy-1')::int as hypotheses
+          from public.ingredient_nutrient_hypotheses`;
+        assert.equal(counts[0].n, 119);
+        assert.equal(counts[0].hypotheses, 119);
+        const samples = await sql`select identity_id, saltiness, fat_score, sweetness from public.ingredient_nutrient_hypotheses where identity_id in ('salt', 'honey', 'olive_oil')`;
+        const byId = Object.fromEntries(samples.map(row => [row.identity_id, row]));
+        assert.ok(Number(byId.salt.saltiness) > 9);
+        assert.equal(byId.salt.fat_score, null);
+        assert.ok(Number(byId.honey.sweetness) > 8);
+        assert.ok(Number(byId.olive_oil.fat_score) > 9);
+        await assert.rejects(sql`update public.ingredient_nutrient_hypotheses set saltiness = null where identity_id = 'salt'`, /hypotheses_saltiness_follows_sodium/);
+        const scoring = await sql`select count(*)::int as n from public.ingredients`;
+        assert.equal(scoring[0].n, 120);
+    });
 });
