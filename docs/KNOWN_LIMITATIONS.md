@@ -27,8 +27,11 @@ Those rows stay `unreviewed` hypotheses. A separate identity list cites 119 stap
 USDA FoodData Central (Foundation Foods CSV 2026-04-30 and SR Legacy CSV 2018-04), license
 CC0 1.0. Each citation copies the USDA description, category and fdc id. Ukrainian labels are
 project translations. Sensory profile, preparation effects, recommended range and pairing
-evidence are empty, and the database rejects filling them on that table. None of the 119 is
-`reviewed`. Rice vinegar has no row in those two releases, so it is not cited. Closed alpha
+evidence are empty, and the database rejects filling them on that table. A separate `nutrient-proxy-1` hypothesis maps published sodium, fat, sugars and water per
+100 g onto four 0–10 axes. Foods already in the transcribed 38 keep those profiles. The other
+82 enter the score on only the axes USDA published; a missing axis is left out of the average
+instead of being treated as a measured zero. Their working shares use `share-band-1` by USDA
+category. None of the 119 is `reviewed`. Pair adjustments are still empty for the 82. Rice vinegar has no row in those two releases, so it is not cited. Closed alpha
 still aims for 80–120 reviewed core ingredients. Commercial 1.0 aims for 300–500 reviewed
 ingredients. Neither target is met. Do not fill the gap with generated numbers.
 

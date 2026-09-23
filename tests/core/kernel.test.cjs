@@ -6,6 +6,9 @@ const {analyzeDish,calculatePair}=require('../../.core-test/flavor-engine/src/en
 const catalog=require('../../.core-test/flavor-engine/src/ingredients.js');
 const knowledge=require('../../.core-test/flavor-engine/src/knowledge.js');
 const identities=require('../../.core-test/flavor-engine/src/sourced-identities.js');
+const hypotheses=require('../../.core-test/flavor-engine/src/nutrient-hypotheses.js');
+const nutrientFormula=require('../../.core-test/flavor-engine/src/nutrient-hypothesis.js');
+const scoring=require('../../.core-test/flavor-engine/src/scoring-catalogue.js');
 const domain=require('../../.core-test/contracts/src/domain.js');
 const {ingredients,ingredientById,preparationMethods,preparationById,defaultDish,publicDishSeeds,explicitPairAdjustments}=catalog;
 const base=[{ingredientId:'salmon',grams:180,preparationId:'raw'},{ingredientId:'avocado',grams:90,preparationId:'raw'},{ingredientId:'mayonnaise',grams:45,preparationId:'sauce'}];
@@ -20,6 +23,8 @@ test('knowledge rows stay unreviewed hypotheses until a person records a source'
  assert.equal(coverage.ingredients,38);assert.equal(coverage.preparations,12);assert.equal(coverage.pairings,64);
  assert.equal(coverage.reviewedIngredients,0);assert.equal(coverage.reviewedPreparations,0);assert.equal(coverage.reviewedPairings,0);
  assert.equal(coverage.sourcedIdentities,119);assert.equal(coverage.reviewedSourcedIdentities,0);
+ assert.equal(coverage.nutrientHypotheses,119);assert.equal(coverage.reviewedNutrientHypotheses,0);
+ assert.equal(coverage.scoringIngredients,120);
  assert.deepEqual(coverage.alphaTarget,{min:80,max:120});assert.deepEqual(coverage.releaseTarget,{min:300,max:500});
  assert.equal(knowledge.isReviewedRecordComplete({source:'x',sourceLicense:null,reviewer:null,reviewStatus:'reviewed',confidence:1,modelVersion:'0.3.0-hypothesis',lastReviewedAt:null}),false);
 });
@@ -37,6 +42,31 @@ test('USDA identity rows cite a public-domain record and leave the sensory model
   assert.ok(row.fdcDescription.length>1);
   if(row.catalogIngredientId)assert.ok(engineIds.has(row.catalogIngredientId));
  }
+});
+test('nutrient hypotheses recompute from stored USDA amounts',()=>{
+ const rows=hypotheses.nutrientHypotheses;
+ assert.equal(rows.length,119);assert.equal(ingredients.length,38);
+ for(const row of rows){
+  assert.equal(row.reviewStatus,'unreviewed');assert.equal(row.confidence,0);assert.equal(row.formula,'nutrient-proxy-1');
+  assert.equal(row.saltiness,nutrientFormula.hypothesisSaltiness(row.sodiumMg));
+  assert.equal(row.fat,nutrientFormula.hypothesisDensity(row.fatG));
+  assert.equal(row.sweetness,nutrientFormula.hypothesisDensity(row.sugarsG));
+  assert.equal(row.moisture,nutrientFormula.hypothesisDensity(row.waterG));
+ }
+ const salt=rows.find(row=>row.identityId==='salt');
+ const honey=rows.find(row=>row.identityId==='honey');
+ const oil=rows.find(row=>row.identityId==='olive_oil');
+ assert.ok(salt.saltiness>9);assert.equal(salt.fat,null);
+ assert.ok(honey.sweetness>8);
+ assert.equal(oil.fatNutrientId,1085);assert.ok(oil.fat>9);
+});
+test('USDA foods that are not in the transcribed 38 change the dish score',()=>{
+ assert.equal(scoring.hypothesisIngredients.length,82);
+ assert.equal(scoring.catalogueIngredients.length,120);
+ const plain=analyzeDish([{ingredientId:'salmon',grams:180,preparationId:'raw'}],'balanced',false);
+ const salted=analyzeDish([{ingredientId:'salmon',grams:180,preparationId:'raw'},{ingredientId:'salt',grams:4,preparationId:'raw'}],'balanced',false);
+ assert.ok(salted.profile.saltiness>plain.profile.saltiness);
+ assert.notEqual(salted.overallScore,plain.overallScore);
 });
 test('catalogue identifiers are unique',()=>{assert.equal(ingredientById.size,38);assert.equal(preparationById.size,12);});
 test('every profile is finite and every preparation reference resolves',()=>{

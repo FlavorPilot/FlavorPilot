@@ -20,7 +20,7 @@ describe('inherited deterministic model', () => {
     });
     it('keeps the bundled catalogue unreviewed', () => {
         const coverage = knowledgeCoverage();
-        expect(coverage).toMatchObject({ ingredients: 38, preparations: 12, pairings: 64, reviewedIngredients: 0, reviewedPreparations: 0, reviewedPairings: 0, sourcedIdentities: 119, reviewedSourcedIdentities: 0 });
+        expect(coverage).toMatchObject({ ingredients: 38, preparations: 12, pairings: 64, reviewedIngredients: 0, reviewedPreparations: 0, reviewedPairings: 0, sourcedIdentities: 119, reviewedSourcedIdentities: 0, nutrientHypotheses: 119, reviewedNutrientHypotheses: 0, scoringIngredients: 120 });
         expect(sourcedIdentities.every(row => row.reviewStatus === 'unreviewed' && row.sensoryProfile === null && row.confidence === 0 && row.sourceLicense === 'CC0-1.0')).toBe(true);
         expect(isReviewedRecordComplete({ source: null, sourceLicense: null, reviewer: ' ', reviewStatus: 'reviewed', confidence: 1, modelVersion: '0.3.0-hypothesis', lastReviewedAt: '2026-09-23T00:00:00.000Z' })).toBe(false);
     });

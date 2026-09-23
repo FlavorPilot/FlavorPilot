@@ -27,6 +27,11 @@ schema. A fresh database already includes these columns in `supabase/schema.sql`
 Apply 0004, then the identity seed, on a database that already has 0003. Fresh installs get
 the table from `schema.sql` and the rows from the identity seed after `seed.sql`.
 
+`supabase/migrations/0005_nutrient_hypotheses.sql` stores `nutrient-proxy-1` scores beside
+those identities. Apply it after 0004, then `supabase/seed-nutrient-hypotheses.sql`.
+`supabase/seed-scoring-hypotheses.sql` inserts the 82 USDA foods that are not already in
+`ingredients`, so a saved dish can reference them. It does not overwrite the transcribed 38.
+
 ## Existing v0.3.0 database
 
 Back up and verify a restorable copy first. Test on a separate staging copy with two users.

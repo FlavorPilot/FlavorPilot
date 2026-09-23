@@ -58,6 +58,27 @@ export interface SourcedIngredientIdentity {
     modelVersion: string;
     lastReviewedAt: null;
 }
+/** Nutrient-density hypothesis. Missing axes stay null. This is not a taste measurement. */
+export interface NutrientHypothesis {
+    identityId: string;
+    formula: 'nutrient-proxy-1';
+    sodiumMg: number | null;
+    sodiumNutrientId: 1093 | null;
+    fatG: number | null;
+    fatNutrientId: 1004 | 1085 | null;
+    sugarsG: number | null;
+    sugarsNutrientId: 2000 | 1063 | null;
+    waterG: number | null;
+    waterNutrientId: 1051 | null;
+    saltiness: number | null;
+    fat: number | null;
+    sweetness: number | null;
+    moisture: number | null;
+    reviewer: null;
+    reviewStatus: 'unreviewed';
+    confidence: 0;
+    sourceLicense: 'CC0-1.0';
+}
 export interface Ingredient {
     id: string;
     name: LocalizedText;
@@ -74,6 +95,8 @@ export interface Ingredient {
         max: number;
     };
     preparations: string[];
+    /** When set, only these axes affect the dish profile. Omitted means every axis counts. */
+    scoredDimensions?: SensoryDimension[];
 }
 export interface DishItem {
     ingredientId: string;

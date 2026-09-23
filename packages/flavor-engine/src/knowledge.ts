@@ -1,6 +1,8 @@
 import type { KnowledgeProvenance } from '@flavorpilot/contracts/domain';
 import { explicitPairAdjustments, ingredients, preparationMethods } from './ingredients';
 import { sourcedIdentities } from './sourced-identities';
+import { nutrientHypotheses } from './nutrient-hypotheses';
+import { catalogueIngredients } from './scoring-catalogue';
 /** Sensory numbers in this version are still the imported demo hypotheses. */
 export const MODEL_VERSION = '0.3.0-hypothesis';
 /** Closed alpha aims for reviewed coverage, not a generated catalogue of this size. */
@@ -31,6 +33,9 @@ export const knowledgeCoverage = () => ({
     reviewedPairings: [...pairingKnowledge.values()].filter(item => item.reviewStatus === 'reviewed').length,
     sourcedIdentities: sourcedIdentities.length,
     reviewedSourcedIdentities: sourcedIdentities.filter(item => (item.reviewStatus as string) === 'reviewed').length,
+    nutrientHypotheses: nutrientHypotheses.length,
+    reviewedNutrientHypotheses: nutrientHypotheses.filter(item => (item.reviewStatus as string) === 'reviewed').length,
+    scoringIngredients: catalogueIngredients.length,
     alphaTarget: ALPHA_REVIEW_TARGET,
     releaseTarget: RELEASE_REVIEW_TARGET,
 });

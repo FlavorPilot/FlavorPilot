@@ -36,10 +36,11 @@ the same suite is 5 cases: the fifth checks that seeded catalogue rows stay unre
 that PostgreSQL rejects `reviewed` without a reviewer, source and review time.
 
 119 USDA FoodData Central identity citations are in the knowledge catalogue. They are CC0
-records of food identity, not reviewed sensory profiles. The scoring catalogue remains 38
-unreviewed ingredients.
+records of food identity, not reviewed sensory profiles. `nutrient-proxy-1` adds unreviewed hypotheses for saltiness, fat, sweetness and moisture.
+82 USDA foods that were outside the transcribed 38 now change the dish score. The transcribed
+38 profiles are unchanged.
 
-CUL-001 is no longer a TODO. The kernel check for this change is 24 passed, 0 failed, 0 todo.
+CUL-001 is no longer a TODO. The kernel check for this change is 26 passed, 0 failed, 0 todo.
 Excess rosemary emits `outsideRecommendedRange` while duck can remain the dominant-impact
 ingredient. Catalogue provenance is stored separately, and the current 38 ingredients stay
 unreviewed. The closed-alpha target of 80–120 reviewed ingredients and the 1.0 target of
