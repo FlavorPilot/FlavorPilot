@@ -101,9 +101,11 @@ it('enforces AI entitlements, idempotency, input/output controls and uncertain-c
  const body=(extra={})=>({requestId:randomUUID(),locale:'uk',scope:'full',recipe,...extra});
  globalThis.fetch=async(url,options)=>{
   if(!String(url).startsWith('https://api.openai.com/v1/'))return originalFetch(url,options);
-  const input=JSON.parse(options.body);assert.equal(input.model,'gpt-5.4-mini-2026-03-17');
+  const input=JSON.parse(options.body);assert.equal(input.model,'gpt-6-luna');
   if(String(url).endsWith('input_tokens')){counts++;return Response.json({input_tokens:mode==='large'?20000:1000});}
   generations++;assert.equal(input.store,false);assert.equal(input.max_output_tokens,4000);assert.match(input.input[0].content[0].text,/Ukrainian/);
+  assert.equal(input.service_tier,'default');assert.deepEqual(input.prompt_cache_options,{mode:'explicit'});
+  assert.ok(input.input.every(message=>message.content.every(content=>!content.prompt_cache_breakpoint)));
   if(mode==='timeout')throw new Error('Simulated lost response');
   const comments=[{id:randomUUID(),kind:'clarity',stepId:mode==='invalid'?randomUUID():stepId,message:'Уточніть тривалість.',suggestedText:'Обсмажте лосось, уточнивши час.'}];
   return Response.json({status:mode==='incomplete'?'incomplete':'completed',usage:{input_tokens:1000,output_tokens:200,output_tokens_details:{reasoning_tokens:0}},output:[{content:[{type:'output_text',text:JSON.stringify({comments})}]}]});
@@ -115,6 +117,8 @@ it('enforces AI entitlements, idempotency, input/output controls and uncertain-c
   const missing=await api('/ai/review-recipe',{method:'POST',token:a.token,body:body({dishId:randomUUID()})});assert.equal(missing.status,404);assert.equal(generations,0);
   const request=body(),first=await api('/ai/review-recipe',{method:'POST',token:a.token,body:request});
   assert.equal(first.status,201,JSON.stringify(first.body));assert.equal(first.body.comments[0].stepId,stepId);assert.equal(first.body.quota.remaining,296);
+  const [priced]=await sql`select model,reserved_microusd,charged_microusd from public.ai_requests where user_id=${a.id} and request_id=${request.requestId}`;
+  assert.equal(priced.model,'gpt-6-luna');assert.equal(priced.reserved_microusd,3200);assert.equal(priced.charged_microusd,200);
   const repeated=await api('/ai/review-recipe',{method:'POST',token:a.token,body:request});assert.equal(repeated.status,201);assert.equal(generations,1);
   const cached=await api('/ai/review-recipe',{method:'POST',token:a.token,body:body()});assert.equal(cached.status,201);assert.equal(generations,1);assert.equal(cached.body.quota.remaining,296);
   const conflict=await api('/ai/review-recipe',{method:'POST',token:a.token,body:{...request,recipe:{...recipe,name:'Other'}}});assert.equal(conflict.status,409);

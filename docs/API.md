@@ -105,7 +105,14 @@ per minute and 20 seconds between step attempts. Pro: 300/month, 30/day; Studio:
 Kitchen: 3000/200. Free has no generation entitlement. Explicit pilot UUIDs use Pro quotas
 without changing their subscription. All periods use calendar UTC, not browser time.
 
-The tested snapshot is `gpt-5.4-mini-2026-03-17`, reasoning none, strict JSON and `store:false`.
+The configured model is `gpt-6-luna`, reasoning none, strict JSON and `store:false`.
+Use the documented public model ID; no dated Luna snapshot is currently published. Requests
+force service_tier=default and prompt_cache_options.mode=explicit without breakpoints, avoiding
+Fast pricing and implicit cache-write charges. Application result caching is separate.
+Standard short-context prices are $0.10/M input and $0.50/M output tokens: full review reserves
+at most $0.0032. Limits stay below the 272K long-context price threshold. Sources:
+[Luna model](https://developers.openai.com/api/docs/models/gpt-6-luna),
+[cache-write behavior](https://developers.openai.com/api/docs/guides/prompt-caching).
 Startup rejects an enabled unpriced model or missing key/DB. Budgets default to $5/day and
 $50/month; changes require trusted server configuration and restart. Reserve the worst-case
 cost under a global transaction lock, then settle actual usage, without assuming cache discounts.

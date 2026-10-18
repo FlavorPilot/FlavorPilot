@@ -1,5 +1,22 @@
 # Actual validation — widget-monorepo-r2
 
+## GPT-6 Luna migration — 2026-10-18
+
+The operator explicitly requested `gpt-6-luna` after the previous model's access rejection.
+Verified the [official model](https://developers.openai.com/api/docs/models/gpt-6-luna),
+pricing and Responses compatibility. Retained reasoning none, JSON schemas, token/unit limits,
+consent and owner-only pilot. Updated active model defaults, eval metadata and micro-USD prices
+to Standard short-context input $0.10/M and output $0.50/M. A full review reserves $0.0032.
+Requests force default service tier and explicit caching without breakpoints to avoid Fast
+pricing and GPT-6 implicit cache-write premiums. The public model ID has no dated snapshot in
+current documentation; future provider changes require renewed evaluation.
+
+API typecheck, all 25 API unit tests and API production build passed. The first integration
+attempt could not connect after WSL stopped its background database. With a live isolated
+WSL database, `node --test apps/api/test/dishes.integration.mjs` passed all 23 cases, including
+Luna request parameters and exact ledger reservation/settlement amounts. Eval dry-run reports
+12 units / $0.0096 maximum for three cases. Hosted Luna inference is pending at this checkpoint.
+
 ## Hosted culinary assistant activation — 2026-10-18
 
 Published implementation commit `ee15b43`: Vercel production reached READY and Railway API

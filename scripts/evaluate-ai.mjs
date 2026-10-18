@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 const cases=JSON.parse(fs.readFileSync(new URL('../tests/evals/culinary-review.json',import.meta.url),'utf8'));
 const limit=Math.min(6,Math.max(1,Number(process.env.FLAVORPILOT_EVAL_LIMIT??3)));
 if(!Number.isInteger(limit))throw Error('Invalid eval limit');
-if(!process.argv.includes('--apply')){console.log(JSON.stringify({dryRun:true,cases:cases.slice(0,limit).map(c=>c.id),maxCheckUnits:limit*4,maxProviderUsd:limit*0.027}));process.exit(0);}
+if(!process.argv.includes('--apply')){console.log(JSON.stringify({dryRun:true,cases:cases.slice(0,limit).map(c=>c.id),maxCheckUnits:limit*4,maxProviderUsd:limit*3200/1e6}));process.exit(0);}
 const token=process.env.FLAVORPILOT_EVAL_ACCESS_TOKEN,base=process.env.FLAVORPILOT_EVAL_API_URL;
 if(!token||!base)throw Error('Set FLAVORPILOT_EVAL_ACCESS_TOKEN and FLAVORPILOT_EVAL_API_URL');
 const url=new URL(base);
@@ -17,5 +17,5 @@ for(const c of cases.slice(0,limit)){
  const data=await response.json();results.push({id,status:response.status,review,result:data,expertVerdict:null});
  if(!response.ok)break;
 }
-fs.mkdirSync('.local',{recursive:true});fs.writeFileSync('.local/ai-evaluation.json',JSON.stringify({model:'gpt-5.4-mini-2026-03-17',results},null,2));
+fs.mkdirSync('.local',{recursive:true});fs.writeFileSync('.local/ai-evaluation.json',JSON.stringify({model:'gpt-6-luna',results},null,2));
 console.log(JSON.stringify({completed:results.length,report:'.local/ai-evaluation.json',expertReviewRequired:true}));
