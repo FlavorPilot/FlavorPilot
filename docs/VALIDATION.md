@@ -1,6 +1,28 @@
 # Actual validation — widget-monorepo-r2
 
-## Executed successfully
+## Catalogue and composition notes — 2026-10-18
+
+Final working-tree catalogue: 620 ingredients, including 500 new AI-authored hypotheses,
+619 USDA identity/nutrient rows; original 120 sensory profiles and original 119 source rows
+preserved. Executed with native Windows Node 22.23.3 and TypeScript 5.9.2:
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed: boundaries/structure, 16 pure editor/locale checks, 27 kernel checks, all workspace typechecks, 67 Vitest tests |
+| `node scripts/verify-fdc-catalogue.mjs` | 619 exact descriptions and 4,333 nutrient/missing-value pairs match official CSV |
+| `npm run test:integration` | 9 passed against disposable local PostgreSQL 18.6 and auth stub; new foods save through API; migration 0008 applied twice and preserves reviewed probes/private recipes |
+| `npm run test:e2e` | Full final run: 15 passed, including mouse/keyboard/touch notes, Ukrainian catalogue, 375 px containment and existing auth/save/recipe scenarios |
+| `npm run build` | Passed: contracts, engine, Nest and Next production build, 23 static pages |
+| Visual inspection | Actual browser screenshot `.local/composition-breakdown-uk.png`; readable mobile nutrient breakdown with sources and no horizontal overflow |
+
+The first browser run exposed ambiguous test selectors after the catalogue grew (Duck/Duck
+liver and two comboboxes); selectors were scoped to exact foods/labels. The final full run
+passes all cases. Initial sandboxed integration could not connect to localhost (EACCES); the
+same suite passed outside that network restriction. These are local tests with a stub auth
+service, not hosted Supabase or production-service validation. The test database was stopped.
+No hosted migration, push or deployment was performed. See [CATALOGUE.md](CATALOGUE.md).
+
+## Earlier archive validation record
 
 | Check | Evidence |
 |---|---|
@@ -35,10 +57,15 @@ accounts immediately, so this is not a staging email-confirmation pass. A later 
 the same suite is 5 cases: the fifth checks that seeded catalogue rows stay unreviewed and
 that PostgreSQL rejects `reviewed` without a reviewer, source and review time.
 
-119 USDA FoodData Central identity citations are in the knowledge catalogue. They are CC0
+619 USDA FoodData Central identity citations are in the knowledge catalogue. They are CC0
 records of food identity, not reviewed sensory profiles. `nutrient-proxy-1` adds unreviewed hypotheses for saltiness, fat, sweetness and moisture and does not feed the dish score.
-82 foods outside the transcribed 38 change the dish score through composed `product-hypothesis-1` profiles. The transcribed
+82 foods outside the transcribed 38 retain composed `product-hypothesis-1` profiles; 500 further foods use AI-authored `ai-product-hypothesis-2`. The transcribed
 38 profiles are unchanged. A separate composition reference sums published USDA protein, fat, carbohydrate, sugars, sodium and energy by dish grams and does not change those scores.
+
+The 2026-10-18 expansion source check compared all 619 descriptions and 4,333 nutrient/missing
+amount pairs against the downloaded official CSV releases. The original 119 identity and
+nutrient records are byte-equivalent as parsed objects. This establishes transcription, not
+sensory correctness. See [CATALOGUE.md](CATALOGUE.md) for source hashes and regeneration.
 
 CUL-001 is no longer a TODO. The kernel check for this change is 27 passed, 0 failed, 0 todo.
 Excess rosemary emits `outsideRecommendedRange` while duck can remain the dominant-impact

@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { analyzeDish } from '@flavorpilot/flavor-engine';
-import type { DishItem, IngredientRecommendation } from '@flavorpilot/contracts';
-import { emptyDraft, loadWorkingDraft, saveWorkingDraft, takeStudioTransfer, fingerprint, MAX_ITEMS, type Draft, type Recipe } from '@/entities/dish';
+import { analyzeDish, recommendedIngredientGrams } from '@flavorpilot/flavor-engine';
+import { MAX_RECIPE_STEPS, MAX_STEP_TEXT, MAX_RECIPE_DESCRIPTION, MAX_RECIPE_SERVINGS, type DishItem, type IngredientRecommendation } from '@flavorpilot/contracts';
+import { emptyDraft, hasDraftContent, loadWorkingDraft, saveWorkingDraft, takeStudioTransfer, fingerprint, MAX_ITEMS, type Draft, type Recipe } from '@/entities/dish';
 import { ingredientById, defaultDish, validateCatalog, firstPreparation } from '@/entities/ingredient';
 import { getDictionary, type Locale, type MessageKey } from '@/shared/i18n';
 import { editorReducer, initialState } from './reducer';
@@ -13,6 +13,7 @@ export function useDishEditor(locale: Locale, scope = 'guest') {
     const [draftStatus, setDraftStatus] = useState<'saving' | 'saved' | 'error'>('saving');
     const [candidate, setCandidate] = useState<DishItem | null>(null);
     const [blockedStorage, setBlockedStorage] = useState(false);
+    const [draftEpoch, setDraftEpoch] = useState(0);
     const loaded = useRef(false);
     const current = useRef({ draft: state.present, ready: false, blocked: false });
     current.current = { draft: state.present, ready, blocked: blockedStorage };
@@ -83,7 +84,7 @@ export function useDishEditor(locale: Locale, scope = 'guest') {
         };
         const beforeUnload = (event: BeforeUnloadEvent) => {
             saveNow();
-            if ((blockedStorage || draftStatus === 'error') && state.present.items.length) {
+            if ((blockedStorage || draftStatus === 'error') && hasDraftContent(state.present)) {
                 event.preventDefault();
                 event.returnValue = '';
             }
@@ -94,14 +95,28 @@ export function useDishEditor(locale: Locale, scope = 'guest') {
     }, [ready, state.present, draftStatus, blockedStorage]);
     const analysis = useMemo(() => analyzeDish(state.present.items, state.present.goal), [state.present.items, state.present.goal]);
     const previewAnalysis = useMemo(() => candidate ? analyzeDish([...state.present.items, candidate], state.present.goal, false) : null, [candidate, state.present.items, state.present.goal]);
-    function replace(draft: Draft) {
+    function replace(draft: Draft, groupKey?: string) {
         if (!validateCatalog(draft.items)) {
             setError('unsupported');
             return;
         }
         setCandidate(null);
         setError(null);
-        dispatch({ type: 'replace', draft });
+        dispatch({ type: 'replace', draft, ...(groupKey ? { group: { key: groupKey, at: Date.now() } } : {}) });
+    }
+    function addStep() {
+        if (state.present.steps.length < MAX_RECIPE_STEPS)
+            replace({ ...state.present, steps: [...state.present.steps, { id: crypto.randomUUID(), text: '' }] });
+    }
+    function setStep(id: string, text: string) {
+        if (text.length <= MAX_STEP_TEXT)
+            replace({ ...state.present, steps: state.present.steps.map(step => step.id === id ? { ...step, text } : step) }, `step:${id}`);
+    }
+    function moveStep(id: string, direction: -1 | 1) {
+        const steps = [...state.present.steps], index = steps.findIndex(step => step.id === id), next = index + direction;
+        if (index < 0 || next < 0 || next >= steps.length) return;
+        [steps[index], steps[next]] = [steps[next], steps[index]];
+        replace({ ...state.present, steps });
     }
     function add(ingredientId: string, grams?: number, preparationId?: string) {
         if (state.present.items.length >= MAX_ITEMS) {
@@ -118,7 +133,7 @@ export function useDishEditor(locale: Locale, scope = 'guest') {
             setError('duplicate');
             return;
         }
-        const amount = grams ?? Math.max(1, Math.round(Math.max(analysis.totalWeight, 240) * ingredient.share.ideal / 100));
+        const amount = grams ?? recommendedIngredientGrams(ingredient, analysis.totalWeight);
         replace({ ...state.present, items: [...state.present.items, { ingredientId, preparationId: prep, grams: Math.min(5000, amount) }] });
     }
     function update(index: number, patch: Partial<DishItem>) {
@@ -140,9 +155,14 @@ export function useDishEditor(locale: Locale, scope = 'guest') {
         const draft: Draft = { ...state.present, name: recipe.name, linkedId: recipe.id, linkedOrigin: recipe.origin === 'cloud' ? 'cloud' : 'local', createdAt: recipe.createdAt, visibility: recipe.visibility };
         dispatch({ type: 'markSaved', draft });
     }
-    return { draft: state.present, analysis, previewAnalysis, candidate, error, ready, draftStatus, blockedStorage,
+    return { draft: state.present, draftEpoch, analysis, previewAnalysis, candidate, error, ready, draftStatus, blockedStorage,
         dirty: fingerprint(state.present) !== state.saved, canUndo: state.past.length > 0, canRedo: state.future.length > 0,
-        setName: (name: string) => replace({ ...state.present, name }),
+        setName: (name: string) => replace({ ...state.present, name }, 'name'),
+        setDescription: (description: string) => { if (description.length <= MAX_RECIPE_DESCRIPTION) replace({ ...state.present, description }, 'description'); },
+        setServings: (servings: number | null) => { if (servings === null || (Number.isInteger(servings) && servings > 0 && servings <= MAX_RECIPE_SERVINGS)) replace({ ...state.present, servings }, 'servings'); },
+        addStep, setStep, moveStep,
+        removeStep: (id: string) => replace({ ...state.present, steps: state.present.steps.filter(step => step.id !== id) }),
+        endEdit: () => dispatch({ type: 'endEdit' }),
         setGoal: (goal: Draft['goal']) => replace({ ...state.present, goal }),
         add, update, remove: (index: number) => replace({ ...state.present, items: state.present.items.filter((_, i) => i !== index) }),
         preview, cancelPreview: () => setCandidate(null), applyPreview: () => {
@@ -150,7 +170,7 @@ export function useDishEditor(locale: Locale, scope = 'guest') {
                 add(candidate.ingredientId, candidate.grams, candidate.preparationId);
         },
         undo: () => { setCandidate(null); dispatch({ type: 'undo' }); }, redo: () => { setCandidate(null); dispatch({ type: 'redo' }); },
-        reset: () => { setCandidate(null); setError(null); dispatch({ type: 'hydrate', draft: emptyDraft() }); },
-        loadExample: () => { setCandidate(null); setError(null); dispatch({ type: 'hydrate', draft: example() }); }, replace, markedSaved,
+        reset: () => { setCandidate(null); setError(null); setDraftEpoch(value => value + 1); dispatch({ type: 'hydrate', draft: emptyDraft() }); },
+        loadExample: () => { setCandidate(null); setError(null); setDraftEpoch(value => value + 1); dispatch({ type: 'hydrate', draft: example() }); }, replace, markedSaved,
     };
 }

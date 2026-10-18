@@ -1,6 +1,6 @@
-import type { DishGoal, DishItem, DishVisibility } from '@flavorpilot/contracts';
+import type { DishGoal, DishItem, DishVisibility, RecipeContent } from '@flavorpilot/contracts';
 export type RecipeOrigin = 'local' | 'cloud' | 'example';
-export interface Recipe {
+export interface Recipe extends RecipeContent {
     id: string;
     name: string;
     items: DishItem[];
@@ -12,7 +12,7 @@ export interface Recipe {
     author?: string;
     shareToken?: string;
 }
-export interface Draft {
+export interface Draft extends RecipeContent {
     name: string;
     items: DishItem[];
     goal: DishGoal;
@@ -23,7 +23,9 @@ export interface Draft {
     visibility: DishVisibility;
 }
 export const MAX_ITEMS = 24;
-export const emptyDraft = (): Draft => ({ name: '', items: [], goal: 'balanced', visibility: 'private' });
+export const emptyRecipeContent = (): RecipeContent => ({ description: '', servings: null, steps: [] });
+export const emptyDraft = (): Draft => ({ name: '', items: [], goal: 'balanced', visibility: 'private', ...emptyRecipeContent() });
+export const hasDraftContent = (draft: Draft): boolean => Boolean(draft.name.trim() || draft.items.length || draft.description.trim() || draft.steps.length || draft.servings !== null);
 export const fingerprint = (draft: Draft): string => JSON.stringify(draft);
 export const itemKey = (item: DishItem): string => `${item.ingredientId}::${item.preparationId}`;
 export function parseAmount(value: string): number | null {

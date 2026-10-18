@@ -181,7 +181,7 @@ test('warns when rosemary is above its working maximum', async ({ page }) => {
     await page.goto('/en/builder');
     for (const [name, grams] of [['Duck', '220'], ['Cherry', '70'], ['Rosemary', '35']] as const) {
         await page.getByLabel('Add an ingredient').fill(name);
-        await page.getByRole('option', { name: new RegExp(name) }).click();
+        await page.getByRole('option').filter({ has: page.getByText(name, { exact: true }) }).click();
         await page.getByLabel(`${name} — Amount, grams`).fill(grams);
     }
     const issue = page.locator('.primary-issue');

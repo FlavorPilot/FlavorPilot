@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import postgres from 'postgres';
+import { readFileSync } from 'node:fs';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { resetTestDatabase } from './reset-database.mjs';
@@ -62,6 +63,41 @@ after(async () => {
 });
 
 describe('dish ownership on PostgreSQL', () => {
+    it('analyses and saves new catalogue foods through the authenticated API', async () => {
+        const account = await signup('expanded-catalogue');
+        const expandedItems = [{ ingredientId: 'shiitake', preparationId: 'roasted', grams: 150 }, { ingredientId: 'pumpkin_seed', preparationId: 'raw', grams: 15 }];
+        const analysis = await api('/flavor/analyze', { method: 'POST', body: { items: expandedItems, goal: 'balanced', includeRecommendations: false } });
+        assert.equal(analysis.status, 201);
+        assert.equal(analysis.body.totalWeight, 165);
+        assert.equal(analysis.body.composition.nutrients[0].contributions.length, 2);
+        assert.ok(analysis.body.composition.nutrients[0].contributions.every(row => row.fdcId > 0));
+        const saved = await api('/dishes', { method: 'POST', token: account.token, body: { name: 'Expanded catalogue recipe', goal: 'balanced', visibility: 'private', items: expandedItems } });
+        assert.equal(saved.status, 201);
+        assert.deepEqual(saved.body.items.map(({ingredientId,preparationId,grams}) => ({ingredientId,preparationId,grams})), expandedItems);
+    });
+    it('the expansion migration is repeatable and preserves reviewed values and private dishes', async () => {
+        const migration = readFileSync(new URL('../../../supabase/migrations/0008_catalogue_expansion.sql', import.meta.url), 'utf8');
+        const before = await sql`select id, visibility, owner_id from public.dishes order by id`;
+        await sql`update public.ingredients set review_status='reviewed', reviewer='Test reviewer', source='Test attribution', last_reviewed_at=now(), intensity=1.23 where id='shiitake'`;
+        await sql`update public.ingredient_nutrient_hypotheses set review_status='reviewed', reviewer='Test reviewer', last_reviewed_at=now(), protein_g=1.23 where identity_id='shiitake'`;
+        try {
+            await sql.unsafe(migration);
+            await sql.unsafe(migration);
+            const ingredient = await sql`select intensity, review_status from public.ingredients where id='shiitake'`;
+            const nutrient = await sql`select protein_g, review_status from public.ingredient_nutrient_hypotheses where identity_id='shiitake'`;
+            assert.equal(Number(ingredient[0].intensity), 1.23);
+            assert.equal(Number(nutrient[0].protein_g), 1.23);
+            assert.equal(ingredient[0].review_status, 'reviewed');
+            assert.equal(nutrient[0].review_status, 'reviewed');
+            assert.deepEqual(await sql`select id, visibility, owner_id from public.dishes order by id`, before);
+            const counts = await sql`select count(*)::int as n from public.ingredients`;
+            assert.equal(counts[0].n, 620);
+        } finally {
+            await sql`update public.ingredients set review_status='unreviewed', reviewer=null, last_reviewed_at=null where id='shiitake'`;
+            await sql`update public.ingredient_nutrient_hypotheses set review_status='unreviewed', reviewer=null, last_reviewed_at=null where identity_id='shiitake'`;
+            await sql.unsafe(migration);
+        }
+    });
     it('keeps a private dish visible only to its owner', async () => {
         const a = await signup('owner');
         const b = await signup('other');
@@ -169,8 +205,8 @@ describe('dish ownership on PostgreSQL', () => {
           (select count(*)::int from public.ingredients where review_status = 'unreviewed' and reviewer is null and last_reviewed_at is null) as unreviewed_ingredients,
           (select count(*)::int from public.preparation_methods where review_status = 'unreviewed') as preparations,
           (select count(*)::int from public.ingredient_pairings where review_status = 'unreviewed') as pairings`;
-        assert.equal(counts[0].ingredients, 120);
-        assert.equal(counts[0].unreviewed_ingredients, 120);
+        assert.equal(counts[0].ingredients, 620);
+        assert.equal(counts[0].unreviewed_ingredients, 620);
         assert.equal(counts[0].preparations, 12);
         assert.equal(counts[0].pairings, 64);
         await assert.rejects(sql`update public.ingredients set review_status = 'reviewed' where id = 'rosemary'`, /ingredients_reviewed_requires_attribution/);
@@ -186,8 +222,8 @@ describe('dish ownership on PostgreSQL', () => {
         const counts = await sql`select count(*)::int as n,
           count(*) filter (where review_status = 'unreviewed' and reviewer is null and confidence = 0 and sensory_profile is null and preparation_effects is null and recommended_range is null and pairing_evidence is null and source_license = 'CC0-1.0')::int as cited
           from public.ingredient_identities`;
-        assert.equal(counts[0].n, 119);
-        assert.equal(counts[0].cited, 119);
+        assert.equal(counts[0].n, 619);
+        assert.equal(counts[0].cited, 619);
         await assert.rejects(sql`update public.ingredient_identities set sensory_profile = '{}'::jsonb where id = 'salt'`, /ingredient_identities_sensory_unfilled/);
         await assert.rejects(sql.begin(async (tx) => {
             await tx.unsafe('set local role authenticated');
@@ -199,8 +235,8 @@ describe('dish ownership on PostgreSQL', () => {
         const counts = await sql`select count(*)::int as n,
           count(*) filter (where review_status = 'unreviewed' and confidence = 0 and formula = 'nutrient-proxy-1')::int as hypotheses
           from public.ingredient_nutrient_hypotheses`;
-        assert.equal(counts[0].n, 119);
-        assert.equal(counts[0].hypotheses, 119);
+        assert.equal(counts[0].n, 619);
+        assert.equal(counts[0].hypotheses, 619);
         const samples = await sql`select identity_id, saltiness, fat_score, sweetness from public.ingredient_nutrient_hypotheses where identity_id in ('salt', 'honey', 'olive_oil')`;
         const byId = Object.fromEntries(samples.map(row => [row.identity_id, row]));
         assert.ok(Number(byId.salt.saltiness) > 9);
@@ -209,6 +245,6 @@ describe('dish ownership on PostgreSQL', () => {
         assert.ok(Number(byId.olive_oil.fat_score) > 9);
         await assert.rejects(sql`update public.ingredient_nutrient_hypotheses set saltiness = null where identity_id = 'salt'`, /hypotheses_saltiness_follows_sodium/);
         const scoring = await sql`select count(*)::int as n from public.ingredients`;
-        assert.equal(scoring[0].n, 120);
+        assert.equal(scoring[0].n, 620);
     });
 });

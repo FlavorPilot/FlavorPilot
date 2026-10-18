@@ -3,6 +3,24 @@ import { editorReducer, initialState } from './reducer';
 import { emptyDraft, parseAmount, canUseItems } from '@/entities/dish';
 const item = { ingredientId: 'salmon', preparationId: 'raw', grams: 180 };
 describe('widget editor model', () => {
+    it('groups consecutive text entry and restores complete instructions with undo/redo', () => {
+        const draft = { ...emptyDraft(), steps: [{ id: crypto.randomUUID(), text: '' }] };
+        let state = editorReducer(initialState(), { type: 'hydrate', draft });
+        for (const [text, at] of [['Chop', 100], ['Chop finely', 200]] as const) {
+            state = editorReducer(state, { type: 'replace', draft: { ...state.present, steps: [{ ...draft.steps[0], text }] }, group: { key: 'step', at } });
+        }
+        expect(state.past).toHaveLength(1);
+        const undone = editorReducer(state, { type: 'undo' });
+        expect(undone.present.steps[0].text).toBe('');
+        expect(editorReducer(undone, { type: 'redo' }).present.steps[0].text).toBe('Chop finely');
+        state = editorReducer(state, { type: 'replace', draft: { ...state.present, description: 'Fresh', servings: 2 }, group: { key: 'description', at: 300 } });
+        expect(state.past).toHaveLength(2);
+        state = editorReducer(state, { type: 'endEdit' });
+        state = editorReducer(state, { type: 'replace', draft: { ...state.present, description: 'Fresh dish' }, group: { key: 'description', at: 400 } });
+        expect(state.past).toHaveLength(3);
+        state = editorReducer(state, { type: 'replace', draft: { ...state.present, description: 'Fresh dish, served cold' }, group: { key: 'description', at: 2000 } });
+        expect(state.past).toHaveLength(4);
+    });
     it('accepts decimal comma, rejects NaN, zero, negative, infinity and units', () => {
         expect(parseAmount('12,5')).toBe(12.5);
         for (const value of ['', '0', '-1', 'Infinity', 'NaN', '2g', '5001'])

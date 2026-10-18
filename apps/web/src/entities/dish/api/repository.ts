@@ -3,7 +3,7 @@ import { request } from '@/shared/api';
 import type { Recipe } from '../model/types';
 export const fromServer = (dish: DishResponse): Recipe => ({
     id: dish.id, name: dish.name, items: dish.items.map(({ ingredientId, preparationId, grams }) => ({ ingredientId, preparationId, grams })),
-    goal: dish.goal, visibility: dish.visibility, createdAt: dish.createdAt, origin: 'cloud',
+    goal: dish.goal, visibility: dish.visibility, createdAt: dish.createdAt, origin: 'cloud', description: dish.description ?? '', servings: null, steps: [],
     ...(dish.parentDishId ? { parentDishId: dish.parentDishId } : {}),
     ...(dish.owner ? { author: dish.owner.displayName || dish.owner.username } : {}),
     ...(dish.shareToken ? { shareToken: dish.shareToken } : {}),

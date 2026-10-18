@@ -137,6 +137,16 @@ export interface IngredientRecommendation {
 }
 export const compositionNutrients = ['protein', 'fat', 'carbohydrate', 'sugars', 'sodium', 'energy'] as const;
 export type CompositionNutrientId = typeof compositionNutrients[number];
+/** Exact contribution before display rounding. Null is missing, never an assumed zero. */
+export interface CompositionContribution {
+    ingredientId: string;
+    preparationId: string;
+    grams: number;
+    per100g: number | null;
+    amount: number | null;
+    fdcId: number | null;
+    sourceDescription: string | null;
+}
 /** Published USDA amounts scaled by dish grams. Missing amounts stay out of the sum. */
 export interface CompositionAmount {
     nutrient: CompositionNutrientId;
@@ -144,6 +154,7 @@ export interface CompositionAmount {
     amount: number | null;
     coveredItems: number;
     totalItems: number;
+    contributions: CompositionContribution[];
 }
 export interface DishComposition {
     totalItems: number;

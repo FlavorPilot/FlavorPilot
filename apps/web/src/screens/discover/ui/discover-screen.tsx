@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { publicDishSeeds } from '@/entities/ingredient';
-import { dishRepository, type Recipe } from '@/entities/dish';
+import { dishRepository, emptyRecipeContent, type Recipe } from '@/entities/dish';
 import { hasApi } from '@/shared/config';
 import { getDictionary, type Locale } from '@/shared/i18n';
 import { Button, EmptyState, Icon, Notice, Skeleton } from '@/shared/ui';
@@ -68,7 +68,7 @@ export function DiscoverScreen({ locale }: {
                 setBusy(false);
         }
     }
-    const examples: Recipe[] = publicDishSeeds.filter(seed => seed.name[locale].toLocaleLowerCase(locale).includes(query.toLocaleLowerCase(locale))).map(seed => ({ id: seed.id, name: seed.name[locale], items: seed.items, goal: seed.goal, origin: 'example', visibility: 'public', createdAt: '1970-01-01T00:00:00.000Z' }));
+    const examples: Recipe[] = publicDishSeeds.filter(seed => seed.name[locale].toLocaleLowerCase(locale).includes(query.toLocaleLowerCase(locale))).map(seed => ({ ...emptyRecipeContent(), id: seed.id, name: seed.name[locale], items: seed.items, goal: seed.goal, origin: 'example', visibility: 'public', createdAt: '1970-01-01T00:00:00.000Z' }));
     return <div className="stack page-stack"><header className="page-heading"><div><p className="eyebrow">{t.discover}</p><h1>{t.discoverTitle}</h1><p className="muted">{t.discoverText}</p></div></header>
     <div className="collection-toolbar"><div className="segmented" role="group" aria-label={t.source}><button type="button" aria-pressed={source === 'examples'} onClick={() => setSource('examples')}>{t.examples}</button><button type="button" aria-pressed={source === 'community'} onClick={() => setSource('community')}>{t.community}</button></div><label className="search-field"><Icon name="search" size={18}/><span className="sr-only">{t.searchRecipes}</span><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={t.searchRecipes}/></label></div>
     {source === 'examples' && <Notice>{t.exampleNotice}</Notice>}

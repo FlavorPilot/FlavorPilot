@@ -50,15 +50,41 @@ Rule: One authoritative draft. Different supported preparations may coexist.
 
 Review: corresponding dictionaries, mobile layout, keyboard focus and the composing screen.
 
+## RecipeInstructions
+
+Path: `apps/web/src/widgets/recipe-instructions`.
+
+Input: controlled description/servings/steps, locale, editing and history-boundary callbacks.
+
+States: empty, editing, invalid servings, 40-step limit, deletion confirmation.
+
+Rule: UUIDs and mutations belong to the editor feature. This widget owns only temporary
+field text, focus, and confirmation state; it performs no storage or network requests.
+
+## RecipeContext
+
+Path: `apps/web/src/widgets/recipe-context`.
+
+Input: items and locale.
+
+States: empty composition or read-only localized ingredients, preparation and grams.
+
+Rule: The first tab owns ingredient editing. No copy of the composition is maintained here.
+
 ## DishAnalysis
 
 Path: `apps/web/src/widgets/dish-analysis`.
 
 Input: analysis + itemCount + locale.
 
-States: insufficient input, assessment, issue, details.
+States: insufficient input, assessment, issue, details, published composition.
 
 Rule: Displays actual overall and balance separately; never invents a score.
+
+Published composition has an information note and independent coverage notes for protein, fat,
+carbohydrate, sugars, sodium and energy. Each note receives kernel contributions, never sums
+amounts in the widget, and exposes missing rows/source IDs. Shared `HoverNote` supports hover,
+focus, keyboard links, Escape, click/tap dismissal and a portal constrained to the viewport.
 
 Review: corresponding dictionaries, mobile layout, keyboard focus and the composing screen.
 

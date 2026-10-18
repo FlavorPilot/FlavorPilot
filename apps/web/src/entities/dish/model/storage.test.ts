@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyDraft } from './types';
-import { importRecipe, loadWorkingDraft, localRecipes, openRecipeDraft, saveLocalRecipe, saveWorkingDraft, takeStudioTransfer } from './storage';
+import { importRecipe, loadWorkingDraft, localRecipes, openRecipeDraft, recipeExport, saveLocalRecipe, saveWorkingDraft, takeStudioTransfer } from './storage';
 const key = 'flavorpilot:saved-dishes:v1';
 const items = [{ ingredientId: 'salmon', grams: 180, preparationId: 'raw' }];
 let values: Map<string, string>;
@@ -60,9 +60,38 @@ describe('device recipes and scoped working drafts', () => {
         expect(result).not.toHaveProperty('tier');
     });
     it('commits a transfer before consuming it and is safe to read twice', () => {
-        openRecipeDraft({ id: 'example', origin: 'example', name: 'Idea', items, goal: 'fresh', visibility: 'public', createdAt: '2026-08-20T00:00:00.000Z' }, 'remix');
+        openRecipeDraft({ ...emptyDraft(), id: 'example', origin: 'example', name: 'Idea', items, goal: 'fresh', visibility: 'public', createdAt: '2026-08-20T00:00:00.000Z' }, 'remix');
         expect(takeStudioTransfer()?.name).toBe('Idea');
         expect(takeStudioTransfer()).toBeNull();
         expect(loadWorkingDraft()).toMatchObject({ name: 'Idea', visibility: 'private' });
+    });
+    it('preserves the full instruction through local save, reopen, export and import', () => {
+        const draft = { ...emptyDraft(), name: 'Written recipe', items, description: 'Serve warm', servings: 2,
+            steps: [{ id: crypto.randomUUID(), text: 'Prepare the salmon.' }, { id: crypto.randomUUID(), text: 'Serve.' }] };
+        const saved = saveLocalRecipe(draft);
+        expect(localRecipes()[0]).toMatchObject(draft);
+        openRecipeDraft(saved, 'edit');
+        expect(takeStudioTransfer()).toMatchObject({ ...draft, linkedId: saved.id });
+        const exported = recipeExport(draft, 'Fallback');
+        expect(exported.version).toBe(2);
+        expect(importRecipe(exported)).toEqual(draft);
+        expect(recipeExport({ ...draft, name: '' }, 'Без назви').name).toBe('Без назви');
+    });
+    it('hydrates old working drafts with empty recipe content without rewriting storage', () => {
+        const old = { name: 'Legacy draft', items, goal: 'balanced', visibility: 'private' };
+        const raw = JSON.stringify(old);
+        values.set('flavorpilot:working-draft:v2:guest', raw);
+        expect(loadWorkingDraft()).toMatchObject({ ...old, description: '', servings: null, steps: [] });
+        expect(values.get('flavorpilot:working-draft:v2:guest')).toBe(raw);
+    });
+    it('rejects malformed steps without overwriting their raw saved data', () => {
+        const draft = { ...emptyDraft(), name: 'Broken steps', items, steps: [{ id: 'bad', text: 'Text' }] };
+        const raw = JSON.stringify(draft);
+        values.set('flavorpilot:working-draft:v2:guest', raw);
+        expect(() => loadWorkingDraft()).toThrow();
+        expect(() => saveWorkingDraft(draft)).toThrow();
+        expect(values.get('flavorpilot:working-draft:v2:guest')).toBe(raw);
+        expect(() => importRecipe({ ...draft, steps: [{ id: crypto.randomUUID(), text: 123 }] })).toThrow();
+        expect(() => importRecipe({ ...draft, version: 99 })).toThrow();
     });
 });

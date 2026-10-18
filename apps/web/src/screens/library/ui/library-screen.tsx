@@ -89,7 +89,8 @@ export function LibraryScreen({ locale }: {
         if (!file)
             return;
         try {
-            if (file.size > 262144)
+            // The v2 format permits 40 Unicode step texts; accept our own largest valid exports.
+            if (file.size > 1024 * 1024)
                 throw new Error('TOO_LARGE');
             const draft = importRecipe(JSON.parse(await file.text()));
             if (!validateCatalog(draft.items))
@@ -110,7 +111,7 @@ export function LibraryScreen({ locale }: {
     <div className="collection-toolbar"><div className="segmented" role="group" aria-label={t.source}><button type="button" aria-pressed={source === 'local'} onClick={() => setSource('local')}>{t.localRecipes}</button><button type="button" aria-pressed={source === 'cloud'} onClick={() => setSource('cloud')}>{t.cloudRecipes}</button></div><Button onClick={() => fileRef.current?.click()}><Icon name="upload" size={16}/>{t.import}</Button><input className="sr-only" type="file" accept="application/json,.json" ref={fileRef} tabIndex={-1} onChange={event => void readFile(event.target.files?.[0])}/></div>
     <label className="search-field library-search"><Icon name="search" size={18}/><span className="sr-only">{t.searchRecipes}</span><input type="search" value={query} placeholder={t.searchRecipes} onChange={event => setQuery(event.target.value)}/></label>
     {notice && <Notice tone="success">{notice}</Notice>}{source === 'local' && <p className="small muted">{t.localOnly}</p>}
-    {error ? <Notice tone="error" role="alert"><p>{error}</p><div className="inline-actions"><Button onClick={() => setRevision(n => n + 1)}>{t.retry}</Button>{!token && source === 'cloud' && <LinkButton href={`/${locale}/sign-in`}>{t.signIn}</LinkButton>}</div></Notice> : busy || loading ? <Skeleton label={t.loading}/> : <RecipeCollection recipes={visible} locale={locale} onOpen={open} onDelete={setSelected} onExport={recipe => downloadJson(recipe.name, recipeExport(recipe))} emptyAction={<LinkButton href={`/${locale}/builder`}>{t.openStudio}</LinkButton>}/>}
+    {error ? <Notice tone="error" role="alert"><p>{error}</p><div className="inline-actions"><Button onClick={() => setRevision(n => n + 1)}>{t.retry}</Button>{!token && source === 'cloud' && <LinkButton href={`/${locale}/sign-in`}>{t.signIn}</LinkButton>}</div></Notice> : busy || loading ? <Skeleton label={t.loading}/> : <RecipeCollection recipes={visible} locale={locale} onOpen={open} onDelete={setSelected} onExport={recipe => downloadJson(recipe.name, recipeExport(recipe, t.recipeUntitled))} emptyAction={<LinkButton href={`/${locale}/builder`}>{t.openStudio}</LinkButton>}/>}
     <Dialog open={Boolean(selected)} onClose={() => {
             if (!deleting)
                 setSelected(null);

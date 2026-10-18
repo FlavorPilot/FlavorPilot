@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { locales, sensoryDimensions, dishGoals, ingredientRoles, textureTags, issueCodes, recommendationReasons, dishVisibilities } from './domain';
+import { recipeContentSchema } from './recipe';
+import { locales, sensoryDimensions, dishGoals, ingredientRoles, textureTags, issueCodes, recommendationReasons, dishVisibilities, compositionNutrients } from './domain';
 export * from './domain';
 export const localeSchema = z.enum(locales);
 export const sensoryDimensionSchema = z.enum(sensoryDimensions);
@@ -16,12 +17,15 @@ export const dishIssueSchema = z.object({ code: issueCodeSchema, severity: z.enu
 export const pairResultSchema = z.object({ ingredientAId: z.string(), ingredientBId: z.string(), score: z.number(), aromaOverlap: z.number(), complementScore: z.number(), explicitAdjustment: z.number() });
 export const recommendationReasonSchema = z.enum(recommendationReasons);
 export const ingredientRecommendationSchema = z.object({ ingredientId: z.string(), compatibility: z.number(), utility: z.number(), recommendedGrams: z.number(), balanceDelta: z.number(), reasons: z.array(recommendationReasonSchema) });
-export const dishAnalysisSchema = z.object({ overallScore: z.number(), compatibilityScore: z.number(), balanceScore: z.number(), quantityScore: z.number(), textureScore: z.number(), confidence: z.number(), profile: sensoryProfileSchema, totalWeight: z.number(), dominantIngredientId: z.string().optional(), pairResults: z.array(pairResultSchema), issues: z.array(dishIssueSchema), recommendations: z.array(ingredientRecommendationSchema) });
+export const compositionContributionSchema = dishItemSchema.extend({ per100g: z.number().nonnegative().nullable(), amount: z.number().nonnegative().nullable(), fdcId: z.number().int().positive().nullable(), sourceDescription: z.string().nullable() });
+export const compositionAmountSchema = z.object({ nutrient: z.enum(compositionNutrients), unit: z.enum(['g','mg','kcal']), amount: z.number().nonnegative().nullable(), coveredItems: z.number().int().nonnegative(), totalItems: z.number().int().nonnegative(), contributions: z.array(compositionContributionSchema) });
+export const dishCompositionSchema = z.object({ totalItems: z.number().int().nonnegative(), nutrients: z.array(compositionAmountSchema) });
+export const dishAnalysisSchema = z.object({ overallScore: z.number(), compatibilityScore: z.number(), balanceScore: z.number(), quantityScore: z.number(), textureScore: z.number(), confidence: z.number(), profile: sensoryProfileSchema, totalWeight: z.number(), dominantIngredientId: z.string().optional(), pairResults: z.array(pairResultSchema), issues: z.array(dishIssueSchema), recommendations: z.array(ingredientRecommendationSchema), composition: dishCompositionSchema });
 export const analyzeDishRequestSchema = z.object({ goal: dishGoalSchema.default('balanced'), items: z.array(dishItemSchema).max(24), includeRecommendations: z.boolean().default(true) });
 export type AnalyzeDishRequest = z.input<typeof analyzeDishRequestSchema>;
 export type NormalizedAnalyzeDishRequest = z.output<typeof analyzeDishRequestSchema>;
 export const dishVisibilitySchema = z.enum(dishVisibilities);
-export const savedDishSchema = z.object({ id: z.string().trim().min(1).max(160), name: z.string().trim().min(1).max(160), items: z.array(dishItemSchema).min(1).max(24), goal: dishGoalSchema, visibility: dishVisibilitySchema, createdAt: z.string().datetime(), parentDishId: z.string().trim().min(1).max(160).optional() });
+export const savedDishSchema = z.object({ id: z.string().trim().min(1).max(160), name: z.string().trim().min(1).max(160), items: z.array(dishItemSchema).min(1).max(24), goal: dishGoalSchema, visibility: dishVisibilitySchema, createdAt: z.string().datetime(), parentDishId: z.string().trim().min(1).max(160).optional(), ...recipeContentSchema.shape });
 // Rebuild r2: the API recalculates analysis; browser-supplied scores are never trusted.
 export const aiExplainRequestSchema = analyzeDishRequestSchema.extend({ locale: localeSchema, dishName: z.string().trim().max(160) });
 export type AiExplainRequest = z.infer<typeof aiExplainRequestSchema>;

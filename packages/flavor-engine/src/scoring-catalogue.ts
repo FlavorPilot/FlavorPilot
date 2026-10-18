@@ -22,6 +22,8 @@ const categoryUk: Record<string, string> = {
     'Nut and Seed Products': 'Горіхи та насіння',
     'Beverages': 'Напої',
     'Alcoholic Beverages': 'Алкогольні напої',
+    'Soups, Sauces, and Gravies': 'Соуси та підливи',
+    'Sausages and Luncheon Meats': 'Ковбаси та м’ясні вироби',
 };
 const knownIds = new Set(ingredients.map(item => item.id));
 const toIngredient = (id: string, nameEn: string, nameUk: string, category: string): Ingredient => {

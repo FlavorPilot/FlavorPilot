@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { savedDishSchema, dishGoalSchema, dishItemSchema, dishVisibilitySchema } from '@flavorpilot/contracts';
+import { savedDishSchema, dishGoalSchema, dishItemSchema, dishVisibilitySchema, recipeContentSchema } from '@flavorpilot/contracts';
 import { StorageError, readJson, writeJson } from '@/shared/lib/storage';
 import type { Draft, Recipe } from './types';
 import { canUseItems } from './types';
@@ -11,6 +11,7 @@ const draftSchema = z.object({
     name: z.string().max(160), items: z.array(dishItemSchema).max(24), goal: dishGoalSchema,
     linkedId: z.string().optional(), linkedOrigin: z.enum(['local', 'cloud']).optional(),
     createdAt: z.string().datetime().optional(), parentDishId: z.string().optional(), visibility: dishVisibilitySchema,
+    ...recipeContentSchema.shape,
 });
 function validDraft(value: unknown): Draft {
     const parsed = draftSchema.safeParse(value);
@@ -35,7 +36,7 @@ export function saveLocalRecipe(draft: Draft): Recipe {
     const updatesPrivate = current.some(dish => dish.id === id && dish.visibility === 'private');
     if (!updatesPrivate && current.filter(dish => dish.id !== id && dish.visibility === 'private').length >= 3)
         throw new Error('FREE_PRIVATE_DISH_LIMIT_REACHED');
-    const parsed = savedDishSchema.parse({ id, name: draft.name.trim(), items: draft.items, goal: draft.goal,
+    const parsed = savedDishSchema.parse({ id, name: draft.name.trim(), items: draft.items, goal: draft.goal, ...recipeContentSchema.parse(draft),
         visibility: 'private', createdAt: draft.linkedOrigin === 'local' && draft.createdAt ? draft.createdAt : new Date().toISOString(),
         ...(draft.parentDishId ? { parentDishId: draft.parentDishId } : {}) });
     const next = [parsed, ...current.filter(dish => dish.id !== id).map(({ origin: _origin, ...rest }) => rest)];
@@ -49,7 +50,7 @@ export function deleteLocalRecipe(id: string) {
     window.dispatchEvent(new Event('flavorpilot:dishes-updated'));
 }
 export function openRecipeDraft(recipe: Recipe, mode: 'edit' | 'remix', scope = 'guest'): void {
-    const draft: Draft = { name: recipe.name, items: recipe.items, goal: recipe.goal,
+    const draft: Draft = { name: recipe.name, items: recipe.items, goal: recipe.goal, ...recipeContentSchema.parse(recipe),
         visibility: mode === 'remix' ? 'private' : recipe.visibility,
         ...(mode === 'edit' && recipe.origin !== 'example' ? { linkedId: recipe.id, linkedOrigin: recipe.origin, createdAt: recipe.createdAt } : {}),
         ...(mode === 'remix' && recipe.origin === 'cloud' ? { parentDishId: recipe.id } : recipe.parentDishId ? { parentDishId: recipe.parentDishId } : {}),
@@ -69,12 +70,13 @@ export function takeStudioTransfer(scope = 'guest'): Draft | null {
     window.localStorage.removeItem(`${TRANSFER_KEY}:${scope}`);
     return draft;
 }
-export function recipeExport(draft: Draft) {
-    return { format: 'flavorpilot.recipe', version: 1, name: draft.name.trim() || 'Untitled dish', items: draft.items, goal: draft.goal };
+export function recipeExport(draft: Draft, fallbackName: string) {
+    return { format: 'flavorpilot.recipe', version: 2, name: draft.name.trim() || fallbackName, items: draft.items, goal: draft.goal, ...recipeContentSchema.parse(draft) };
 }
 export function importRecipe(value: unknown): Draft {
-    const parsed = z.object({ name: z.string().trim().min(1).max(160), items: z.array(dishItemSchema).min(1).max(24), goal: dishGoalSchema }).parse(value);
-    const draft: Draft = { ...parsed, visibility: 'private' };
+    const parsed = z.object({ format: z.literal('flavorpilot.recipe').optional(), version: z.union([z.literal(1), z.literal(2)]).optional(), name: z.string().trim().min(1).max(160), items: z.array(dishItemSchema).max(24), goal: dishGoalSchema, ...recipeContentSchema.shape }).parse(value);
+    const { format: _format, version: _version, ...content } = parsed;
+    const draft: Draft = { ...content, visibility: 'private' };
     if (!canUseItems(draft.items))
         throw new Error('INVALID_RECIPE');
     return draft; // Never import identities, ownership, visibility or subscription claims.

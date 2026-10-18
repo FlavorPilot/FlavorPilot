@@ -33,10 +33,13 @@ The current untracked local configuration is:
 
 - `apps/web/.env.local`: `NEXT_PUBLIC_API_URL=http://localhost:4000/v1`;
 - `apps/api/.env`: `API_HOST=127.0.0.1`, `API_PORT=4000`, `AI_ENABLED=false`;
-- database and Supabase credentials are empty. The guest editor, browser library
-  and deterministic analysis work; account login and cloud persistence require
-  a separately configured development Supabase project. Persistence returns 503
-  while the API database is unconfigured.
+- the Supabase project URL and publishable key are configured in both env files.
+  `GET /auth/v1/settings` returned 200 with that key. Real login, confirmation
+  callbacks and password recovery still need end-to-end verification;
+- `DATABASE_URL` is configured locally, but the direct database host is IPv6-only
+  and this machine cannot reach IPv6. A Session pooler connection string is
+  required before database access and the hosted schema can be checked. The
+  guest editor, browser library and deterministic analysis remain available.
 
 Local addresses: `http://localhost:3000/en`, `http://localhost:3000/uk`,
 `http://localhost:4000/v1/health` and `http://localhost:4000/docs`.
@@ -67,7 +70,7 @@ In another PowerShell terminal, run the suites in sequence:
 ```
 
 The tests reset only a local database named `flavorpilot_test`. They use the
-test-only authentication stub, not the unavailable hosted Supabase account.
+test-only authentication stub rather than hosted Supabase.
 E2E starts and stops its own Next/API processes; keep ports 3000, 4000 and 54321
 free before running it. It does not use the ordinary development `.env` secrets.
 Stop the database when no longer needed:
@@ -88,8 +91,8 @@ on Windows. No CSS plugins or framework versions were changed.
 
 These are authenticated dashboard links, not the public application/API URLs.
 Local setup does not pull their secrets, apply hosted database migrations or
-trigger a deployment. Hosted Supabase access is currently unavailable according
-to the project owner.
+trigger a deployment. The configured Supabase Auth endpoint is reachable; its
+database connection is awaiting an IPv4-compatible Session pooler string.
 
 ### Local verification — 2026-10-18
 
@@ -104,7 +107,7 @@ Executed on Windows x64 with Node 22.23.3 / npm 10.9.9 through `scripts/npm.ps1`
 - `run test:integration`: 7 passed against PostgreSQL 18.6 in WSL.
 - `run test:e2e`: 11 passed in Chromium against local Next/API, the disposable
   database and the test authentication stub.
-- `run dev`: both services and both package watchers started. EN/UK builder
+- Initial `run dev` before Supabase configuration: both services and both package watchers started. EN/UK builder
   routes returned 200 with the correct `lang`; `/v1/health` reported
   `database: not_configured` as expected for the ordinary guest configuration.
   Posting the default composition to `/v1/flavor/analyze` returned 74 overall,

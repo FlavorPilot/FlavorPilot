@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import { writeFileSync } from 'node:fs';
 const require = createRequire(import.meta.url);
 const { hypothesisIngredients } = require('../packages/flavor-engine/dist/scoring-catalogue.js');
+const { expandedProductHypotheses, AI_HYPOTHESIS_VERSION } = require('../packages/flavor-engine/dist/expanded-product-hypotheses.js');
 const q = value => `'${String(value).replaceAll("'", "''")}'`;
 const arr = values => values.length ? `array[${values.map(q).join(',')}]::text[]` : `'{}'::text[]`;
 const json = value => `${q(JSON.stringify(value))}::jsonb`;
@@ -19,11 +20,11 @@ const assignments = item => [
     ['ideal_share', item.share.ideal],
     ['max_share', item.share.max],
     ['preparation_ids', arr(item.preparations)],
-    ['source_note', q(note)],
-    ['source', q(note)],
-    ['model_version', q(version)],
+    ['source_note', q(expandedProductHypotheses[item.id] ? `${AI_HYPOTHESIS_VERSION}: AI-authored culinary hypothesis; not a measured or reviewed taste profile. USDA is the identity/nutrient source only.` : note)],
+    ['source', q(expandedProductHypotheses[item.id] ? 'FlavorPilot AI-authored culinary hypothesis, 2026-10-18. scripts/data/catalogue-expansion.txt and catalogue-families.mjs.' : note)],
+    ['model_version', q(expandedProductHypotheses[item.id] ? AI_HYPOTHESIS_VERSION : version)],
 ];
-let seed = '-- GENERATED product-hypothesis-1 scoring rows. Does not overwrite a reviewed ingredient.\nbegin;\n';
+let seed = '-- GENERATED product-hypothesis-1 and ai-product-hypothesis-2 scoring rows. Does not overwrite a reviewed ingredient.\nbegin;\n';
 let migration = '-- Replace nutrient-density placeholders with composed product hypotheses. Leaves reviewed rows unchanged.\nbegin;\n';
 for (const item of hypothesisIngredients) {
     const fields = assignments(item);
@@ -35,5 +36,6 @@ for (const item of hypothesisIngredients) {
 seed += 'commit;\n';
 migration += 'commit;\n';
 writeFileSync(new URL('../supabase/seed-scoring-hypotheses.sql', import.meta.url), seed);
-writeFileSync(new URL('../supabase/migrations/0006_product_hypotheses.sql', import.meta.url), migration);
+if (process.argv.includes('--write-historical-migration'))
+    writeFileSync(new URL('../supabase/migrations/0006_product_hypotheses.sql', import.meta.url), migration);
 console.log(`Scoring hypotheses: ${hypothesisIngredients.length}`);

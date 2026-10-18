@@ -13,6 +13,14 @@ must resolve in the kernel catalogue. Save requires 1–24 items; live analysis 
 composition. Per-row grams must be finite, positive and <=5000. Existing canonical IDs do not
 change with the interface language. Exact repeat ingredient/method rows are rejected.
 
+`POST /flavor/analyze` includes `composition` with six nutrient totals. Each total contains
+`coveredItems`, `totalItems`, and `contributions`: ingredient/preparation IDs, grams, nullable
+`per100g`/`amount`, nullable `fdcId`/`sourceDescription`. Contributions retain full precision;
+totals round only after summing (grams: one decimal; mg/kcal: integer). A missing amount stays
+null and is not included; published zero is covered. These source-reference amounts do not
+apply cooking-loss/yield factors and never affect the culinary score. Contracts parse this
+composition instead of stripping it from the server response. Rebuild the API and web together.
+
 ## AI request change
 
 The r2 request is composition-based, NOT the old `analysis` object:

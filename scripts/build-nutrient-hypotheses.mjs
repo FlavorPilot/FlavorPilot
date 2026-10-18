@@ -4,7 +4,8 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+import { fileURLToPath } from 'node:url';
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dir = process.env.FDC_DIR ?? '/tmp/fdc';
 const FORMULA = 'nutrient-proxy-1';
 const ANCHOR = 40000;
@@ -181,6 +182,8 @@ for (const record of records) {
 sql += 'commit;\n';
 migration += 'commit;\n';
 writeFileSync(path.join(root, 'supabase/seed-nutrient-hypotheses.sql'), sql);
-writeFileSync(path.join(root, 'supabase/migrations/0007_composition_nutrients.sql'), migration);
+// Historical migrations are immutable during routine catalogue regeneration.
+if (process.argv.includes('--write-historical-migration'))
+    writeFileSync(path.join(root, 'supabase/migrations/0007_composition_nutrients.sql'), migration);
 const filled = (key) => records.filter(record => record[key] !== null).length;
 console.log(`Hypotheses: ${records.length}. saltiness ${filled('saltiness')}, fat ${filled('fat')}, sweetness ${filled('sweetness')}, moisture ${filled('moisture')}, protein ${filled('proteinG')}, carbohydrate ${filled('carbohydrateG')}, energy ${filled('energyKcal')}.`);

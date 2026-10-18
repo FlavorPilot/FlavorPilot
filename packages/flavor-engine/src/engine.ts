@@ -1,6 +1,6 @@
 import { dishComposition } from './composition';
-import { getPairAdjustment, goalDefinitions, ingredients, preparationById } from './ingredients';
-import { catalogueById } from './scoring-catalogue';
+import { getPairAdjustment, goalDefinitions, preparationById } from './ingredients';
+import { catalogueById, catalogueIngredients as ingredients } from './scoring-catalogue';
 import { sensoryDimensions, type DishAnalysis, type DishGoal, type DishIssue, type DishItem, type Ingredient, type IngredientRecommendation, type PairResult, type RecommendationReason, type SensoryProfile, type TextureTag } from '@flavorpilot/contracts/domain';
 interface PreparedIngredient {
     ingredient: Ingredient;
@@ -208,7 +208,7 @@ const coreAnalysis = (items: DishItem[], goal: DishGoal) => {
     const overallScore = weightedItems.length === 0 ? 0 : clamp(compatibilityScore * .38 + balanceScore * .32 + quantityScore * .16 + textureScore * .14);
     return { weightedItems, totalWeight, profile, pairs, compatibilityScore, balanceScore, quantityScore, textureScore, dominant, confidence, overallScore, issues: buildIssues(weightedItems, profile, textureScore, observed, dominant) };
 };
-const recommendedGrams = (ingredient: Ingredient, totalWeight: number) => {
+export const recommendedIngredientGrams = (ingredient: Ingredient, totalWeight: number) => {
     const base = Math.max(totalWeight, 240) * (ingredient.share.ideal / 100);
     if (base < 3)
         return round(Math.max(.3, base), 1);
@@ -247,7 +247,7 @@ const generateRecommendations = (items: DishItem[], goal: DishGoal, current: Ret
     for (const candidate of ingredients) {
         if (existing.has(candidate.id))
             continue;
-        const grams = recommendedGrams(candidate, current.totalWeight), preparationId = candidate.preparations.includes('raw') ? 'raw' : candidate.preparations[0];
+        const grams = recommendedIngredientGrams(candidate, current.totalWeight), preparationId = candidate.preparations.includes('raw') ? 'raw' : candidate.preparations[0];
         const preparedCandidate = getPreparedIngredient(candidate, preparationId);
         const pairScores = current.weightedItems.map(item => ({ score: calculatePair(item, preparedCandidate).score, weight: item.impact }));
         const totalImpact = pairScores.reduce((sum, pair) => sum + pair.weight, 0);

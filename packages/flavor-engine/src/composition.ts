@@ -6,6 +6,10 @@ const roundTo = (value: number, digits: number) => {
     return Math.round(value * factor) / factor;
 };
 const hypothesisByIdentity = new Map(nutrientHypotheses.map(row => [row.identityId, row]));
+const identityByIngredient = new Map(sourcedIdentities.flatMap(identity => [
+    [identity.id, identity] as const,
+    ...(identity.catalogIngredientId ? [[identity.catalogIngredientId, identity] as const] : []),
+]));
 const hypothesisByIngredient = new Map<string, typeof nutrientHypotheses[number]>();
 for (const identity of sourcedIdentities) {
     const row = hypothesisByIdentity.get(identity.id);
@@ -25,19 +29,18 @@ const specs: { nutrient: CompositionAmount['nutrient']; unit: CompositionAmount[
 ];
 /** Scale published per-100 g amounts by the grams in the dish. A missing amount is omitted from the sum. */
 export const dishComposition = (items: DishItem[]): DishComposition => {
-    const present = items.filter(item => item.grams > 0);
+    const present = items.filter(item => Number.isFinite(item.grams) && item.grams > 0);
     const nutrients = specs.map(spec => {
-        let sum = 0;
-        let coveredItems = 0;
-        for (const item of present) {
+        const contributions = present.map(item => {
             const row = hypothesisByIngredient.get(item.ingredientId);
+            const identity = identityByIngredient.get(item.ingredientId);
             const per100 = row ? spec.read(row) : null;
-            if (per100 === null)
-                continue;
-            sum += per100 * item.grams / 100;
-            coveredItems += 1;
-        }
-        return { nutrient: spec.nutrient, unit: spec.unit, amount: coveredItems === 0 ? null : roundTo(sum, spec.digits), coveredItems, totalItems: present.length };
+            return { ...item, per100g: per100, amount: per100 === null ? null : per100 * item.grams / 100,
+                fdcId: identity?.fdcId ?? null, sourceDescription: identity?.fdcDescription ?? null };
+        });
+        const covered = contributions.filter(item => item.amount !== null);
+        const sum = covered.reduce((sum, item) => sum + item.amount!, 0);
+        return { nutrient: spec.nutrient, unit: spec.unit, amount: covered.length === 0 ? null : roundTo(sum, spec.digits), coveredItems: covered.length, totalItems: present.length, contributions };
     });
     return { totalItems: present.length, nutrients };
 };

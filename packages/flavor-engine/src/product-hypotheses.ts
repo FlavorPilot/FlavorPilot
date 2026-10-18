@@ -1,4 +1,5 @@
 import type { IngredientRole, TextureTag } from '@flavorpilot/contracts/domain';
+import { expandedProductHypotheses } from './expanded-product-hypotheses';
 /** Composed product hypotheses on the same 0–10 scale as the transcribed 38.
  * They are not taste-panel measurements and stay unreviewed.
  */
@@ -28,6 +29,7 @@ const veg = ['raw', 'boiled', 'steamed', 'roasted', 'grilled'];
 const dry = ['boiled', 'steamed'];
 const herb = ['raw', 'sauce'];
 export const productHypotheses: Record<string, ProductHypothesis> = {
+    ...expandedProductHypotheses,
     beef: row(0.2, 0.2, 7.2, 0.1, 1.4, 5.6, 1.2, 5.4, 0.3, 6.2, 5.8, 6.4, ['meaty', 'savory'], ['firm', 'tender'], ['base', 'umami'], base, [22, 46, 74]),
     lamb: row(0.2, 0.4, 6.8, 0.2, 1.2, 6.4, 1.1, 6.2, 0.3, 5.8, 6.2, 6.2, ['meaty', 'savory'], ['firm', 'tender'], ['base', 'umami'], base, [22, 46, 74]),
     turkey: row(0.2, 0.1, 5.4, 0, 2.2, 3.8, 1, 2.4, 0.3, 6.6, 4.2, 5.2, ['meaty', 'mild'], ['firm', 'tender'], ['base'], base, [22, 46, 74]),

@@ -4,6 +4,15 @@ Playwright covers the critical path in `critical.spec.ts`: signup and login, the
 local save, reload, edit, private visibility, a public dish, an unlisted link, remix, delete,
 language switch, the mobile builder, and an API failure that leaves the local draft in place.
 
+`recipe-instructions.spec.ts` covers the second builder tab: keyboard navigation, grouped
+undo/redo, step reordering and deletion, device persistence, EN/UK text preservation,
+servings validation, mobile overflow and JSON v2 round trips before adding ingredients.
+
+`composition-reference.spec.ts` covers nutrient-specific coverage/missing rows, source links,
+hover and keyboard access, Escape, touch, Ukrainian names from the expanded catalogue and
+popover containment on a 375 px screen. The local database seed has 620 ingredients; API
+integration also checks migration 0008 and saving recipes with new ingredients.
+
 The browser does not call staging Supabase. `tests/e2e/serve.mjs` resets a local
 `flavorpilot_test` database, starts an auth stub, and starts the Nest API. Playwright then
 starts Next with that stub. `npm run test:integration` checks the same database through Nest:

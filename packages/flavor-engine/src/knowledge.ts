@@ -3,8 +3,10 @@ import { explicitPairAdjustments, ingredients, preparationMethods } from './ingr
 import { sourcedIdentities } from './sourced-identities';
 import { nutrientHypotheses } from './nutrient-hypotheses';
 import { catalogueIngredients } from './scoring-catalogue';
-/** Sensory numbers in this version are still the imported demo hypotheses. */
+import { AI_HYPOTHESIS_VERSION, expandedHypothesisRationales } from './expanded-product-hypotheses';
+/** Formula version is retained; authored catalogue additions are versioned separately. */
 export const MODEL_VERSION = '0.3.0-hypothesis';
+export const CATALOGUE_VERSION = '2026-10-18-ai-2';
 /** Closed alpha aims for reviewed coverage, not a generated catalogue of this size. */
 export const ALPHA_REVIEW_TARGET = { min: 80, max: 120 } as const;
 /** Commercial 1.0 cares more about reviewed coverage than about hitting the top of this range. */
@@ -22,9 +24,16 @@ export const unreviewedHypothesis = (): KnowledgeProvenance => ({
 export const isReviewedRecordComplete = (record: KnowledgeProvenance): boolean => record.reviewStatus !== 'reviewed' || Boolean(record.reviewer?.trim() && record.reviewer.trim().length >= 2 && record.source?.trim() && record.source.trim().length >= 3 && record.lastReviewedAt);
 const hypothesis = () => unreviewedHypothesis();
 export const ingredientKnowledge = new Map(ingredients.map(item => [item.id, hypothesis()]));
+/** AI-authored additions have their own provenance, never the historic demo or USDA taste attribution. */
+export const aiIngredientKnowledge = new Map(Object.entries(expandedHypothesisRationales).map(([id, rationale]) => [id, {
+    ...unreviewedHypothesis(),
+    source: `FlavorPilot AI-authored culinary hypothesis. ${rationale}`,
+    modelVersion: AI_HYPOTHESIS_VERSION,
+}]));
 export const preparationKnowledge = new Map(preparationMethods.map(item => [item.id, hypothesis()]));
 export const pairingKnowledge = new Map([...explicitPairAdjustments.keys()].map(key => [key, hypothesis()]));
 export const knowledgeCoverage = () => ({
+    catalogueVersion: CATALOGUE_VERSION,
     ingredients: ingredientKnowledge.size,
     reviewedIngredients: [...ingredientKnowledge.values()].filter(item => item.reviewStatus === 'reviewed').length,
     preparations: preparationKnowledge.size,
@@ -36,6 +45,7 @@ export const knowledgeCoverage = () => ({
     nutrientHypotheses: nutrientHypotheses.length,
     reviewedNutrientHypotheses: nutrientHypotheses.filter(item => (item.reviewStatus as string) === 'reviewed').length,
     scoringIngredients: catalogueIngredients.length,
+    aiAuthoredIngredients: aiIngredientKnowledge.size,
     alphaTarget: ALPHA_REVIEW_TARGET,
     releaseTarget: RELEASE_REVIEW_TARGET,
 });

@@ -22,19 +22,19 @@ has no range warning.
 
 ## Catalogue review coverage
 
-The scoring catalogue is still 38 ingredients, 12 preparations and 64 explicit pair adjustments.
-Those rows stay `unreviewed` hypotheses. A separate identity list cites 119 staple foods from
+The scoring catalogue has 620 ingredients, 12 preparations and 64 explicit pair adjustments.
+Those rows stay `unreviewed` hypotheses. A separate identity list cites 619 foods from
 USDA FoodData Central (Foundation Foods CSV 2026-04-30 and SR Legacy CSV 2018-04), license
 CC0 1.0. Each citation copies the USDA description, category and fdc id. Ukrainian labels are
 project translations. Sensory profile, preparation effects, recommended range and pairing
 evidence are empty, and the database rejects filling them on that table. A separate `nutrient-proxy-1` hypothesis maps published sodium, fat, sugars and water per
 100 g onto four 0–10 axes and stays out of the dish score. Foods already in the transcribed 38 keep those composed profiles. The other
-82 enter the score through `product-hypothesis-1`: composed values on all ten sensory axes, plus aroma, texture, role, share and preparation. They are the same kind of unreviewed product hypothesis as the original 38, not USDA measurements.
-The dish assessment also shows a separate composition reference: protein, fat, carbohydrate, sugars, sodium and energy from the published USDA amounts, scaled by the grams in the dish. A missing amount stays out of that sum. It is not a laboratory result for the cooked dish and it does not change the model score. None of the 119 is `reviewed`. Pair adjustments are still empty for the 82. Rice vinegar has no row in those two releases, so it is not cited. Closed alpha
+82 retain `product-hypothesis-1`. A further 500 use `ai-product-hypothesis-2`: AI-authored culinary families, food-specific axes and refinements on all ten sensory dimensions, plus aroma, texture, role, share and preparation. These are hypotheses composed before release, not live AI inference or USDA taste measurements. See [CATALOGUE.md](CATALOGUE.md).
+The dish assessment also shows a separate composition reference: protein, fat, carbohydrate, sugars, sodium and energy from the published USDA amounts, scaled by the grams in the dish. A missing amount stays out of that sum. Per-nutrient hover/focus/tap notes expose each row's contribution, missing data, reference state and source. Cooking losses, absorbed water, recipe yield and ingredient-specific preparation effects are not estimated. It is not a laboratory result for the cooked dish and it does not change the model score. None of the 619 is `reviewed`. Pair adjustments are still empty for the 582 additions; recommendations now search all 620 foods using the existing heuristic. Rice vinegar has no matching row in those two releases, so it is not cited. Closed alpha
 still aims for 80–120 reviewed core ingredients. Commercial 1.0 aims for 300–500 reviewed
 ingredients. Neither target is met. Composed hypotheses do not count as reviewed coverage.
 
-All 38 profiles, working ratios, pair adjustments and transformations remain unvalidated
+All 620 profiles, working ratios, pair adjustments and transformations remain unvalidated
 hypotheses. Repeated calculations and passing regressions cannot establish sensory correctness.
 Heuristic confidence can be high even when data is unreviewed. Model scores are not food-safety,
 allergen, nutrition or cooking-temperature assurances. No medical guidance is provided by the UI.

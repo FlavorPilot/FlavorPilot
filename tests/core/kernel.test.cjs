@@ -22,16 +22,16 @@ test('knowledge rows stay unreviewed hypotheses until a person records a source'
  const coverage=knowledge.knowledgeCoverage();
  assert.equal(coverage.ingredients,38);assert.equal(coverage.preparations,12);assert.equal(coverage.pairings,64);
  assert.equal(coverage.reviewedIngredients,0);assert.equal(coverage.reviewedPreparations,0);assert.equal(coverage.reviewedPairings,0);
- assert.equal(coverage.sourcedIdentities,119);assert.equal(coverage.reviewedSourcedIdentities,0);
- assert.equal(coverage.nutrientHypotheses,119);assert.equal(coverage.reviewedNutrientHypotheses,0);
- assert.equal(coverage.scoringIngredients,120);
+ assert.equal(coverage.sourcedIdentities,619);assert.equal(coverage.reviewedSourcedIdentities,0);
+ assert.equal(coverage.nutrientHypotheses,619);assert.equal(coverage.reviewedNutrientHypotheses,0);
+ assert.equal(coverage.scoringIngredients,620);
  assert.deepEqual(coverage.alphaTarget,{min:80,max:120});assert.deepEqual(coverage.releaseTarget,{min:300,max:500});
  assert.equal(knowledge.isReviewedRecordComplete({source:'x',sourceLicense:null,reviewer:null,reviewStatus:'reviewed',confidence:1,modelVersion:'0.3.0-hypothesis',lastReviewedAt:null}),false);
 });
 test('USDA identity rows cite a public-domain record and leave the sensory model empty',()=>{
  const rows=identities.sourcedIdentities;
  const engineIds=new Set(ingredients.map(item=>item.id));
- assert.equal(rows.length,119);
+ assert.equal(rows.length,619);
  assert.equal(new Set(rows.map(row=>row.fdcId)).size,rows.length);
  assert.equal(rows.some(row=>row.id==='rice_vinegar'),false);
  for(const row of rows){
@@ -45,7 +45,7 @@ test('USDA identity rows cite a public-domain record and leave the sensory model
 });
 test('nutrient hypotheses recompute from stored USDA amounts',()=>{
  const rows=hypotheses.nutrientHypotheses;
- assert.equal(rows.length,119);assert.equal(ingredients.length,38);
+ assert.equal(rows.length,619);assert.equal(ingredients.length,38);
  for(const row of rows){
   assert.equal(row.reviewStatus,'unreviewed');assert.equal(row.confidence,0);assert.equal(row.formula,'nutrient-proxy-1');
   assert.equal(row.saltiness,nutrientFormula.hypothesisSaltiness(row.sodiumMg));
@@ -75,8 +75,8 @@ test('published composition sums USDA amounts and leaves missing nutrients out',
  assert.ok(sodium(withSalt).amount>sodium(only).amount);
 });
 test('USDA foods that are not in the transcribed 38 change the dish score',()=>{
- assert.equal(scoring.hypothesisIngredients.length,82);
- assert.equal(scoring.catalogueIngredients.length,120);
+ assert.equal(scoring.hypothesisIngredients.length,582);
+ assert.equal(scoring.catalogueIngredients.length,620);
  const plain=analyzeDish([{ingredientId:'salmon',grams:180,preparationId:'raw'}],'balanced',false);
  const salted=analyzeDish([{ingredientId:'salmon',grams:180,preparationId:'raw'},{ingredientId:'salt',grams:4,preparationId:'raw'}],'balanced',false);
  assert.ok(salted.profile.saltiness>plain.profile.saltiness);
@@ -137,7 +137,7 @@ test('recommendations never duplicate an existing ingredient',()=>{const ids=new
 test('recommendation quantities, methods and balance delta match the actual preview',()=>{
  const before=analyzeDish(defaultDish,'fresh');
  for(const r of before.recommendations){
-  const ingredient=ingredientById.get(r.ingredientId),preparationId=ingredient.preparations.includes('raw')?'raw':ingredient.preparations[0];
+  const ingredient=scoring.catalogueById.get(r.ingredientId),preparationId=ingredient.preparations.includes('raw')?'raw':ingredient.preparations[0];
   assert.ok(Number.isFinite(r.recommendedGrams)&&r.recommendedGrams>0&&r.recommendedGrams<=5000);
   const after=analyzeDish([...defaultDish,{ingredientId:r.ingredientId,grams:r.recommendedGrams,preparationId}],'fresh',false);
   // Public score is rounded to an integer; the delta is derived before rounding.

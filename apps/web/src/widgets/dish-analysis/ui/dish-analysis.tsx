@@ -1,16 +1,25 @@
 import type { CSSProperties } from 'react';
 import type { CompositionAmount, DishAnalysis as Analysis } from '@flavorpilot/contracts';
-import { ingredientById } from '@/entities/ingredient';
+import { ingredientById, preparationById } from '@/entities/ingredient';
 import { getDictionary, formatNumber, type Locale } from '@/shared/i18n';
-import { Badge, EmptyState, Icon, WidgetFrame } from '@/shared/ui';
+import { Badge, EmptyState, HoverNote, Icon, WidgetFrame } from '@/shared/ui';
 const nutrientLabel = { protein: 'compositionProtein', fat: 'compositionFat', carbohydrate: 'compositionCarbohydrate', sugars: 'compositionSugars', sodium: 'compositionSodium', energy: 'compositionEnergy' } as const;
 const unitLabel = { g: 'unitG', mg: 'unitMg', kcal: 'unitKcal' } as const;
 function CompositionReference({ nutrients, locale }: { nutrients: CompositionAmount[]; locale: Locale }) {
     const t = getDictionary(locale).messages;
     return <section className="composition-reference" aria-labelledby="published-composition">
-      <h3 id="published-composition">{t.publishedComposition}</h3>
-      <p className="muted small">{t.compositionNote}</p>
-      <dl className="composition-list">{nutrients.map(item => <div key={item.nutrient}><dt>{t[nutrientLabel[item.nutrient]]}</dt><dd>{item.amount === null ? t.compositionMissing : <>{formatNumber(item.amount, locale, item.unit === 'g' ? 1 : 0)} {t[unitLabel[item.unit]]}</>}<small>{item.coveredItems} {t.compositionOf} {item.totalItems}</small></dd></div>)}</dl>
+      <div className="composition-heading"><h3 id="published-composition">{t.publishedComposition}</h3><HoverNote label={t.compositionAbout} trigger={<Icon name="info" size={17}/>} closeLabel={t.close}><p>{t.compositionNote}</p></HoverNote></div>
+      <dl className="composition-list">{nutrients.map(item => <div key={item.nutrient}><dt>{t[nutrientLabel[item.nutrient]]}</dt><dd>{item.amount === null ? t.compositionMissing : <>{formatNumber(item.amount, locale, item.unit === 'g' ? 1 : 0)} {t[unitLabel[item.unit]]}</>}
+        <HoverNote label={`${t[nutrientLabel[item.nutrient]]}: ${t.compositionCoverage}`} closeLabel={t.close} trigger={<span className="composition-coverage">{item.coveredItems} {t.compositionOf} {item.totalItems}</span>}>
+          <strong>{t[nutrientLabel[item.nutrient]]}</strong><p>{t.compositionContributions}</p>
+          <ul className="composition-contributions">{item.contributions.map((contribution, index) => <li key={`${contribution.ingredientId}-${contribution.preparationId}-${index}`}>
+            <div className="composition-contribution-title"><strong>{ingredientById.get(contribution.ingredientId)?.name[locale] ?? contribution.ingredientId}</strong><span>{contribution.amount === null ? t.compositionMissing : `${formatNumber(contribution.amount, locale, 2)} ${t[unitLabel[item.unit]]}`}</span></div>
+            <small>{formatNumber(contribution.grams, locale)} {t.unitG} · {preparationById.get(contribution.preparationId)?.name[locale]}</small>
+            {contribution.per100g === null ? <small>{t.compositionExcluded}</small> : <small>{formatNumber(contribution.per100g, locale, 3)} {t[unitLabel[item.unit]]} / 100 {t.unitG}</small>}
+            {contribution.fdcId !== null && <a href={`https://fdc.nal.usda.gov/food-details/${contribution.fdcId}/nutrients`} target="_blank" rel="noreferrer">{t.compositionSource} {contribution.fdcId}<span className="composition-source-description">{contribution.sourceDescription}</span></a>}
+          </li>)}</ul>
+        </HoverNote>
+      </dd></div>)}</dl>
     </section>;
 }
 export function DishAnalysis({ analysis, locale, itemCount }: {

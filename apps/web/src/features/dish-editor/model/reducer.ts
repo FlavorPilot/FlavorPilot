@@ -5,10 +5,14 @@ export interface EditorState {
     past: Draft[];
     future: Draft[];
     saved: string;
+    editGroup?: { key: string; at: number };
 }
 export type EditorAction = {
     type: 'replace';
     draft: Draft;
+    group?: { key: string; at: number };
+} | {
+    type: 'endEdit';
 } | {
     type: 'hydrate';
     draft: Draft;
@@ -24,25 +28,29 @@ export const initialState = (): EditorState => ({ present: emptyDraft(), past: [
 export function editorReducer(state: EditorState, action: EditorAction): EditorState {
     switch (action.type) {
         case 'hydrate': return canUseItems(action.draft.items) ? { present: action.draft, past: [], future: [], saved: fingerprint(action.draft) } : state;
+        case 'endEdit': return { ...state, editGroup: undefined };
         case 'replace':
             if (!canUseItems(action.draft.items) || fingerprint(action.draft) === fingerprint(state.present))
                 return state;
-            return { ...state, present: action.draft, past: [...state.past, state.present].slice(-50), future: [] };
+            return { ...state, present: action.draft,
+                past: action.group && action.group.key === state.editGroup?.key && action.group.at >= state.editGroup.at && action.group.at - state.editGroup.at < 1000
+                    ? state.past : [...state.past, state.present].slice(-50),
+                future: [], editGroup: action.group };
         case 'undo': {
             const previous = state.past.at(-1);
             if (!previous)
                 return state;
-            return { ...state, present: previous, past: state.past.slice(0, -1), future: [state.present, ...state.future].slice(0, 50) };
+            return { ...state, present: previous, past: state.past.slice(0, -1), future: [state.present, ...state.future].slice(0, 50), editGroup: undefined };
         }
         case 'redo': {
             const next = state.future[0];
             if (!next)
                 return state;
-            return { ...state, present: next, past: [...state.past, state.present].slice(-50), future: state.future.slice(1) };
+            return { ...state, present: next, past: [...state.past, state.present].slice(-50), future: state.future.slice(1), editGroup: undefined };
         }
         case 'markSaved': {
             const attach = (draft: Draft): Draft => ({ ...draft, linkedId: action.draft.linkedId, linkedOrigin: action.draft.linkedOrigin, createdAt: action.draft.createdAt });
-            return { ...state, present: action.draft, past: state.past.map(attach), future: state.future.map(attach), saved: fingerprint(action.draft) };
+            return { ...state, present: action.draft, past: state.past.map(attach), future: state.future.map(attach), saved: fingerprint(action.draft), editGroup: undefined };
         }
     }
 }

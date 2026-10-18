@@ -1,0 +1,577 @@
+# AI-authored culinary hypotheses. Values override the named family in catalogue-families.mjs.
+# fdc_id | stable id | English | Ukrainian | family-specific overrides (in header order)
+# Fruit: sweetness, acidity, aromaIntensity
+@fruit
+167750|prickly_pear|Prickly pear|Опунція|5,2,3
+167754|pomelo|Pomelo|Помело|4,5,5
+167755|raspberry|Raspberry|Малина|4,6,7
+167758|rhubarb|Rhubarb|Ревінь|1,8,4
+167759|sapodilla|Sapodilla|Саподіла|8,1,5
+167760|mamey_sapote|Mamey sapote|Мамей сапота|8,1,6
+167761|soursop|Soursop|Гуанабана|6,5,7
+167763|tamarind|Tamarind|Тамаринд|6,9,7
+167765|watermelon|Watermelon|Кавун|6,1,4
+168150|java_plum|Java plum|Джамболан|4,5,4
+168151|jujube|Jujube|Зизифус|6,2,3
+168153|kiwi|Kiwi|Ківі|5,6,5
+168154|kumquat|Kumquat|Кумкват|4,7,8
+168163|quince|Quince|Айва|2,6,6
+168170|roselle|Roselle|Розела|1,8,6
+168171|rose_apple|Rose apple|Рожеве яблуко|3,2,5
+168175|sugar_apple|Sugar apple|Цукрове яблуко|8,2,6
+168176|feijoa|Feijoa|Фейхоа|5,5,7
+168177|asian_pear|Asian pear|Азійська груша|5,2,3
+168192|durian|Durian|Дуріан|7,1,9
+168195|clementine|Clementine|Клементин|6,4,6
+169086|lychee|Lychee|Лічі|7,3,7
+169089|longan|Longan|Лонган|7,2,5
+169092|cantaloupe|Cantaloupe|Диня канталупа|6,1,6
+169093|casaba_melon|Casaba melon|Диня касаба|5,1,3
+169105|mandarin|Mandarin|Мандарин|6,4,7
+169108|passion_fruit|Passion fruit|Маракуя|5,8,9
+169129|pitanga|Pitanga|Пітанга|4,6,7
+169908|loquat|Loquat|Мушмула японська|5,4,4
+169909|mammee_apple|Mammee apple|Маммея американська|6,3,6
+169911|honeydew|Honeydew melon|Медова диня|6,1,4
+169913|mulberry|Mulberry|Шовковиця|6,3,4
+169914|nectarine|Nectarine|Нектарин|6,4,6
+169926|papaya|Papaya|Папая|6,1,6
+169941|persimmon|Persimmon|Хурма|7,1,4
+169949|plum|Plum|Слива|5,5,5
+171686|acerola|Acerola|Ацерола|2,9,5
+171714|breadfruit|Breadfruit|Хлібний плід|2,1,3
+171715|starfruit|Starfruit|Карамбола|3,6,4
+171721|crabapple|Crabapple|Райське яблуко|3,7,5
+171725|custard_apple|Custard apple|Аннона сітчаста|8,2,6
+171727|elderberry|Elderberry|Бузина|3,6,6
+173021|fresh_fig|Fresh fig|Свіжий інжир|7,1,5
+173030|gooseberry|Gooseberry|Аґрус|4,7,4
+173033|grapefruit|Grapefruit|Грейпфрут|3,7,7
+173043|cape_gooseberry|Cape gooseberry|Фізаліс|5,6,6
+173044|guava|Guava|Гуава|6,4,8
+173946|blackberry|Blackberry|Ожина|5,6,6
+173953|cherimoya|Cherimoya|Черимоя|8,2,6
+173954|sour_cherry|Sour cherry|Кисла вишня|4,7,7
+173963|blackcurrant|Blackcurrant|Чорна смородина|3,8,9
+173964|redcurrant|Redcurrant|Червона смородина|3,8,5
+174687|jackfruit|Jackfruit|Джекфрут|7,2,8
+# Dried fruit: sweetness, acidity, aromaIntensity
+@dried_fruit
+168162|prune|Prune|Чорнослив|8,3,6
+168164|golden_raisin|Golden raisin|Світлі родзинки|8,3,4
+168191|date|Medjool date|Фінік меджул|9,1,6
+173941|dried_apricot|Dried apricot|Курага|7,5,6
+169934|dried_peach|Dried peach|Сушений персик|7,4,5
+171691|dried_apple|Dried apple|Сушене яблуко|7,4,4
+169121|dried_pear|Dried pear|Сушена груша|8,2,4
+# Vegetables: sweetness, bitterness, freshness
+@vegetable
+167714|palm_heart|Heart of palm|Серцевина пальми|2,1,5
+168393|bitter_melon|Bitter melon|Гірка диня|1,9,5
+168414|luffa|Luffa gourd|Люфа|2,1,5
+168424|kohlrabi|Kohlrabi|Кольрабі|3,1,6
+168448|pumpkin|Pumpkin|Гарбуз|4,1,4
+168454|rutabaga|Rutabaga|Бруква|3,2,4
+168464|yellow_squash|Yellow summer squash|Жовтий літній кабачок|3,1,5
+168472|acorn_squash|Acorn squash|Жолудевий гарбуз|4,1,3
+168475|hubbard_squash|Hubbard squash|Гарбуз габбард|5,1,3
+168566|tomatillo|Tomatillo|Томатільйо|2,1,7
+168571|nopales|Nopales|Нопаль|1,2,6
+169205|artichoke|Artichoke|Артишок|2,4,4
+169210|bamboo_shoot|Bamboo shoot|Пагони бамбука|1,2,5
+169222|yardlong_bean|Yardlong bean|Спаржева вігна|2,1,6
+169232|bottle_gourd|Bottle gourd|Лагенарія|1,1,5
+169250|lotus_root|Lotus root|Корінь лотоса|3,1,4
+169260|okra|Okra|Бамія|2,1,5
+169289|pattypan|Pattypan squash|Патисон|2,1,5
+169295|butternut|Butternut squash|Мускатний гарбуз|5,1,3
+169298|spaghetti_squash|Spaghetti squash|Гарбуз спагеті|3,1,4
+169320|wax_bean|Yellow wax bean|Жовта стручкова квасоля|2,1,6
+169385|fennel_bulb|Fennel bulb|Фенхель|3,1,7
+169981|cardoon|Cardoon|Кардон|1,5,4
+169990|celtuce|Celtuce|Спаржевий салат|2,2,6
+170010|snow_pea|Snow pea|Цукровий горох у стручках|4,1,7
+170066|water_chestnut|Water chestnut|Водяний каштан|3,1,6
+170069|winter_melon|Winter melon|Восковий гарбуз|1,1,5
+170073|jicama|Jicama|Джикама|3,1,6
+170071|yam|Yam|Ямс|3,1,2
+# Roots/starchy bases: sweetness, aromaIntensity, textureIntensity
+@root
+168432|mountain_yam|Hawaiian mountain yam|Гірський ямс|2,2,5
+168490|arrowroot|Arrowroot root|Корінь маранти|1,2,5
+169203|arrowhead|Arrowhead root|Бульби стрілолиста|2,3,5
+169236|jerusalem_artichoke|Jerusalem artichoke|Топінамбур|4,4,6
+169277|salsify|Salsify|Козельці|2,4,5
+169308|taro|Taro|Таро|2,3,6
+169401|tannier|Tannier|Ксантосома|2,3,5
+169974|burdock|Burdock root|Корінь лопуха|2,5,7
+169985|cassava|Cassava|Маніок|2,2,6
+169993|chicory_root|Chicory root|Корінь цикорію|2,5,6
+168215|plantain|Green plantain|Зелений плантан|2,3,6
+# Leaf vegetables: bitterness, pungency, freshness
+@leaf
+168385|amaranth_leaf|Amaranth leaves|Листя амаранту|2,0,6
+168407|garden_cress|Garden cress|Крес-салат|2,5,8
+168412|endive|Endive|Ендивій|6,1,7
+168416|moringa_leaf|Moringa leaves|Листя моринги|4,1,6
+168419|jute_leaf|Jute leaves|Листя джуту|2,0,5
+168429|butterhead|Butterhead lettuce|Маслянистий салат|1,0,8
+168431|red_leaf_lettuce|Red leaf lettuce|Червоний листовий салат|2,0,8
+168438|mustard_spinach|Mustard spinach|Комацуна|2,2,7
+168440|new_zealand_spinach|New Zealand spinach|Новозеландський шпинат|2,0,6
+168487|taro_leaf|Taro leaves|Листя таро|2,0,5
+168491|chrysanthemum_leaf|Chrysanthemum greens|Зелень хризантеми|4,1,7
+168564|radicchio|Radicchio|Радікіо|7,1,7
+168575|grape_leaf|Grape leaves|Виноградне листя|4,0,5
+169219|corn_salad|Corn salad|Салат корн|1,0,8
+169224|cowpea_leaf|Cowpea leaves|Листя вігни|2,0,6
+169226|dandelion_green|Dandelion greens|Листя кульбаби|7,1,7
+169244|lambsquarters|Lambsquarters|Лобода|3,0,6
+169247|romaine|Romaine lettuce|Салат ромен|2,0,8
+169249|green_leaf_lettuce|Green leaf lettuce|Зелений листовий салат|2,0,8
+169256|mustard_green|Mustard greens|Листова гірчиця|4,5,7
+169270|squash_blossom|Squash blossom|Квіти гарбуза|1,0,5
+169272|pumpkin_leaf|Pumpkin leaves|Листя гарбуза|2,0,5
+169274|purslane|Purslane|Портулак|2,0,7
+169301|water_spinach|Water spinach|Водяний шпинат|1,0,6
+169303|sweet_potato_leaf|Sweet potato leaves|Листя батату|2,0,6
+169387|arugula|Arugula|Рукола|4,5,8
+169398|epazote|Epazote|Епазот|4,2,7
+169404|chinese_broccoli|Chinese broccoli|Китайська броколі|3,1,6
+169405|fiddlehead|Fiddlehead fern|Пагони папороті|3,0,6
+169977|red_cabbage|Red cabbage|Червонокачанна капуста|2,1,6
+169979|napa_cabbage|Napa cabbage|Пекінська капуста|1,0,7
+169991|chard|Swiss chard|Мангольд|3,0,6
+169992|chicory_green|Chicory greens|Листя цикорію|6,1,7
+170061|turnip_green|Turnip greens|Листя ріпи|4,2,6
+170068|watercress|Watercress|Водяний крес|3,5,8
+170076|sorrel|Sorrel|Щавель|2,0,8
+# Sprouts: freshness, bitterness, aromaIntensity
+@sprout
+168384|alfalfa_sprout|Alfalfa sprouts|Паростки люцерни|8,2,3
+168427|lentil_sprout|Lentil sprouts|Паростки сочевиці|7,1,3
+169284|soybean_sprout|Soybean sprouts|Паростки сої|7,2,4
+169957|mung_sprout|Mung bean sprouts|Паростки машу|8,1,3
+170095|radish_sprout|Radish sprouts|Паростки редиски|8,2,5
+# Pungent vegetables/aromatics: pungency, sweetness, aromaIntensity
+@aromatic
+168451|daikon|Daikon|Дайкон|4,2,4
+168573|lemongrass|Lemongrass|Лемонграс|2,1,9
+168576|jalapeno|Jalapeño|Халапеньйо|7,2,6
+168578|hungarian_pepper|Hungarian wax pepper|Угорський восковий перець|5,3,5
+168583|wasabi_root|Wasabi root|Корінь васабі|10,1,9
+169276|radish|Radish|Редиска|5,2,5
+169395|serrano|Serrano pepper|Перець серрано|9,2,7
+169994|chive|Chives|Шніт-цибуля|4,1,6
+170005|scallion|Scallion|Зелена цибуля|5,2,6
+# Mushrooms: umami, aromaIntensity, textureIntensity
+@mushroom
+168422|chanterelle|Chanterelle|Лисички|5,6,5
+168423|morel|Morel|Зморшки|7,7,5
+168434|cremini|Cremini mushroom|Коричневі печериці|6,5,4
+168580|oyster_mushroom|Oyster mushroom|Гливи|6,5,5
+169237|wood_ear|Wood ear mushroom|Муер|3,2,7
+169242|shiitake|Shiitake|Шиїтаке|8,7,5
+169255|portobello|Portobello|Портобело|7,6,6
+169382|enoki|Enoki|Енокі|4,3,6
+169403|maitake|Maitake|Майтаке|7,6,5
+# Sea vegetables: umami, saltiness, aromaIntensity
+@seaweed
+168456|irish_moss|Irish moss|Ірландський мох|2,2,3
+168457|kelp|Kelp|Ламінарія|8,4,7
+168458|nori|Laver seaweed|Норі|7,3,7
+169280|agar_seaweed|Agar seaweed|Агарові водорості|2,1,2
+# Nuts/seeds: fat, bitterness, aromaIntensity
+@nut
+168591|lotus_seed|Lotus seed|Насіння лотоса|1,1,3
+169407|watermelon_seed|Watermelon seed kernels|Ядра насіння кавуна|6,1,4
+169414|flaxseed|Flaxseed|Насіння льону|6,2,4
+170148|hemp_seed|Hemp hearts|Очищене насіння конопель|7,1,5
+170162|cashew|Cashew|Кеш'ю|7,1,5
+170175|ginkgo_nut|Dried ginkgo nuts|Сушені горіхи гінкго|2,3,4
+170177|hickory_nut|Hickory nut|Горіх гікорі|8,2,6
+170178|macadamia|Macadamia|Макадамія|9,1,5
+170182|pecan|Pecan|Пекан|8,2,6
+170184|pistachio|Pistachio|Фісташка|7,1,6
+170186|black_walnut|Black walnut|Чорний горіх|8,3,8
+170554|chia|Chia seed|Насіння чіа|4,1,2
+170556|pumpkin_seed|Pumpkin seed kernels|Гарбузове насіння|6,1,5
+170562|sunflower_seed|Sunflower seed kernels|Насіння соняшнику|7,1,5
+170569|brazil_nut|Brazil nut|Бразильський горіх|8,2,5
+170570|butternut_nut|Butternut walnut|Сірий горіх|8,2,5
+170581|hazelnut|Hazelnut|Фундук|8,2,7
+170590|pili_nut|Pili nut|Горіх пілі|9,1,4
+170591|pine_nut|Pine nut|Кедровий горіх|8,2,6
+170574|chestnut|European chestnut|Їстівний каштан|1,1,4
+# Nut pastes / coconut liquids: fat, sweetness, aromaIntensity
+@nut_paste
+168588|almond_butter|Unsalted almond butter|Мигдалева паста без солі|8,2,6
+170155|sunflower_butter|Unsalted sunflower butter|Соняшникова паста без солі|7,2,5
+170163|cashew_butter|Unsalted cashew butter|Паста з кеш'ю без солі|8,3,5
+170160|almond_paste|Sweet almond paste|Солодка мигдалева паста|5,8,7
+170172|coconut_milk|Coconut milk|Кокосове молоко|6,2,7
+170580|coconut_cream|Coconut cream|Кокосові вершки|8,2,8
+@juice
+170174|coconut_water|Coconut water|Кокосова вода|3,1,4
+167747|lemon_juice|Lemon juice|Лимонний сік|1,10,7
+168156|lime_juice|Lime juice|Сік лайма|1,10,8
+169098|orange_juice|Orange juice|Апельсиновий сік|6,6,7
+167774|grapefruit_juice|Pink grapefruit juice|Сік рожевого грейпфрута|4,7,6
+169109|passion_fruit_juice|Passion fruit juice|Сік маракуї|5,8,8
+# Dry grains/flours: sweetness, aromaIntensity, textureIntensity
+@grain
+168884|rye|Rye grain|Жито|1,5,7
+168888|triticale_flour|Triticale flour|Борошно тритикале|1,3,2
+168892|wheat_germ|Wheat germ|Зародки пшениці|2,5,4
+168885|rye_flour|Dark rye flour|Житнє борошно|1,5,2
+168893|wholewheat_flour|Whole wheat flour|Цільнозернове пшеничне борошно|1,4,2
+168898|brown_rice_flour|Brown rice flour|Борошно з бурого рису|1,3,2
+168899|corn_pasta|Gluten-free corn pasta|Кукурудзяна паста без глютену|2,3,6
+168906|soba|Soba noodles|Локшина соба|1,5,5
+168908|somen|Somen noodles|Локшина сомен|1,2,4
+168933|semolina|Semolina|Манна крупа|1,2,3
+168943|sorghum_flour|Sorghum flour|Соргове борошно|2,3,2
+169699|couscous|Couscous|Кускус|1,3,4
+169702|millet|Millet|Пшоно|2,4,5
+169703|brown_rice|Brown rice|Бурий рис|1,4,6
+169714|rice_flour|White rice flour|Рисове борошно|1,1,2
+169716|sorghum|Sorghum grain|Сорго|2,4,7
+169717|tapioca|Tapioca pearls|Тапіока|0,1,4
+169718|triticale|Triticale grain|Тритикале|1,4,7
+169726|wild_rice|Wild rice|Дикий рис|1,5,6
+169731|egg_noodle|Egg noodles|Яєчна локшина|1,3,5
+169738|wholewheat_pasta|Whole wheat pasta|Цільнозернова паста|1,4,6
+169739|barley_flour|Barley flour|Ячмінне борошно|1,3,2
+169740|malt_flour|Barley malt flour|Ячмінне солодове борошно|5,6,2
+169741|oat_flour|Oat flour|Вівсяне борошно|2,4,2
+169742|rice_noodle|Rice noodles|Рисова локшина|1,1,4
+169743|khorasan_wheat|Khorasan wheat|Хорасанська пшениця|2,4,6
+169745|spelt|Spelt|Спельта|2,5,6
+169747|teff|Teff|Теф|2,5,5
+170286|buckwheat|Buckwheat groats|Гречана крупа|1,6,6
+170290|corn_flour|Yellow corn flour|Кукурудзяне борошно|3,4,2
+170682|amaranth_grain|Amaranth grain|Крупа амаранту|1,5,4
+170688|bulgur|Bulgur|Булгур|2,5,5
+168872|oat_bran|Oat bran|Вівсяні висівки|1,4,5
+# Dry legumes: umami, sweetness, aromaIntensity
+@legume
+172423|lupin|Lupin beans|Люпин|3,1,4
+172425|moth_bean|Moth beans|Боби мат|3,1,4
+172428|split_pea|Split peas|Сухий колотий горох|3,2,4
+172436|pigeon_pea|Pigeon peas|Голубиний горох|3,1,4
+173727|adzuki|Adzuki beans|Адзукі|3,3,4
+173744|red_kidney_bean|Red kidney beans|Червона квасоля|4,1,4
+173745|navy_bean|Navy beans|Дрібна біла квасоля|3,1,3
+173748|pink_bean|Pink beans|Рожева квасоля|3,1,4
+173751|yellow_bean|Yellow beans|Жовта квасоля|3,1,3
+173758|blackeyed_pea|Black-eyed peas|Квасоля чорне око|3,2,4
+174252|lima_bean|Dry lima beans|Сухі боби ліма|3,2,3
+174256|mung_bean|Mung beans|Маш|3,1,4
+174259|urad_bean|Black gram|Урад|4,1,4
+174270|soybean|Dry soybeans|Сухі соєві боби|4,1,5
+174273|soy_flour|Full-fat soy flour|Соєве борошно|4,1,5
+174284|red_lentil|Red lentils|Червона сочевиця|3,2,3
+175189|borlotti|Borlotti beans|Квасоля борлотті|4,2,4
+175190|great_northern_bean|Great northern beans|Велика північна квасоля|3,1,3
+175199|pinto_bean|Pinto beans|Квасоля пінто|4,1,4
+175205|fava_bean|Dry fava beans|Сухі боби фава|4,1,5
+# Fresh legumes: sweetness, umami, freshness
+@fresh_legume
+168396|fresh_lima|Fresh lima beans|Свіжі боби ліма|3,3,5
+168574|fresh_fava|Fresh fava beans in pod|Свіжі боби фава в стручках|3,3,6
+169220|fresh_cowpea|Fresh cowpeas|Свіжа вігна|3,3,6
+169234|hyacinth_bean|Fresh hyacinth beans|Свіжі гіацинтові боби|2,3,5
+169282|edamame|Edamame|Едамаме|3,4,6
+# Cheese: saltiness, fat, aromaIntensity
+@cheese
+170843|fontina|Fontina|Фонтіна|3,7,6
+170844|monterey_jack|Monterey Jack|Монтерей Джек|3,6,4
+170849|port_salut|Port Salut|Пор-Салю|3,7,5
+170850|provolone|Provolone|Проволоне|4,7,6
+170851|ricotta|Whole-milk ricotta|Рікота з незбираного молока|1,4,3
+170852|tilsit|Tilsit|Тільзітер|4,7,7
+170898|cotija|Cotija|Котіха|7,6,7
+171240|gjetost|Gjetost|Брюност|2,6,7
+171241|gouda|Gouda|Гауда|4,7,6
+171242|gruyere|Gruyère|Грюєр|4,7,7
+171243|limburger|Limburger|Лімбургер|4,6,9
+171245|muenster|Muenster|Мюнстер|3,7,5
+171246|neufchatel|Neufchâtel|Нешатель|2,5,4
+171249|romano|Romano|Романо|7,6,8
+171250|roquefort|Roquefort|Рокфор|7,7,9
+171251|swiss_cheese|Swiss cheese|Швейцарський сир|2,7,6
+172176|brick_cheese|Brick cheese|Сир брик|3,7,5
+172177|brie|Brie|Брі|3,7,7
+172178|camembert|Camembert|Камамбер|3,7,8
+172179|cottage_cheese|Cottage cheese|Зернистий кисломолочний сир|2,2,3
+172197|hard_goat_cheese|Hard goat cheese|Твердий козячий сир|4,7,8
+172223|queso_fresco|Queso fresco|Кесо фреско|4,5,4
+172224|queso_blanco|Queso blanco|Кесо бланко|4,5,3
+173415|cheshire|Cheshire|Чешир|4,6,6
+173416|colby|Colby|Колбі|3,7,4
+173418|cream_cheese|Cream cheese|Крем-сир|2,7,3
+173419|edam|Edam|Едам|4,6,5
+173435|soft_goat_cheese|Soft goat cheese|М'який козячий сир|3,6,7
+173437|asadero|Asadero|Асадеро|3,6,4
+173438|chihuahua_cheese|Chihuahua cheese|Сир чихуахуа|3,7,5
+# Dairy: fat, acidity, sweetness
+@dairy
+170882|sheep_milk|Sheep milk|Овече молоко|5,1,3
+171280|buffalo_milk|Buffalo milk|Буйволяче молоко|6,1,3
+171304|greek_yogurt|Plain whole-milk Greek yogurt|Грецький йогурт без добавок|4,4,2
+172225|buttermilk|Cultured whole buttermilk|Сквашена пахта|3,4,2
+170885|acid_whey|Liquid acid whey|Рідка кисла сироватка|0,4,2
+171275|condensed_milk|Sweetened condensed milk|Згущене молоко з цукром|4,1,9
+# Eggs: fat, umami, textureIntensity
+@egg
+172183|egg_white|Egg white|Яєчний білок|0,2,2
+172184|egg_yolk|Egg yolk|Яєчний жовток|8,6,4
+172190|goose_egg|Goose egg|Гусяче яйце|7,5,4
+172191|quail_egg|Quail egg|Перепелине яйце|6,5,3
+# Fish: fat, umami, aromaIntensity
+@fish
+171948|striped_bass|Striped bass|Смугастий лаврак|2,5,4
+171949|bluefish|Bluefish|Луфар|4,6,6
+171950|burbot|Burbot|Минь|1,5,4
+171951|butterfish|Butterfish|Масляна риба|5,5,4
+171952|carp|Carp|Короп|4,5,5
+171953|cisco|Cisco|Озерний сиг|3,5,5
+171958|cusk|Cusk|Менек|1,5,3
+171959|mahi_mahi|Mahi-mahi|Махі-махі|1,5,4
+171960|freshwater_drum|Freshwater drum|Прісноводний горбиль|3,5,4
+171962|grouper|Grouper|Групер|1,5,4
+171964|haddock|Haddock|Пікша|1,5,4
+174200|halibut|Halibut|Палтус|2,5,4
+173670|ling|Ling|Морська щука|1,5,4
+173675|milkfish|Milkfish|Ханос|4,5,5
+173676|monkfish|Monkfish|Морський чорт|1,6,4
+173678|perch|Perch|Окунь|1,5,4
+173680|pike|Pike|Щука|1,5,4
+173682|pompano|Pompano|Помпано|5,6,5
+173684|rockfish|Pacific rockfish|Тихоокеанський морський окунь|2,5,4
+173695|seatrout|Seatrout|Морська форель|2,5,4
+173696|shad|Shad|Шед|6,6,7
+173698|snapper|Snapper|Люціан|1,5,4
+173701|sturgeon|Sturgeon|Осетер|5,6,5
+173703|swordfish|Swordfish|Риба-меч|4,6,5
+173710|turbot|Turbot|Калкан|3,6,4
+173711|whitefish|Whitefish|Сиг|4,5,4
+173713|whiting|Whiting|Мерланг|1,5,4
+173725|alaska_pollock|Alaska pollock|Минтай|1,5,4
+174186|catfish|Channel catfish|Канальний сом|3,5,5
+174193|eel|Eel|Вугор|8,6,7
+174196|flounder|Flounder and sole|Камбала та морський язик|1,5,3
+175116|herring|Atlantic herring|Атлантичний оселедець|6,7,7
+175119|mackerel|Atlantic mackerel|Атлантична скумбрія|7,7,8
+175123|mullet|Striped mullet|Смугаста кефаль|3,5,5
+175128|walleye|Walleye|Світлоперий судак|1,5,4
+175134|sablefish|Sablefish|Чорна тріска|8,6,6
+175142|sea_bass|Sea bass|Морський лаврак|3,5,4
+175146|smelt|Rainbow smelt|Корюшка|3,5,5
+175154|rainbow_trout|Rainbow trout|Райдужна форель|4,6,5
+175162|wolffish|Atlantic wolffish|Атлантична зубатка|3,5,4
+175163|yellowtail|Yellowtail|Жовтохвіст|5,6,6
+# Shellfish: sweetness, umami, textureIntensity
+@shellfish
+167744|snail|Snail|Равлик|1,5,6
+171968|dungeness_crab|Dungeness crab|Краб данженес|3,6,4
+174204|blue_crab|Blue crab|Блакитний краб|3,6,4
+174206|crayfish|Crayfish|Раки|3,6,5
+174208|lobster|Northern lobster|Омар|4,6,5
+174211|spiny_lobster|Spiny lobster|Лангуст|4,6,5
+174212|abalone|Abalone|Морське вушко|2,6,7
+174214|clam|Clam|Венерки|2,7,6
+174215|cuttlefish|Cuttlefish|Каракатиця|2,6,6
+174216|mussel|Blue mussel|Мідії|2,7,5
+174218|octopus|Octopus|Восьминіг|2,6,7
+174219|oyster|Pacific oyster|Тихоокеанська устриця|2,8,3
+174220|scallop|Scallop|Морський гребінець|4,6,4
+174223|squid|Squid|Кальмар|2,6,6
+# Meat/game: fat, umami, aromaIntensity
+@meat
+172521|rabbit|Rabbit|Кролик|2,5,4
+173815|veal|Veal|Телятина|3,5,4
+173851|bison|Bison|Бізон|2,7,6
+173855|venison|Venison|Оленина|1,7,7
+174344|moose|Moose|Лосятина|1,7,7
+174425|elk|Elk|М'ясо вапіті|2,7,6
+175086|horse|Horse meat|Конина|2,6,6
+172413|goose|Goose|Гуска|5,6,7
+174471|guinea_fowl|Guinea fowl|Цесарка|2,6,6
+174473|pheasant|Pheasant|Фазан|2,6,6
+172419|quail|Quail|Перепілка|3,6,6
+174481|ostrich|Ostrich|Страус|2,6,5
+172832|emu|Emu|Ему|2,6,5
+# Offal: bitterness, umami, aromaIntensity
+@offal
+171060|chicken_liver|Chicken liver|Куряча печінка|2,8,7
+171458|chicken_heart|Chicken hearts|Курячі серця|1,7,6
+171486|turkey_liver|Turkey liver|Індича печінка|2,8,7
+174467|duck_liver|Duck liver|Качина печінка|2,8,8
+172415|goose_liver|Goose liver|Гусяча печінка|2,8,8
+167862|pork_liver|Pork liver|Свиняча печінка|3,8,8
+168267|pork_heart|Pork heart|Свиняче серце|1,7,6
+168625|beef_heart|Beef heart|Яловиче серце|1,7,6
+169451|beef_liver|Beef liver|Яловича печінка|3,8,9
+172531|lamb_liver|Lamb liver|Бараняча печінка|3,8,9
+174354|lamb_kidney|Lamb kidneys|Баранячі нирки|2,7,8
+174366|lamb_tongue|Lamb tongue|Баранячий язик|1,7,6
+# Spices: pungency, bitterness, aromaIntensity
+@spice
+170918|caraway|Caraway seed|Насіння кмину|2,3,8
+170920|celery_seed|Celery seed|Насіння селери|2,5,8
+170924|curry_powder|Curry powder|Порошок карі|5,3,9
+170925|dill_seed|Dill seed|Насіння кропу|1,3,7
+170926|ground_ginger|Ground ginger|Мелений імбир|7,2,8
+170927|mace|Mace|Мускатний цвіт|2,3,9
+170928|marjoram|Dried marjoram|Сушений майоран|1,3,7
+170929|mustard_seed|Ground mustard seed|Мелене насіння гірчиці|8,4,8
+170932|cayenne|Cayenne pepper|Каєнський перець|10,2,7
+170933|white_pepper|White pepper|Білий перець|8,3,8
+170934|saffron|Saffron|Шафран|0,4,9
+170935|sage|Ground sage|Мелена шавлія|1,5,9
+170936|savory|Ground savory|Мелений чабер|3,4,8
+170937|tarragon|Dried tarragon|Сушений естрагон|1,3,8
+171315|allspice|Allspice|Духмяний перець|3,3,9
+171316|anise|Anise seed|Насіння анісу|1,2,9
+171318|chervil|Dried chervil|Сушений кервель|1,2,6
+171319|chili_powder|Chili powder blend|Суміш порошку чилі|7,3,8
+171323|fennel_seed|Fennel seed|Насіння фенхелю|1,2,9
+171324|fenugreek|Fenugreek seed|Насіння пажитника|1,7,8
+171325|garlic_powder|Garlic powder|Часниковий порошок|5,2,9
+171327|onion_powder|Onion powder|Цибулевий порошок|3,2,7
+171330|poppy_seed|Poppy seed|Мак|0,2,5
+# Oils/fats: aromaIntensity, bitterness, sweetness
+@oil
+167702|flaxseed_oil|Flaxseed oil|Лляна олія|5,3,0
+171013|rice_bran_oil|Rice bran oil|Рисова олія|2,1,0
+171014|wheat_germ_oil|Wheat germ oil|Олія зародків пшениці|5,2,0
+171015|palm_oil|Palm oil|Пальмова олія|3,1,0
+171016|sesame_oil|Sesame oil|Кунжутна олія|8,2,0
+171025|sunflower_oil|Sunflower oil|Соняшникова олія|3,1,0
+171026|safflower_oil|Safflower oil|Сафлорова олія|1,1,0
+171028|grapeseed_oil|Grapeseed oil|Олія виноградних кісточок|2,2,0
+171029|corn_oil|Corn oil|Кукурудзяна олія|3,1,0
+171030|walnut_oil|Walnut oil|Олія волоського горіха|7,3,0
+171031|almond_oil|Almond oil|Мигдалева олія|5,1,0
+171401|lard|Lard|Смалець|5,0,0
+171410|peanut_oil|Peanut oil|Арахісова олія|5,1,0
+171411|soybean_oil|Soybean oil|Соєва олія|2,1,0
+171412|coconut_oil|Coconut oil|Кокосова олія|7,0,1
+171421|cocoa_butter|Cocoa butter|Какао-масло|6,1,0
+171427|hazelnut_oil|Hazelnut oil|Олія фундука|8,2,0
+172336|canola_oil|Canola oil|Ріпакова олія|1,1,0
+172337|mustard_oil|Mustard oil|Гірчична олія|8,3,0
+173573|avocado_oil|Avocado oil|Олія авокадо|3,1,0
+171314|ghee|Ghee|Масло гхі|7,0,1
+# Sweeteners: sweetness, bitterness, aromaIntensity
+@sweetener
+168820|molasses|Molasses|Меляса|8,4,8
+169661|maple_syrup|Maple syrup|Кленовий сироп|9,1,7
+169660|malt_syrup|Malt syrup|Солодовий сироп|8,2,7
+169662|sorghum_syrup|Sorghum syrup|Сорговий сироп|9,2,6
+170277|agave_syrup|Agave syrup|Сироп агави|10,0,2
+168837|corn_syrup|Light corn syrup|Світлий кукурудзяний сироп|9,0,1
+167743|cane_syrup|Cane syrup|Тростинний сироп|9,1,5
+@chocolate
+170273|dark_chocolate|Dark chocolate 70–85%|Чорний шоколад 70–85%|4,8,9
+167587|milk_chocolate|Milk chocolate|Молочний шоколад|8,2,7
+167571|white_chocolate|White chocolate|Білий шоколад|9,0,6
+167568|baking_chocolate|Unsweetened baking chocolate|Несолодкий пекарський шоколад|0,10,9
+# Condiments: acidity, saltiness, sweetness
+@condiment
+172240|red_wine_vinegar|Red wine vinegar|Червоний винний оцет|9,0,1
+173469|cider_vinegar|Apple cider vinegar|Яблучний оцет|9,0,2
+168556|ketchup|Ketchup|Кетчуп|5,5,7
+168558|dill_pickle|Dill pickle|Солоний огірок із кропом|6,7,1
+169378|sweet_pickle|Sweet pickle|Солодкий маринований огірок|6,4,8
+171186|sriracha|Sriracha|Шрірача|5,6,4
+171610|worcestershire|Worcestershire sauce|Вустерський соус|6,7,4
+172886|hoisin|Hoisin sauce|Соус хойсин|3,7,7
+174531|fish_sauce|Fish sauce|Рибний соус|1,10,1
+174529|oyster_sauce|Oyster sauce|Устричний соус|1,8,5
+171167|teriyaki|Teriyaki sauce|Соус теріякі|3,8,7
+174523|barbecue_sauce|Barbecue sauce|Соус барбекю|5,6,8
+174524|salsa|Tomato salsa|Томатна сальса|5,5,3
+171824|salsa_verde|Salsa verde|Сальса верде|6,5,2
+174527|hot_sauce|Hot pepper sauce|Гострий перцевий соус|7,6,1
+171833|horseradish_sauce|Horseradish sauce|Соус із хрону|5,4,2
+171579|pesto|Refrigerated pesto|Охолоджений соус песто|2,5,1
+171192|marinara|Marinara sauce|Соус маринара|5,4,3
+167717|yeast_extract|Yeast extract spread|Паста з дріжджового екстракту|1,10,1
+@vegetable
+170465|turnip|Turnip|Ріпа|3,2,5
+170383|brussels_sprout|Brussels sprouts|Брюссельська капуста|2,4,5
+@root
+170417|parsnip|Parsnip|Пастернак|5,6,6
+170400|celeriac|Celeriac|Коренева селера|2,7,6
+@leaf
+170390|bok_choy|Bok choy|Пак-чой|1,0,7
+@condiment
+172238|caper|Capers|Каперси|6,8,0
+173472|horseradish|Prepared horseradish|Столовий хрін|6,3,2
+170459|tomato_paste|Unsalted tomato paste|Томатна паста без солі|6,1,5
+174278|tamari|Tamari sauce|Соус тамарі|1,9,1
+169096|green_olive|Pickled green olives|Мариновані зелені оливки|4,7,0
+@legume
+174272|tempeh|Tempeh|Темпе|6,1,6
+@nut_paste
+172454|hummus|Homemade hummus|Домашній хумус|3,1,5
+172470|peanut_butter|Unsalted peanut butter|Арахісова паста без солі|8,2,7
+@grain
+174267|peanut_flour|Defatted peanut flour|Знежирене арахісове борошно|2,7,2
+168147|wheat_gluten|Vital wheat gluten|Суха пшенична клейковина|0,2,2
+169722|wheat_bran|Wheat bran|Пшеничні висівки|1,4,5
+169698|cornstarch|Cornstarch|Кукурудзяний крохмаль|0,0.5,1
+170684|arrowroot_flour|Arrowroot flour|Борошно маранти|0,1,1
+168446|potato_flour|Potato flour|Картопляне борошно|1,2,2
+# Bread/dough: saltiness, fat, aromaIntensity
+@bread
+172684|rye_bread|Rye bread|Житній хліб|3,1,6
+172816|pita|White pita bread|Біла піта|2,0.5,3
+173241|corn_tortilla|Unsalted corn tortilla|Кукурудзяна тортилья без солі|0.5,1,4
+174928|breadcrumb|Plain dry breadcrumbs|Панірувальні сухарі без приправ|3,1,5
+172688|wholewheat_bread|Whole wheat bread|Цільнозерновий хліб|3,1,5
+172790|puff_pastry|Unbaked puff pastry|Сире листкове тісто|2,7,3
+172791|phyllo|Phyllo dough|Тісто філо|2,1,2
+@meat
+175303|goat|Goat meat|Козлятина|2,6,7
+# Cured meats: saltiness, fat, aromaIntensity
+@cured_meat
+168277|bacon|Uncooked bacon|Сирий бекон|7,9,8
+173864|ham|Sliced ham|Шинка|6,4,6
+172938|salami|Dry pork salami|Суха свиняча салямі|8,7,9
+173859|chorizo|Raw pork chorizo|Сирі ковбаски чорізо|6,7,8
+@shellfish
+174188|caviar|Salted granular fish caviar|Солона зерниста ікра|1,8,3
+175132|fish_roe|Raw fish roe|Сира рибна ікра|1,6,3
+@fish
+174183|canned_anchovy|Anchovies in oil, drained|Анчоуси в олії без заливки|6,9,9
+175139|canned_sardine|Sardines in oil, drained|Сардини в олії без заливки|6,8,8
+173709|canned_tuna|Tuna in water, drained|Тунець у воді без заливки|1,7,6
+@sweetener
+168833|brown_sugar|Brown sugar|Коричневий цукор|10,1,5
+169656|powdered_sugar|Powdered sugar|Цукрова пудра|10,0,0.5
+170645|apricot_jam|Apricot jam|Абрикосовий джем|9,1,6
+# Baking agents: umami, aromaIntensity, saltiness
+@baking
+169599|gelatin|Unsweetened gelatin powder|Желатин без цукру|0.5,0.5,0
+175043|baker_yeast|Active dry baker’s yeast|Сухі активні пекарські дріжджі|5,7,0.2
+# Brewed drinks/water: bitterness, acidity, aromaIntensity
+@drink
+168746|beer|Beer|Пиво|5,2,6
+171917|green_tea|Brewed green tea|Заварений зелений чай|4,0.5,5
+173227|black_tea|Brewed black tea|Заварений чорний чай|6,1,6
+171946|hibiscus_tea|Brewed hibiscus tea|Заварений каркаде|1,7,6
+173647|water|Drinking water|Питна вода|0,0,0
+@juice
+170545|tomato_juice|Unsalted tomato juice|Томатний сік без солі|3,4,5
+170491|carrot_juice|Carrot juice|Морквяний сік|6,1,5
+173042|grape_juice|Unsweetened grape juice|Виноградний сік без цукру|8,4,6
+173933|apple_juice|Unsweetened apple juice|Яблучний сік без цукру|7,4,5
+# Citrus peels are useful standalone ingredients, not a new shape selector.
+@spice
+167749|lemon_zest|Lemon peel|Лимонна цедра|0,5,9
+169103|orange_zest|Orange peel|Апельсинова цедра|0,4,9
+@dairy
+171278|goat_milk|Goat milk|Козяче молоко|4,1,3
