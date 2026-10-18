@@ -1,5 +1,25 @@
 # Actual validation — widget-monorepo-r2
 
+## Hosted GPT-6 Luna smoke passed — 2026-10-18
+
+After the operator replaced OPENAI_API_KEY in Railway, deployment
+`4a1c7874-283d-4470-b6d4-408572c64fd1` reached SUCCESS on implementation `c452aef`.
+The authenticated production pilot returned real Ukrainian results for all three features:
+composition explanation (201, three actions), full recipe review (201, two comments) and
+active-step review (201, two comments attached only to the active step). The synthetic recipe
+deliberately served fish before cooking; both reviews identified that sequence inconsistency.
+Responses were inspected as text. This is a functional smoke, not expert culinary validation.
+
+Repeating the identical full-review request ID returned 201 without consuming additional
+quota. The owner-scoped database check found exactly three successful generation rows:
+explain 2 units / 785 input / 437 output / 297 micro USD; full 4 / 509 / 292 / 197;
+step 1 / 532 / 272 / 190. Total: 7 units, 1,826 input and 1,001 output tokens,
+684 micro USD recorded cost (rounded up per request), zero reasoning tokens. Final pilot
+quota was 293/month and 23/day. The earlier access failures below are historical; no secret
+values or actual private recipes were exported, committed or used in these synthetic checks.
+Owner-only pilot and application budgets remain in place. Broader evals, expert review,
+unknown-charge reconciliation and real paid-plan billing remain separate outstanding work.
+
 ## Provider project diagnostics — 2026-10-18
 
 The operator supplied a dashboard screenshot with GPT-6 Luna allowed, while hosted requests
