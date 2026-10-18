@@ -1,5 +1,30 @@
 # Actual validation — widget-monorepo-r2
 
+## Temporary Free/guest AI access — 2026-10-18
+
+Free accounts receive 100 test units; guests receive 50 with a server-issued AI-only browser
+credential. AI_TEST_ACCESS_ENABLED controls the rollout independently from paid subscriptions
+and owner pilot grants. Test usage is separate from calendar refills and retained when the flag
+is toggled. The shared monetary budgets, request limits, cache and uncertain-cost accounting apply.
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed: structure/layer checks, editor/kernel checks, all workspace typechecks, 114 Vitest tests |
+| Compiled API integration suite | 26 passed on disposable local PostgreSQL/Auth/provider stubs; tests 100/50, refund, concurrent exhaustion, calendar boundaries, toggle persistence, paid/pilot priority, denied private routes, invalid bearer, hashed credentials, issuance bounds and repeatable migration |
+| Focused assistant browser suite | 7 passed; includes guest use without signup, consent, persisted identity/balance after reload and the Free 100-unit display |
+| `npm run build` | Passed shared packages, Nest and Next production output, 27 generated pages |
+| Hosted Supabase | Migration applied; guest/ledger/cache tables have RLS and deny SELECT to anon/authenticated; XOR account/guest constraint verified |
+| Hosted inference | One real Luna guest step review returned 201 and one comment; 50 became 49, identical replay was cached with no further unit, fresh capabilities retained 49, account capabilities returned 401 |
+
+Implementation 0677b80 and documentation fa1871b reached Vercel READY. Railway test-mode rollout
+48041c9e-c791-45bc-9174-fe7266e3b6af reached SUCCESS and public capabilities report guest_test/50.
+The security advisor has ten intentional closed-table
+[RLS/no-policy informational findings](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)
+(one new guest table), and the existing
+[leaked-password protection warning](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+No new security error/warning was introduced. Browser identity is not proof of a unique person;
+see KNOWN_LIMITATIONS. These checks verify implementation, not culinary prediction accuracy.
+
 ## Finished-dish forecast and recipe generation — 2026-10-18
 
 Full review now optionally returns a qualitative dish verdict, expected taste/texture, strengths,
