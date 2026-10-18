@@ -163,7 +163,7 @@ it('assesses dish outcomes and generates bounded recipes with shared accounting 
   generations++;
   assert.match(input.input[0].content[0].text,/Every human-readable output must be in Ukrainian/);
   const generated=input.text.format.name==='recipe_draft';
-  const value=generated?{recipe:{name:'Lime salmon',description:'A separate draft.',servings:mode==='servings'?3:2,steps:[{id:providerStepId,text:'Sear salmon, then add lime.',ingredientIds:mode==='extra'?['salmon','lime','unknown-oil']:mode==='missing'?['salmon']:['salmon','lime']}]},assumptions:[]}:{comments:[],...(input.text.format.schema.properties.outcome?{outcome}:{})};
+  const value=generated?{recipe:{name:mode==='language'?'Куриный рецепт':'Lime salmon',description:'A separate draft.',servings:mode==='servings'?3:2,steps:[{id:providerStepId,text:'Sear salmon, then add lime.',ingredientIds:mode==='extra'?['salmon','lime','unknown-oil']:mode==='missing'?['salmon']:['salmon','lime']}]},assumptions:[]}:{comments:[],...(input.text.format.schema.properties.outcome?{outcome}:{})};
   if(generated){assert.equal(input.max_output_tokens,5000);assert.match(input.input[0].content[0].text,/do not add unselected oil/);}
   return Response.json({status:'completed',usage:{input_tokens:1000,output_tokens:300,output_tokens_details:{reasoning_tokens:0}},output:[{content:[{type:'output_text',text:JSON.stringify(value)}]}]});
  };
@@ -185,13 +185,13 @@ it('assesses dish outcomes and generates bounded recipes with shared accounting 
   const cached=await api('/ai/generate-recipe',{method:'POST',token:owner.token,body:{...request,requestId:randomUUID()}});assert.equal(cached.status,201);assert.deepEqual(cached.body.recipe,generated.body.recipe);assert.equal(generations,2);
   const [charge]=await sql`select feature,units,reserved_microusd,charged_microusd from public.ai_requests where user_id=${owner.id} and request_id=${request.requestId}`;
   assert.equal(charge.feature,'generate');assert.equal(charge.units,4);assert.equal(charge.reserved_microusd,3300);assert.equal(charge.charged_microusd,250);
-  for(mode of ['extra','missing','servings']){
+  for(mode of ['extra','missing','servings','language']){
    await sql`update public.ai_requests set created_at=now()-interval '2 minutes' where user_id=${owner.id}`;
    const invalid=await api('/ai/generate-recipe',{method:'POST',token:owner.token,body:{...request,requestId:randomUUID(),brief:mode}});
    assert.equal(invalid.status,502);assert.equal(invalid.body.code,'AI_RESPONSE_INVALID');
   }
   const [failed]=await sql`select count(*)::int n,sum(units)::int units from public.ai_requests where user_id=${owner.id} and feature='generate' and status='failed'`;
-  assert.equal(failed.n,3);assert.equal(failed.units,0);
+  assert.equal(failed.n,4);assert.equal(failed.units,0);
   await sql.unsafe(migration);const [kept]=await sql`select id from public.ai_requests where user_id=${owner.id} and request_id=${request.requestId}`;assert.ok(kept.id);
  }finally{globalThis.fetch=originalFetch;config.set('AI_ENABLED',false);config.set('AI_PILOT_USER_IDS','');}
 });

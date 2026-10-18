@@ -27,6 +27,18 @@ was changed. The small production migration expands only the ledger feature cons
 `generate`, preserving existing rows, grants and RLS. Hosted inference of the new response
 formats remains a separate rollout check; these local stubs do not establish culinary quality.
 
+Implementation `3f91a75` reached Vercel READY and Railway SUCCESS
+(`58fff460-dfa0-4050-b89c-48b077a01903`); hosted checks returned a full outcome with three cooking
+actions, a four-step generated recipe, and an identical cached generation without extra units.
+The generator preserved all selected ingredient IDs and two servings. Inspection found that
+the full outcome followed the Russian input language despite locale uk, while generation was
+Ukrainian. Strengthened native-language developer instructions and added a narrow rejection
+rule for Russian-only letters in Ukrainian output. It is not a general language detector.
+This rejects rather than silently translates/retries a bad response; known provider cost stays
+recorded, while user units are returned. Prompt version advanced to culinary-review-3 to avoid
+old cached responses. API typecheck, 28 unit tests, production API build and all 24 integration
+cases passed, including the invalid-language refund path. Hosted language retest is pending.
+
 ## Hosted GPT-6 Luna smoke passed — 2026-10-18
 
 After the operator replaced OPENAI_API_KEY in Railway, deployment
