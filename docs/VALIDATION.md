@@ -1,5 +1,31 @@
 # Actual validation — widget-monorepo-r2
 
+## Auth error diagnosis and localization — 2026-10-18
+
+Hosted Auth logs distinguish `invalid_credentials` on password sign-in from
+`over_email_send_rate_limit` (429) on recovery. Signup 200 responses do not establish another
+email delivery. No account password, confirmation flag or mail quota was changed for this fix.
+An attempted private account-state read was rejected by automatic approval review and was not
+retried; the diagnosis uses restricted service-log fields rather than private account records.
+
+The authentication feature now maps known provider codes to EN/UK messages without displaying
+raw provider text. Unknown errors remain generic. Email limits, unconfirmed email, password
+validation, expired sessions, connectivity and server failures are separate messages. Inputs
+survive failures, and a failed reset request never displays a success notice.
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed: 125 frontend files/boundaries, 16 pure editor/locale checks, 27 kernel checks, all workspace typechecks and 99 Vitest tests |
+| `npm run test:e2e -- tests/e2e/auth-errors.spec.ts` | Final run: all three new cases passed, including Ukrainian 375 px layout and explicit retry |
+| `npm run build` | Passed: shared packages, Nest, Next production build with 27 generated static pages |
+
+Initial browser assertions matched both the form alert and Next's route announcer; selectors
+were scoped to the authentication region and the complete three-case file rerun successfully.
+Browser errors were intercepted locally: no hosted signup, password change or email was sent.
+The disposable local database was stopped afterward. Full browser and API integration suites
+were not rerun. UI changes are local source changes, not a Vercel deployment. Custom SMTP and
+an end-to-end hosted confirmation/recovery test remain outstanding; see [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ## Composition-specific recommendations — 2026-10-18
 
 Model 0.3.1 changes recommendation selection/portions/explanations; the primary assessment

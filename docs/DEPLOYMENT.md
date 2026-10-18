@@ -35,6 +35,19 @@ After creating the Supabase project, add `/en/auth/callback`, `/uk/auth/callback
 paths with `?mode=recovery` to the Auth redirect URLs. Apply `supabase/schema.sql`, then
 `supabase/seed.sql`, on an empty project. Readiness is `database: connected`, not merely HTTP 200.
 
+For the current web domain, set Auth Site URL to `https://flavor-pilot-web.vercel.app` and allow
+the exact `/en/auth/callback` and `/uk/auth/callback` URLs, with and without `?mode=recovery`.
+This hosted configuration was corrected and HTTP redirect destinations checked on 2026-10-18.
+It does not establish successful email delivery or a complete confirmation/recovery flow.
+
+Configure a custom SMTP sender before general signup. Supabase's built-in mail service currently
+allows only two messages per hour across the project, and recipients must be organization team
+members. Confirmation and recovery share the quota. A `200` on repeated signup does not prove
+that another email was sent or change an existing password; responses can conceal account
+existence. The UI translates known Auth error codes, distinguishes invalid credentials from
+email limits, and leaves unknown/provider details generic. Do not disable confirmation or
+automatically change account passwords to work around a mail quota. See [Supabase SMTP docs](https://supabase.com/docs/guides/auth/auth-smtp).
+
 ## Release gate
 
 Require native green build/test, tested schema migration, real 2-user permission tests,

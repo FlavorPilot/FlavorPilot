@@ -1,7 +1,8 @@
 'use client';
 import { useState, type FormEvent } from 'react';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
-import { getDictionary, type Locale } from '@/shared/i18n';
+import { getDictionary, type Locale, type MessageKey } from '@/shared/i18n';
+import { authErrorMessage } from './auth-error';
 export type AuthFormMode = 'sign-in' | 'sign-up' | 'reset-password';
 export function useAuthForm({ client, session, locale, mode }: {
     client: SupabaseClient | null;
@@ -13,14 +14,14 @@ export function useAuthForm({ client, session, locale, mode }: {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [busy, setBusy] = useState(false);
-    const [error, setError] = useState(false);
+    const [error, setError] = useState<MessageKey | null>(null);
     const [notice, setNotice] = useState('');
     async function submit(event: FormEvent) {
         event.preventDefault();
         if (!client || busy)
             return;
         setBusy(true);
-        setError(false);
+        setError(null);
         setNotice('');
         try {
             if (mode === 'sign-up') {
@@ -50,8 +51,8 @@ export function useAuthForm({ client, session, locale, mode }: {
                 setPassword('');
             }
         }
-        catch {
-            setError(true);
+        catch (problem) {
+            setError(authErrorMessage(problem));
         }
         finally {
             setBusy(false);

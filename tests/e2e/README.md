@@ -1,5 +1,9 @@
 # Browser E2E
 
+`auth-errors.spec.ts` intercepts Auth responses to verify distinct invalid-credential and email
+rate-limit copy, EN/UK localization, retained inputs, safe error text, explicit retry and mobile
+containment. It never sends real emails or attempts real hosted account logins.
+
 `recommendations.spec.ts` checks recalculation after changing grams, measured model deltas,
 the exact preparation/amount in preview and Apply, preservation of the original during preview,
 and Ukrainian keyboard-accessible details/preview at 375 px.

@@ -16,7 +16,7 @@ export function AuthPanel({ locale, mode }: {
     {!client ? <div className="stack"><Notice>{t.authUnavailable}</Notice><LinkButton href={`/${locale}/builder`} variant="primary">{t.continueLocal}<Icon name="arrow" size={16}/></LinkButton></div> : <form className="stack" onSubmit={submit}>
       {!(mode === 'reset-password' && session) && <label className="field-label">{t.email}<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} required disabled={busy}/></label>}
       {(mode !== 'reset-password' || session) && <label className="field-label">{mode === 'reset-password' ? t.newPassword : t.password}<input type="password" autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'} value={password} onChange={event => setPassword(event.target.value)} required minLength={8} disabled={busy}/><small className="muted">{t.passwordHint}</small></label>}
-      {error && <Notice role="alert" tone="error">{t.authError}</Notice>}{notice && <Notice tone="success">{notice}</Notice>}
+      {error && <Notice role="alert" tone="error">{t[error]}</Notice>}{notice && <Notice tone="success">{notice}</Notice>}
       <Button variant="primary" type="submit" disabled={busy}>{busy ? t.busy : mode === 'reset-password' && session ? t.updatePassword : title}<Icon name="arrow" size={16}/></Button>
       {session && <Link href={`/${locale}/builder`}>{t.openStudio}</Link>}
     </form>}
