@@ -1,5 +1,20 @@
 # Actual validation — widget-monorepo-r2
 
+## Hosted culinary assistant activation — 2026-10-18
+
+Published implementation commit `ee15b43`: Vercel production reached READY and Railway API
+reached SUCCESS. After the operator saved OPENAI_API_KEY directly in Railway, enabled the
+requested owner-only pilot with the pinned model and $5/day, $50/month application budgets.
+Deployment `61b8e8da-337e-43e3-ba82-d5fec343d4c8` reached SUCCESS; authenticated capabilities
+returned enabled=true, access=pilot, 300 monthly units. Two synthetic hosted requests
+(explanation and full recipe review) returned 502 AI_PROVIDER_UNAVAILABLE. Both ledger rows
+were failed with zero units and zero charged micro USD; no usable GPT result was obtained.
+
+Added safe provider diagnostics: only HTTP status, stage and fixed allowlisted error/parameter
+labels enter server logs. Raw error messages, credentials and recipe content are excluded.
+API typecheck and all 24 API unit tests passed, including two diagnostic redaction tests.
+Provider error diagnosis and real successful inference are still pending at this checkpoint.
+
 ## Cloud preparation and budgeted culinary assistant — 2026-10-18
 
 Implemented cloud servings/ordered steps, optimistic version checks, preserved versions/remixes,
