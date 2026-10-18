@@ -9,4 +9,10 @@ describe('Ukrainian AI output guard',()=>{
   expect(()=>assertOutputLocale({summary:'Курка суха.',steps:[{id:'abc',text:'Додайте лайм після обсмажування.'}],name:'Worcestershire',servings:2},'uk')).not.toThrow();
   expect(()=>assertOutputLocale('Quoted foreign text: Выраженный вкус','en')).not.toThrow();
  });
+ it('allows exact quoted source wording but rejects unquoted or unrelated Russian prose',()=>{
+  const source={steps:[{text:'Нарежьте крупные куски курицы.'}]};
+  expect(()=>assertOutputLocale({comments:[{message:'Фраза «Нарежьте крупные куски» потребує уточнення.'}]},'uk',source)).not.toThrow();
+  expect(()=>assertOutputLocale({outcome:{summary:'Выраженный вкус'}},'uk',source)).toThrow();
+  expect(()=>assertOutputLocale('Фраза «Острые специи» потребує уточнення.','uk',source)).toThrow();
+ });
 });

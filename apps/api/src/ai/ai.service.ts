@@ -7,7 +7,7 @@ import { AiUsageService } from './ai-usage.service';
 import { AI_LIMITS, AI_MODEL, AI_PROMPT_VERSION, type AiFeature } from './ai.policy';
 import { providerDiagnostic } from './provider-diagnostic';
 import { reviewFormat,fullReviewFormat,generationFormat } from './ai-formats';
-import { assertOutputLocale } from './output-locale';
+import { assertOutputLocale,AiOutputLocaleError } from './output-locale';
 const explanationSchema={type:'object',properties:{summary:{type:'string'},main_problem:{type:'string'},actions:{type:'array',items:{type:'object',properties:{title:{type:'string'},explanation:{type:'string'}},required:['title','explanation'],additionalProperties:false}}},required:['summary','main_problem','actions'],additionalProperties:false};
 export class AiProviderFailure extends Error {constructor(readonly code:string,readonly uncertain:boolean){super(code);}}
 type Usage={input:number;output:number;reasoning:number};
@@ -21,7 +21,7 @@ export class AiService {
   try{return await fetch(`https://api.openai.com/v1/${path}`,{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(timeout)});}
   catch{this.logger.warn(`OpenAI transport failed: stage=${path==='responses'?'responses':'input_tokens'}`);throw new AiProviderFailure('AI_PROVIDER_UNAVAILABLE',path==='responses');}
  }
- async run<T>(userId:string,requestId:string,feature:AiFeature,locale:Locale,context:unknown,schema:unknown,parse:(v:unknown)=>T,task='',normalize:(value:T)=>T=value=>value){
+ async run<T>(userId:string,requestId:string,feature:AiFeature,locale:Locale,context:unknown,schema:unknown,parse:(v:unknown)=>T,task='',prepare:(value:unknown)=>unknown=value=>value){
   const hash=createHash('sha256').update(JSON.stringify({model:AI_MODEL,prompt:AI_PROMPT_VERSION,engine:MODEL_VERSION,catalogue:CATALOGUE_VERSION,feature,locale,context})).digest('hex');
   const reserved=await this.usage.reserve(userId,requestId,hash,feature);
   if(reserved.cached!==undefined)return {value:parse(reserved.cached),hash};
@@ -48,7 +48,7 @@ export class AiService {
    const text=data.output?.flatMap(o=>o.content??[]).find(c=>c.type==='output_text')?.text;
    if(!text)throw new AiProviderFailure('AI_PROVIDER_UNAVAILABLE',false);
    let value:T;
-   try{value=normalize(parse(JSON.parse(text)));assertOutputLocale(value,locale);}catch{throw new AiProviderFailure('AI_RESPONSE_INVALID',false);}
+   try{value=parse(prepare(JSON.parse(text)));assertOutputLocale(value,locale,context);}catch(error){this.logger.warn(error instanceof AiOutputLocaleError?`AI output rejected: reason=locale section=${error.section}`:'AI output rejected: reason=schema');throw new AiProviderFailure('AI_RESPONSE_INVALID',false);}
    await this.usage.finish(reserved.id,{status:'succeeded',usage,response:value,duration:Date.now()-start});
    return {value,hash};
   }catch(error){
@@ -76,8 +76,11 @@ export class AiService {
    if(input.scope==='step'&&parsed.comments.length>2)throw new Error('Too many step comments');
    if(includeOutcome&&!parsed.outcome)throw new Error('Missing dish outcome');
    if(!includeOutcome&&parsed.outcome)throw new Error('Unexpected dish outcome');
-   return {...parsed,comments:parsed.comments.map(c=>({...c,id:randomUUID()}))};
-  },includeOutcome?'Review the finished dish as well as the steps. Give a clear qualitative verdict on whether the dish is likely to work, predicted taste and texture, strengths and concrete risks. Do not merely repeat scores or edit wording. Give 1–4 practical cooking recommendations with an action and its sensory reason: sequence, heat, moisture, browning or when to add acid, as relevant. Refer to the actual ingredients and amounts. If steps are absent, assess the composition and planned preparation, state assumptions, and do not invent existing steps.': 'Review the supplied steps.');
+   return parsed;
+  },includeOutcome?'Review the finished dish as well as the steps. Give a clear qualitative verdict on whether the dish is likely to work, predicted taste and texture, strengths and concrete risks. Do not merely repeat scores or edit wording. Give 1–4 practical cooking recommendations with an action and its sensory reason: sequence, heat, moisture, browning or when to add acid, as relevant. Refer to the actual ingredients and amounts. If steps are absent, assess the composition and planned preparation, state assumptions, and do not invent existing steps.': 'Review the supplied steps.',value=>{
+   if(!value||typeof value!=='object'||!('comments' in value)||!Array.isArray(value.comments))return value;
+   return {...value,comments:value.comments.map(comment=>comment&&typeof comment==='object'?{...comment,id:randomUUID()}:comment)};
+  });
   return {...result.value,contentHash:result.hash,requestId:input.requestId,quota:await this.usage.capabilities(userId)};
  }
  async generate(userId:string,input:AiGenerateRequest){
@@ -88,7 +91,10 @@ export class AiService {
    if([...used].some(id=>!allowed.has(id))||[...allowed].some(id=>!used.has(id)))throw new Error('Generated ingredient references do not match composition');
    if(parsed.recipe.servings!==r.servings)throw new Error('Generated servings changed');
    return parsed;
-  },'Generate a complete, practical recipe draft from exactly the selected food ingredients, grams and intended preparation methods. Use every selected ingredient; do not add unselected oil, salt, water, sauces or garnishes, or change quantities. State missing necessities as assumptions instead. Follow the brief only within these constraints. Preserve supplied servings; if absent, leave servings null and do not invent a yield. Return 1–16 ordered steps with explicit actions, useful cooking cues and timings only when justified; avoid vague filler. Each step lists the selected ingredient IDs it uses; list no other IDs. Generate arbitrary UUIDs for steps. The existing user recipe is not being edited: return a separate proposed title, description and method for preview.',value=>({...value,recipe:{...value.recipe,steps:value.recipe.steps.map(s=>({...s,id:randomUUID()}))}}));
+  },'Generate a complete, practical recipe draft from exactly the selected food ingredients, grams and intended preparation methods. Use every selected ingredient; do not add unselected oil, salt, water, sauces or garnishes, or change quantities. State missing necessities as assumptions instead. Follow the brief only within these constraints. Preserve supplied servings; if absent, leave servings null and do not invent a yield. Return 1–16 ordered steps with explicit actions, useful cooking cues and timings only when justified; avoid vague filler. Each step lists the selected ingredient IDs it uses; list no other IDs. Generate arbitrary UUIDs for steps. The existing user recipe is not being edited: return a separate proposed title, description and method for preview.',value=>{
+   if(!value||typeof value!=='object'||!('recipe' in value)||!value.recipe||typeof value.recipe!=='object'||!('steps' in value.recipe)||!Array.isArray(value.recipe.steps))return value;
+   return {...value,recipe:{...value.recipe,steps:value.recipe.steps.map(step=>step&&typeof step==='object'?{...step,id:randomUUID()}:step)}};
+  });
   return {...result.value,contentHash:result.hash,requestId:input.requestId,quota:await this.usage.capabilities(userId)};
  }
 }

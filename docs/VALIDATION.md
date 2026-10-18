@@ -38,6 +38,13 @@ This rejects rather than silently translates/retries a bad response; known provi
 recorded, while user units are returned. Prompt version advanced to culinary-review-3 to avoid
 old cached responses. API typecheck, 28 unit tests, production API build and all 24 integration
 cases passed, including the invalid-language refund path. Hosted language retest is pending.
+That retest was rejected as AI_RESPONSE_INVALID; its provider cost remained recorded and its
+user units were zero. Tightened output processing to allow exact quoted source wording inside
+Ukrainian prose and assign service-owned comment/step UUIDs before contract parsing. Cached
+results keep those UUIDs stable. Logs report only a fixed rejection reason/section, never the
+response text. Prompt version is now culinary-review-4. The final API typecheck, 29 unit tests,
+production API build and all 24 integration cases passed, including arbitrary provider IDs,
+stable cached IDs, quoted-source handling and rejected-language accounting.
 
 ## Hosted GPT-6 Luna smoke passed — 2026-10-18
 

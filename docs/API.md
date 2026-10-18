@@ -112,6 +112,11 @@ mutated. Textual claims still need human review; ID validation cannot prove culi
 The browser previews the proposal, confirms replacement and applies name/description/servings/
 steps as one undoable editor operation, preserving selected composition and cloud identity.
 The same cached generation retains stable server-issued step IDs and uses no additional units.
+Comment IDs and generated step IDs are assigned by Nest before parsing; provider-assigned
+labels cannot invalidate an otherwise valid response, while supplied recipe step references
+still require exact membership checks. Cached IDs remain stable. Locale instructions are
+explicit; a narrow Ukrainian guard rejects Russian-only letters outside exact quoted source
+phrases. It is not a general language classifier and never triggers a paid automatic retry.
 
 Limits: explain 3000 input/2000 output/2 units; step 5000/1600/1; full 12000/4000/4;
 generate 8000/5000/4 (at most $0.0033 reserved). All share the same quotas and money budgets.

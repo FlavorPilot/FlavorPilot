@@ -107,7 +107,7 @@ it('enforces AI entitlements, idempotency, input/output controls and uncertain-c
   assert.equal(input.service_tier,'default');assert.deepEqual(input.prompt_cache_options,{mode:'explicit'});
   assert.ok(input.input.every(message=>message.content.every(content=>!content.prompt_cache_breakpoint)));
   if(mode==='timeout')throw new Error('Simulated lost response');
-  const comments=[{id:randomUUID(),kind:'clarity',stepId:mode==='invalid'?randomUUID():stepId,message:'Уточніть тривалість.',suggestedText:'Обсмажте лосось, уточнивши час.'}];
+  const comments=[{id:'provider-comment-id',kind:'clarity',stepId:mode==='invalid'?randomUUID():stepId,message:'Уточніть тривалість.',suggestedText:'Обсмажте лосось, уточнивши час.'}];
   return Response.json({status:mode==='incomplete'?'incomplete':'completed',usage:{input_tokens:1000,output_tokens:200,output_tokens_details:{reasoning_tokens:0}},output:[{content:[{type:'output_text',text:JSON.stringify({comments})}]}]});
  };
  try{
@@ -119,7 +119,7 @@ it('enforces AI entitlements, idempotency, input/output controls and uncertain-c
   assert.equal(first.status,201,JSON.stringify(first.body));assert.equal(first.body.comments[0].stepId,stepId);assert.equal(first.body.quota.remaining,296);
   const [priced]=await sql`select model,reserved_microusd,charged_microusd from public.ai_requests where user_id=${a.id} and request_id=${request.requestId}`;
   assert.equal(priced.model,'gpt-6-luna');assert.equal(priced.reserved_microusd,3200);assert.equal(priced.charged_microusd,200);
-  const repeated=await api('/ai/review-recipe',{method:'POST',token:a.token,body:request});assert.equal(repeated.status,201);assert.equal(generations,1);
+  const repeated=await api('/ai/review-recipe',{method:'POST',token:a.token,body:request});assert.equal(repeated.status,201);assert.equal(generations,1);assert.deepEqual(repeated.body.comments,first.body.comments);
   const cached=await api('/ai/review-recipe',{method:'POST',token:a.token,body:body()});assert.equal(cached.status,201);assert.equal(generations,1);assert.equal(cached.body.quota.remaining,296);
   const conflict=await api('/ai/review-recipe',{method:'POST',token:a.token,body:{...request,recipe:{...recipe,name:'Other'}}});assert.equal(conflict.status,409);
   for(const testMode of ['large','invalid','incomplete','timeout']){
@@ -155,7 +155,7 @@ it('assesses dish outcomes and generates bounded recipes with shared accounting 
  config.set('AI_ENABLED',true);config.set('OPENAI_API_KEY','fake-local-key');config.set('AI_PILOT_USER_IDS',owner.id);
  const recipe={name:'Outcome',goal:'balanced',items,description:'',servings:2,steps:[]};
  const outcome={verdict:'mixed',summary:'Rich fish with a sharp finish.',taste:'Rich and acidic.',texture:'Tender with a browned surface.',strengths:['Contrast'],risks:['Dry fish'],cookingAdvice:[{title:'Add lime last',instruction:'Add lime after searing.',reason:'Keep the fresh aroma.'}],assumptions:['Pan searing is intended.']};
- let generations=0,mode='valid';const providerStepId=randomUUID();
+ let generations=0,mode='valid';const providerStepId='provider-step-id';
  globalThis.fetch=async(url,options)=>{
   if(!String(url).startsWith('https://api.openai.com/v1/'))return originalFetch(url,options);
   const input=JSON.parse(options.body);
