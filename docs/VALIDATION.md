@@ -46,6 +46,22 @@ response text. Prompt version is now culinary-review-4. The final API typecheck,
 production API build and all 24 integration cases passed, including arbitrary provider IDs,
 stable cached IDs, quoted-source handling and rejected-language accounting.
 
+Final implementation `8273b60` reached Railway SUCCESS
+(`27bed0e4-cc39-4f27-b368-b5694415b1a4`) and Vercel READY. The same Russian-input/uk-locale
+synthetic dish then returned 201 with Ukrainian comments, verdict, taste/texture, strengths,
+risks and three cooking actions; the actual output was inspected. Its ledger row recorded
+4 units, 1002 input / 1114 output tokens and 658 micro USD. Earlier successful generation was
+4 steps / 4 units / 313 micro USD, with the cached repeat retaining identical text and IDs.
+Final `npm run validate` passed all workspace checks and 113 Vitest tests. The API's final
+integration run remains 24 passed; frontend/browser source is unchanged from the five-case
+passing assistant rerun and the successful full production build.
+
+The production constraint verification includes generate; both AI tables retain RLS, and anon/
+authenticated reads remain denied. Security advisors were unchanged before/after this migration:
+nine intentional [closed-table notices](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)
+and the existing [password-protection setting](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+No auth configuration, model coefficients, paid billing flow or broader pilot access changed.
+
 ## Hosted GPT-6 Luna smoke passed — 2026-10-18
 
 After the operator replaced OPENAI_API_KEY in Railway, deployment
