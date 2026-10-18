@@ -15,7 +15,14 @@ API typecheck, all 25 API unit tests and API production build passed. The first 
 attempt could not connect after WSL stopped its background database. With a live isolated
 WSL database, `node --test apps/api/test/dishes.integration.mjs` passed all 23 cases, including
 Luna request parameters and exact ledger reservation/settlement amounts. Eval dry-run reports
-12 units / $0.0096 maximum for three cases. Hosted Luna inference is pending at this checkpoint.
+12 units / $0.0096 maximum for three cases. Published migration commit `225032f`: Vercel READY,
+Railway deployment `69217af2-f42c-4cf0-b9cf-f588c3426f24` SUCCESS with the owner-only pilot
+enabled. Hosted capabilities report pilot/300 monthly units. Both synthetic Luna attempts
+(explanation and full review) were rejected by OpenAI generation with HTTP 403 model_not_found;
+token preflight passed. Ledger rows correctly retain model `gpt-6-luna`, reservations 1300/3200
+micro USD, failed status, zero consumed units and zero recorded charges. The operator must
+verify model access and API billing in the key's project. Successful Luna inference and hosted
+cache/step review remain unverified. No repeated paid requests are scheduled.
 
 ## Hosted culinary assistant activation — 2026-10-18
 
