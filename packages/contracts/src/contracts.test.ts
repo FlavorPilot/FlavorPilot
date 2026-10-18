@@ -10,6 +10,11 @@ describe('external contract boundaries', () => {
     it('allows an empty analysis but not an empty saved dish', () => { expect(analyzeDishRequestSchema.safeParse({ items: [] }).success).toBe(true); expect(createDishRequestSchema.safeParse({ name: 'A', items: [] }).success).toBe(false); });
     it('limits dishes to 24 rows', () => { expect(analyzeDishRequestSchema.safeParse({ items: Array(25).fill(item) }).success).toBe(false); });
     it('does not allow an empty patch', () => { expect(updateDishRequestSchema.safeParse({}).success).toBe(false); });
+    it('preserves omitted preparation fields in patches and rejects revision-only updates',()=>{
+        expect(updateDishRequestSchema.parse({name:'Renamed'})).toEqual({name:'Renamed'});
+        expect(updateDishRequestSchema.safeParse({expectedVersionNumber:1}).success).toBe(false);
+        expect(updateDishRequestSchema.parse({steps:[],servings:null})).toEqual({steps:[],servings:null});
+    });
     it('does not accept legacy AI requests with only client scores', () => { expect(aiExplainRequestSchema.safeParse({ locale: 'en', dishName: 'X', analysis: { overallScore: 100 } }).success).toBe(false); });
     it('AI takes composition and strips unsupported score fields', () => { const parsed = aiExplainRequestSchema.parse({ locale: 'en', dishName: 'X', items: [item], analysis: { overallScore: 100 } }); expect('analysis' in parsed).toBe(false); expect(parsed.items).toEqual([item]); });
 });

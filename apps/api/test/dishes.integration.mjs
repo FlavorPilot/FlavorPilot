@@ -10,6 +10,8 @@ import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { resetTestDatabase } from './reset-database.mjs';
 import { startAuthStub } from './auth-stub.mjs';
 import { analyzeDish, MODEL_VERSION, CATALOGUE_VERSION } from '@flavorpilot/flavor-engine';
+import { randomUUID } from 'node:crypto';
+import { ConfigService } from '@nestjs/config';
 
 const databaseUrl = process.env.FLAVORPILOT_TEST_DATABASE_URL ?? 'postgres://postgres:postgres@127.0.0.1:54329/flavorpilot_test';
 process.env.DATABASE_URL = databaseUrl;
@@ -64,6 +66,83 @@ after(async () => {
     await app?.close();
     await stub?.close();
     await sql?.end();
+});
+
+it('round-trips recipe steps, protects stale edits and preserves remix/snapshot contents',async()=>{
+ const a=await signup('recipe-cloud'),b=await signup('recipe-other');
+ const steps=[{id:randomUUID(),text:'Sear salmon, then add lime.'}];
+ const made=await api('/dishes',{method:'POST',token:a.token,body:{name:'Cloud recipe',items,steps,servings:2,visibility:'public'}});
+ assert.equal(made.status,201);assert.deepEqual(made.body.steps,steps);assert.equal(made.body.servings,2);
+ const id=made.body.id;
+ const wrong=await api(`/dishes/${id}`,{method:'PATCH',token:b.token,body:{steps:[]}});assert.equal(wrong.status,404);
+ const changed=await api(`/dishes/${id}`,{method:'PATCH',token:a.token,body:{name:'New title',expectedVersionNumber:1}});
+ assert.equal(changed.status,200);assert.deepEqual(changed.body.steps,steps);
+ const stale=await api(`/dishes/${id}`,{method:'PATCH',token:a.token,body:{steps:[],expectedVersionNumber:1}});
+ assert.equal(stale.status,409);assert.equal(stale.body.code,'DISH_UPDATE_CONFLICT');
+ const publicRead=await api(`/dishes/public/${id}`);assert.deepEqual(publicRead.body.steps,steps);
+ const remix=await api(`/dishes/${id}/remix`,{method:'POST',token:b.token,body:{}});
+ assert.equal(remix.status,201);assert.deepEqual(remix.body.steps,steps);assert.equal(remix.body.servings,2);
+ const [version]=await sql`select snapshot from public.dish_versions where dish_id=${id} order by version_number desc limit 1`;
+ assert.deepEqual(version.snapshot.steps,steps);assert.equal(version.snapshot.servings,2);
+ const migration=readFileSync(fileURLToPath(new URL('../../../supabase/migrations/20261018125915_recipe_cloud_and_ai_usage.sql',import.meta.url)),'utf8');
+ await sql.unsafe(migration);await sql.unsafe(migration);
+ await assert.rejects(sql`update public.dishes set steps=${JSON.stringify([steps[0],steps[0]])}::jsonb where id=${id}`,/dishes_recipe_content_valid/);
+ for(const role of ['anon','authenticated'])await assert.rejects(sql.begin(async tx=>{await tx.unsafe(`set local role ${role}`);await tx`select id from public.ai_requests where true`;}),/permission denied/);
+});
+
+it('enforces AI entitlements, idempotency, input/output controls and uncertain-cost accounting',async()=>{
+ const a=await signup('ai-pilot'),free=await signup('ai-free');
+ const config=app.get(ConfigService),originalFetch=globalThis.fetch;
+ const {AiUsageService}=await import('../dist/ai/ai-usage.service.js');const usage=app.get(AiUsageService);
+ const {AiService}=await import('../dist/ai/ai.service.js');const service=app.get(AiService);
+ const stepId=randomUUID();let mode='valid',generations=0,counts=0;
+ config.set('AI_ENABLED',true);config.set('OPENAI_API_KEY','fake-local-key');config.set('AI_PILOT_USER_IDS',a.id);
+ const recipe={name:'Review',goal:'balanced',items,description:'',servings:2,steps:[{id:stepId,text:'Sear salmon.'}]};
+ const body=(extra={})=>({requestId:randomUUID(),locale:'uk',scope:'full',recipe,...extra});
+ globalThis.fetch=async(url,options)=>{
+  if(!String(url).startsWith('https://api.openai.com/v1/'))return originalFetch(url,options);
+  const input=JSON.parse(options.body);assert.equal(input.model,'gpt-5.4-mini-2026-03-17');
+  if(String(url).endsWith('input_tokens')){counts++;return Response.json({input_tokens:mode==='large'?20000:1000});}
+  generations++;assert.equal(input.store,false);assert.equal(input.max_output_tokens,4000);assert.match(input.input[0].content[0].text,/Ukrainian/);
+  if(mode==='timeout')throw new Error('Simulated lost response');
+  const comments=[{id:randomUUID(),kind:'clarity',stepId:mode==='invalid'?randomUUID():stepId,message:'Уточніть тривалість.',suggestedText:'Обсмажте лосось, уточнивши час.'}];
+  return Response.json({status:mode==='incomplete'?'incomplete':'completed',usage:{input_tokens:1000,output_tokens:200,output_tokens_details:{reasoning_tokens:0}},output:[{content:[{type:'output_text',text:JSON.stringify({comments})}]}]});
+ };
+ try{
+  const denied=await api('/ai/review-recipe',{method:'POST',token:free.token,body:body()});assert.equal(denied.status,403);assert.equal(generations,0);assert.equal(counts,0);
+  const expired=await sql`update public.subscriptions set tier='pro',status='active',current_period_end=now()-interval '1 day' where user_id=${free.id}`;
+  assert.equal((await api('/ai/review-recipe',{method:'POST',token:free.token,body:body()})).status,403);
+  const missing=await api('/ai/review-recipe',{method:'POST',token:a.token,body:body({dishId:randomUUID()})});assert.equal(missing.status,404);assert.equal(generations,0);
+  const request=body(),first=await api('/ai/review-recipe',{method:'POST',token:a.token,body:request});
+  assert.equal(first.status,201,JSON.stringify(first.body));assert.equal(first.body.comments[0].stepId,stepId);assert.equal(first.body.quota.remaining,296);
+  const repeated=await api('/ai/review-recipe',{method:'POST',token:a.token,body:request});assert.equal(repeated.status,201);assert.equal(generations,1);
+  const cached=await api('/ai/review-recipe',{method:'POST',token:a.token,body:body()});assert.equal(cached.status,201);assert.equal(generations,1);assert.equal(cached.body.quota.remaining,296);
+  const conflict=await api('/ai/review-recipe',{method:'POST',token:a.token,body:{...request,recipe:{...recipe,name:'Other'}}});assert.equal(conflict.status,409);
+  for(const testMode of ['large','invalid','incomplete','timeout']){
+   mode=testMode;await sql`update public.ai_requests set created_at=now()-interval '2 minutes' where user_id=${a.id}`;
+   const r=await api('/ai/review-recipe',{method:'POST',token:a.token,body:body({recipe:{...recipe,name:testMode}})});
+   assert.equal(r.status,testMode==='large'?400:502,JSON.stringify(r.body));
+   const [entry]=await sql`select status,units,reserved_microusd,charged_microusd from public.ai_requests where user_id=${a.id} order by created_at desc limit 1`;
+   assert.equal(entry.units,0);assert.equal(entry.status,testMode==='timeout'?'unknown':'failed');
+   if(testMode==='timeout')assert.ok(entry.reserved_microusd>0);
+   else if(testMode==='large')assert.equal(entry.charged_microusd,0);
+   else assert.ok(entry.charged_microusd>0);
+  }
+  await sql`update public.ai_requests set created_at=now()-interval '2 minutes' where user_id=${a.id}`;
+  const before=generations;
+  const candidates=await Promise.allSettled([usage.reserve(a.id,randomUUID(),'concurrent-a','full'),usage.reserve(a.id,randomUUID(),'concurrent-b','full')]);
+  assert.equal(candidates.filter(x=>x.status==='fulfilled').length,1);assert.equal(generations,before);
+  const reservation=candidates.find(x=>x.status==='fulfilled').value;
+  await usage.finish(reservation.id,{status:'failed',knownZero:true,duration:1});
+  await sql`update public.ai_requests set created_at=now()-interval '2 minutes' where user_id=${a.id}`;
+  config.set('AI_DAILY_BUDGET_USD',0.000001);
+  await assert.rejects(usage.reserve(a.id,randomUUID(),'budget','full'),/AI_BUDGET_EXCEEDED/);
+  config.set('AI_DAILY_BUDGET_USD',5);
+  await sql`insert into public.ai_requests(user_id,request_id,content_hash,feature,model,prompt_version,status,units,reserved_microusd,expires_at) select ${a.id},gen_random_uuid(),'quota-'||n,'full','test','test','succeeded',4,0,now() from generate_series(1,7) n`;
+  await assert.rejects(usage.reserve(a.id,randomUUID(),'quota-exhausted','full'),/AI_QUOTA_EXCEEDED/);
+  assert.equal((await api('/ai/explain',{method:'POST',token:free.token,body:{locale:'en',dishName:'Free bypass',items}})).status,403);
+  const metrics=await usage.metrics();assert.ok(metrics.unknown>=1);assert.ok(metrics.reservedUsd>0);
+ }finally{globalThis.fetch=originalFetch;config.set('AI_ENABLED',false);config.set('AI_PILOT_USER_IDS','');config.set('AI_DAILY_BUDGET_USD',5);}
 });
 
 it('hardens internal trigger RPC permissions while preserving signup and repeatable migration', async () => {

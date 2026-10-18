@@ -15,8 +15,7 @@ export function SaveRecipeDialog({ open, onClose, draft, locale, token, onSaved 
     onSaved: (recipe: Recipe) => void;
 }) {
     const t = getDictionary(locale).messages;
-    const needsInstructionsStorage = draft.steps.length > 0 || draft.servings !== null;
-    const [destination, setDestination] = useState<'local' | 'cloud'>(draft.linkedOrigin === 'local' || needsInstructionsStorage ? 'local' : token && hasApi ? 'cloud' : 'local');
+    const [destination, setDestination] = useState<'local' | 'cloud'>(draft.linkedOrigin === 'local' ? 'local' : token && hasApi ? 'cloud' : 'local');
     const [visibility, setVisibility] = useState<Draft['visibility']>(draft.linkedOrigin === 'cloud' ? draft.visibility : 'private');
     const [consent, setConsent] = useState(false);
     const [busy, setBusy] = useState(false);
@@ -28,7 +27,7 @@ export function SaveRecipeDialog({ open, onClose, draft, locale, token, onSaved 
             setError(t.invalidName);
             return;
         }
-        if (!draft.items.length || (destination === 'cloud' && (needsInstructionsStorage || (visibility !== 'private' && !consent))))
+        if (!draft.items.length || (destination === 'cloud' && visibility !== 'private' && !consent))
             return;
         setBusy(true);
         setError('');
@@ -39,9 +38,9 @@ export function SaveRecipeDialog({ open, onClose, draft, locale, token, onSaved 
             else {
                 if (!token || !hasApi)
                     throw new ApiError(401, 'AUTH_REQUIRED');
-                const data = { name: draft.name.trim(), items: draft.items, goal: draft.goal, visibility, description: draft.description || null };
+                const data = { name: draft.name.trim(), items: draft.items, goal: draft.goal, visibility, description: draft.description || null, servings: draft.servings, steps: draft.steps };
                 recipe = draft.linkedOrigin === 'cloud' && draft.linkedId
-                    ? await dishRepository.update(draft.linkedId, data, token)
+                    ? await dishRepository.update(draft.linkedId, { ...data, expectedVersionNumber: draft.linkedVersionNumber }, token)
                     : await dishRepository.create({ ...data, ...(draft.parentDishId ? { parentDishId: draft.parentDishId } : {}) }, token);
             }
             onSaved(recipe);
@@ -49,7 +48,7 @@ export function SaveRecipeDialog({ open, onClose, draft, locale, token, onSaved 
         }
         catch (problem) {
             const code = problem instanceof ApiError ? problem.code : problem instanceof Error ? problem.message : '';
-            setError(code.includes('PRIVATE_DISH_LIMIT') ? t.privateLimit : t.saveError);
+            setError(code === 'DISH_UPDATE_CONFLICT' ? t.recipeSaveConflict : code.includes('PRIVATE_DISH_LIMIT') ? t.privateLimit : t.saveError);
         }
         finally {
             setBusy(false);
@@ -61,13 +60,12 @@ export function SaveRecipeDialog({ open, onClose, draft, locale, token, onSaved 
         }} title={t.saveTitle} closeLabel={t.close}>
     <p className="muted">{t.saveSubtitle}</p>
     <div className="choice-grid" role="group" aria-label={t.source}>
-      {(['local', 'cloud'] as const).map(value => <button type="button" className={`choice ${destination === value ? 'is-selected' : ''}`} key={value} aria-pressed={destination === value} disabled={busy || (value === 'cloud' && (!token || !hasApi || needsInstructionsStorage))} onClick={() => { setDestination(value); setConsent(false); setError(''); }}>
+      {(['local', 'cloud'] as const).map(value => <button type="button" className={`choice ${destination === value ? 'is-selected' : ''}`} key={value} aria-pressed={destination === value} disabled={busy || (value === 'cloud' && (!token || !hasApi))} onClick={() => { setDestination(value); setConsent(false); setError(''); }}>
         <Icon name={value === 'local' ? 'save' : 'user'}/><strong>{value === 'local' ? t.localDestination : t.cloudDestination}</strong>
         <small>{value === 'local' ? t.localSaveHint : t.cloudSaveHint}</small>
       </button>)}
     </div>
     {!token && <p className="small"><Link href={`/${locale}/sign-in`}>{t.signInToSave}</Link></p>}
-    {needsInstructionsStorage && <Notice>{t.recipeCloudPending}</Notice>}
     {destination === 'local' ? <Notice><Badge><Icon name="lock" size={13}/>{t.private}</Badge><p>{t.localOnly}</p></Notice> :
             <fieldset className="visibility"><legend>{t.visibility}</legend>{(['private', 'unlisted', 'public'] as const).map(value => <label className="visibility-option" key={value}>
         <input type="radio" name="visibility" value={value} checked={visibility === value} disabled={busy} onChange={() => { setVisibility(value); setConsent(false); }}/>

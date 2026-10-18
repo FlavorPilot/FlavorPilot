@@ -3,5 +3,6 @@ import { AdminAccessController, AdminController, SupportController } from './adm
 import { AdminGuard, AdminMfaGuard } from './admin.guard';
 import { AdminService } from './admin.service';
 import { SupportService } from './support.service';
-@Module({controllers:[AdminAccessController,AdminController,SupportController],providers:[AdminGuard,AdminMfaGuard,AdminService,SupportService]})
+import { AiModule } from '../ai/ai.module';
+@Module({imports:[AiModule],controllers:[AdminAccessController,AdminController,SupportController],providers:[AdminGuard,AdminMfaGuard,AdminService,SupportService]})
 export class AdminModule {}

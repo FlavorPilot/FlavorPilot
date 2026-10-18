@@ -42,9 +42,9 @@ description, optional servings, and ordered preparation steps with stable UUIDs.
 text edits in one field are grouped in undo history; switching fields, blur, a one-second
 pause, and structural actions separate groups. Tab selection and field focus are UI state.
 Preparation edits preserve the items/goal references used by calculation memoization.
-Steps and servings currently persist in device storage and recipe JSON v2. Cloud save is
-disabled for drafts containing these fields until the API/database migration is implemented;
-the save dialog explains this in EN/UK. Existing cloud descriptions remain supported.
+Steps and servings persist in device storage, recipe JSON v2 and cloud records after the
+recipe/AI migration. Cloud adapters retain them; versions and remixes carry the same content.
+New clients supply expectedVersionNumber to prevent overwriting a stale cloud recipe.
 
 Local input strings (e.g. incomplete grams) may live inside a row until valid. Search dropdown
 and collapsible help are UI-only state. Private/account identifiers remain in the draft entity,
@@ -59,8 +59,14 @@ Layout uses the shared CSS token system, not inline per-widget theme constants o
 
 Preparation: the instructions editor and a read-only ingredient reference sit beside each
 other on desktop and follow reading order on mobile. Both panels stay mounted behind
-accessible tabs so changing stages preserves temporary input. No AI requests or paid-plan
-controls are included in this first delivery. See [the recipe workspace plan](RECIPE_WORKSPACE_PLAN.md).
+accessible tabs so changing stages preserves temporary input. `features/culinary-assistant`
+coordinates capabilities, explicit consent, review/explanation requests, optional automatic
+step reviews, snapshot invalidation and explicit suggestion application. `entities/ai` owns
+HTTP adapters; `widgets/culinary-assistant` receives state/callbacks without networking or
+storage. An enabled automatic review needs an actual edit while Preparation is active;
+opening a tab or changing the locale alone never generates a request. Both assistant panels
+share one controller. Its response only applies to the same content/language snapshot and
+uses the editor reducer/undo history. See [the recipe workspace plan](RECIPE_WORKSPACE_PLAN.md).
 
 ## Feedback and public discussion
 

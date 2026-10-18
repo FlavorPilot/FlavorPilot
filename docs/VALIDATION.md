@@ -1,5 +1,45 @@
 # Actual validation — widget-monorepo-r2
 
+## Cloud preparation and budgeted culinary assistant — 2026-10-18
+
+Implemented cloud servings/ordered steps, optimistic version checks, preserved versions/remixes,
+and an additive repeatable migration. Added authenticated explanation/step/full review through
+one database-backed quota/budget service, explicit pilot grants, exact input-token preflight,
+bounded structured output, private cache, idempotency and conservative uncertain-charge holds.
+The editor requires consent, preserves drafts on failure, supports optional delayed comments
+and prevents applying stale suggestions. EN/UK strings, quota reset times and CRM usage metrics
+are present. Numerical Flavor Engine scores and catalogue coefficients are unchanged.
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed: 130 frontend files/boundaries, 16 pure editor/locale checks, 27 kernel checks, workspace typechecks and 104 Vitest tests |
+| `npm run build` | Final sequential run passed: shared packages, Nest and Next production output with 27 generated static pages |
+| `npm run test:integration` | 23 passed on disposable PostgreSQL with Auth/provider stubs; includes concurrent reservations, budget/quota rejection, expired subscription, cache/idempotency, excessive input, invalid step reference, incomplete/unknown responses, cloud round-trip, stale writes and repeatable migration |
+| Final compiled API check | `node --test apps/api/test/dishes.integration.mjs`: 23 passed after the final production build |
+| `npm run test:e2e` | Full run: 28 passed; the new cloud test searched device storage instead of selecting account storage and failed. Selector corrected; all three assistant cases passed on rerun |
+| `npm run test:e2e -- tests/e2e/culinary-assistant.spec.ts` | Final focused run: 3 passed, including cloud reload, explicit apply/undo, stale rejection, automatic edit trigger, consent and UK 375 px error layout |
+| Visual inspection | `.local/ai-review-en.png`, `.local/ai-review-uk-mobile.png`; fixed comment-card flex layout after inspecting the first screenshots |
+| `node scripts/evaluate-ai.mjs` | Dry-run passed: three selected synthetic cases, at most 12 check units / $0.081 provider reservation; no paid request sent |
+
+Initial integration execution was blocked by sandbox TCP permissions; rerun used the isolated
+test database with approved network access. Tests caught PATCH defaults clearing omitted fields,
+SQL date serialization and reserved SQL aliases; corrected before the passing runs. An overlapping
+Nest build/E2E start was discarded and subsequent builds ran sequentially. Windows standalone
+output needed approved filesystem access. No mock response is evidence of culinary accuracy.
+
+The provider key was found in Vercel as Sensitive; a single-variable read could not return its
+value. A proposed bulk production-env export was rejected by automatic approval review and was
+not executed. The narrower metadata/single-key API read did not export other secrets. The API
+Railway service lacked OPENAI_API_KEY at inspection time; its value must be set by the owner.
+The operator subsequently authorized the production migration, main push/deployment and an
+owner-only pilot. The additive migration was applied to the active Supabase project: steps
+exist, AI tables enable RLS and anon/authenticated cannot read the ledger/cache. The security
+advisor reports the two expected additional closed tables ([deny-all RLS notice](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy));
+the existing [leaked-password protection setting](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)
+was unchanged. At this pre-publication checkpoint, Railway still did not list OPENAI_API_KEY;
+pilot activation, actual provider inference and expert review remained pending. Later hosted
+deployment results must be recorded separately from these local/stub validation results.
+
 ## Hosted database and owner bootstrap — 2026-10-18
 
 With explicit operator authorization, initialized the empty active Supabase project's public

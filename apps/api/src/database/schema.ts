@@ -1,4 +1,4 @@
-import type { DishGoal, DishItem, DishVisibility, DishAnalysis, FeedbackRecipeSnapshot, NormalizedModelFeedbackRequest } from '@flavorpilot/contracts';
+import type { DishGoal, DishItem, DishVisibility, DishAnalysis, FeedbackRecipeSnapshot, NormalizedModelFeedbackRequest, RecipeStep } from '@flavorpilot/contracts';
 import { boolean, index, integer, jsonb, numeric, pgEnum, pgTable, smallint, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 export const dishVisibilityEnum = pgEnum('dish_visibility', ['public', 'unlisted', 'private']);
 export const subscriptionTierEnum = pgEnum('subscription_tier', ['free', 'pro', 'studio', 'kitchen']);
@@ -8,6 +8,7 @@ export const profiles = pgTable('profiles', {
     id: uuid('id').primaryKey(), username: text('username').notNull(), displayName: text('display_name'), bio: text('bio'), avatarUrl: text('avatar_url'), locale: text('locale').notNull().default('en'), createdAt: created(), updatedAt: updated()
 }, t => [uniqueIndex('profiles_username_idx').on(t.username)]);
 export const dishes = pgTable('dishes', {
+    servings: integer('servings'), steps: jsonb('steps').$type<RecipeStep[]>().notNull().default([]),
     moderationHidden: boolean('moderation_hidden').notNull().default(false),
     moderationRevision:integer('moderation_revision').notNull().default(0),
     id: uuid('id').primaryKey().defaultRandom(), ownerId: uuid('owner_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }), name: text('name').notNull(), goal: text('goal').$type<DishGoal>().notNull().default('balanced'), visibility: dishVisibilityEnum('visibility').$type<DishVisibility>().notNull().default('private'), shareToken: uuid('share_token').notNull().defaultRandom(), parentDishId: uuid('parent_dish_id'), description: text('description'), imageUrl: text('image_url'), publishedAt: timestamp('published_at', { withTimezone: true, mode: 'date' }), createdAt: created(), updatedAt: updated()
@@ -16,6 +17,8 @@ export const dishItems = pgTable('dish_items', {
     id: uuid('id').primaryKey().defaultRandom(), dishId: uuid('dish_id').notNull().references(() => dishes.id, { onDelete: 'cascade' }), ingredientId: text('ingredient_id').notNull(), grams: numeric('grams', { precision: 10, scale: 3 }).notNull(), preparationId: text('preparation_id').notNull(), position: smallint('position').notNull().default(0), note: text('note'), createdAt: created()
 }, t => [index('dish_items_dish_idx').on(t.dishId, t.position), uniqueIndex('dish_items_unique_ingredient_idx').on(t.dishId, t.ingredientId, t.preparationId)]);
 export interface DishSnapshot {
+    servings?: number | null;
+    steps?: RecipeStep[];
     name: string;
     goal: DishGoal;
     visibility: DishVisibility;

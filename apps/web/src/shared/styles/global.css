@@ -2745,6 +2745,9 @@ legend {
 .step-arrow--down { transform: rotate(90deg); }
 .field-error { color: var(--danger); }
 .recipe-reading { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-comment { display: block; min-width: 0; }
+.ai-comment blockquote { margin: 12px 0; padding-inline-start: 12px; border-inline-start: 2px solid currentColor; }
+.ai-comment .dialog__actions { flex-wrap: wrap; }
 @media(max-width:900px) { .recipe-workspace { grid-template-columns: 1fr; } }
 @media(max-width:480px) { .workspace-tabs [role=tab] { padding: 12px 8px; font-size: 13px; } .recipe-step { padding: 12px; } }
 

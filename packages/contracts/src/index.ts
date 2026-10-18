@@ -5,3 +5,4 @@ export * from './recipe';
 export * from './feedback';
 export * from './admin';
 export * from './support';
+export * from './ai';

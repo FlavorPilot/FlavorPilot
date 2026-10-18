@@ -40,7 +40,7 @@ export const adminAuditSchema = z.object({id,actorId:id.nullable(),action:z.stri
 export const adminAuditPageSchema = page(adminAuditSchema);
 export const adminServiceSchema = z.object({database:z.enum(['connected','unavailable','not_configured']),checkedAt:date,
     environment:z.string(),apiVersion:z.string(),modelVersion:z.string(),catalogueVersion:z.string(),
-    authConfigured:z.boolean(),aiEnabled:z.boolean(),billing:z.literal('not_connected'),backups:z.literal('not_monitored')});
+    authConfigured:z.boolean(),aiEnabled:z.boolean(),aiUsage:z.object({model:z.string(),requests:z.number(),errors:z.number(),unknown:z.number(),inputTokens:z.number(),outputTokens:z.number(),reasoningTokens:z.number(),spentUsd:z.number(),reservedUsd:z.number(),monthlyBudgetUsd:z.number(),dailyBudgetUsd:z.number(),averageLatencyMs:z.number()}).optional(),billing:z.literal('not_connected'),backups:z.literal('not_monitored')});
 
 export type AdminAccess = z.infer<typeof adminAccessSchema>;
 export type AdminOverview = z.infer<typeof adminOverviewSchema>;

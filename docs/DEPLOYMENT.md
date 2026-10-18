@@ -26,7 +26,12 @@ after the actual ingress topology is known. Forwarded client-IP headers alone ar
 
 ## Staging values
 
-Keep `AI_ENABLED=false`. Production startup rejects `AI_ENABLED=true` until usage quotas exist.
+Keep `AI_ENABLED=false` until the recipe/AI migration and matching API/web have passed checks.
+For an approved pilot, set server-only OPENAI_API_KEY, OPENAI_MODEL=gpt-5.4-mini-2026-03-17,
+AI_PILOT_USER_IDS to the explicitly approved UUIDs, AI_DAILY_BUDGET_USD=5 and
+AI_MONTHLY_BUDGET_USD=50. Only then enable AI_ENABLED. The pilot grant does not upgrade a
+subscription. Set AI_ENABLED=false and restart to stop new calls; in-flight calls can still bill.
+Usage budgets are enforced by Nest reservations; an external dashboard alert is not the control.
 Set `CORS_ORIGINS` to the exact web origin, for example `https://staging.flavorpilot.example`.
 A wildcard is rejected in production. Put `DATABASE_URL`, `SUPABASE_URL` and
 `SUPABASE_PUBLISHABLE_KEY` only in the API host's secret storage. The web build receives

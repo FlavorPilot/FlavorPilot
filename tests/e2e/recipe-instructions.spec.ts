@@ -32,7 +32,7 @@ test('writes, reorders, undoes and reopens a complete device recipe', async ({ p
     await page.getByLabel('Add an ingredient').fill('Salmon');
     await page.getByRole('option', { name: /Salmon/ }).click();
     await page.getByRole('button', { name: 'Save recipe', exact: true }).click();
-    await expect(page.getByRole('dialog').getByText(/Preparation steps and servings can currently be saved/)).toBeVisible();
+    await expect(page.getByRole('dialog').getByRole('button', {name:/My account/})).toBeDisabled();
     await page.getByRole('dialog').getByRole('button', { name: 'Save recipe', exact: true }).click();
     await expect(page.getByText('Saved to this browser only.')).toBeVisible();
     await page.goto('/en/library');

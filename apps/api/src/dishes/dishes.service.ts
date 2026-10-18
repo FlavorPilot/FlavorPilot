@@ -7,6 +7,8 @@ import { DatabaseService, type FlavorPilotDatabase } from '../database/database.
 import { dishes, dishItems, dishVersions, profiles, subscriptions, type DishSnapshot } from '../database/schema';
 import { hasActivePaidEntitlement } from './subscription-entitlement';
 interface DishSelectRow {
+    servings: number | null;
+    steps: DishResponse['steps'];
     moderationHidden: boolean;
     versionNumber: number;
     id: string;
@@ -61,7 +63,7 @@ export class DishesService {
         try {
             const id = await db.transaction(async (tx) => {
                 const now = new Date();
-                const [created] = await tx.insert(dishes).values({ ownerId, name: input.name, goal: input.goal, visibility: input.visibility, parentDishId: input.parentDishId ?? null, description: input.description ?? null, imageUrl: input.imageUrl ?? null, publishedAt: input.visibility === 'public' ? now : null, updatedAt: now }).returning({ id: dishes.id });
+                const [created] = await tx.insert(dishes).values({ ownerId, servings: input.servings ?? null, steps: input.steps ?? [], name: input.name, goal: input.goal, visibility: input.visibility, parentDishId: input.parentDishId ?? null, description: input.description ?? null, imageUrl: input.imageUrl ?? null, publishedAt: input.visibility === 'public' ? now : null, updatedAt: now }).returning({ id: dishes.id });
                 if (!created)
                     throw new Error('Dish insert returned no id');
                 await this.replaceItems(tx, created.id, input.items);
@@ -77,13 +79,15 @@ export class DishesService {
     }
     async update(ownerId: string, id: string, input: NormalizedUpdateDishRequest): Promise<DishResponse> {
         const existing = await this.getMine(ownerId, id);
+        if (input.expectedVersionNumber !== undefined && input.expectedVersionNumber !== existing.versionNumber)
+            throw new ConflictException({ code: 'DISH_UPDATE_CONFLICT', message: 'Reload the changed recipe before saving' });
         const nextItems = input.items ?? existing.items.map(({ ingredientId, grams, preparationId }) => ({ ingredientId, grams, preparationId }));
         assertValidDishItems(nextItems);
         const visibility = input.visibility ?? existing.visibility;
         // Keep existing private recipes private/editable after a downgrade. Limit only an increase.
         if (!(existing.visibility === 'private' && visibility === 'private'))
             await this.assertCapacity(ownerId, visibility, id);
-        const next = { name: input.name ?? existing.name, goal: input.goal ?? existing.goal, visibility, description: input.description === undefined ? existing.description : input.description, imageUrl: input.imageUrl === undefined ? existing.imageUrl : input.imageUrl, parentDishId: existing.parentDishId, items: nextItems };
+        const next = { servings: input.servings === undefined ? existing.servings : input.servings, steps: input.steps ?? existing.steps, name: input.name ?? existing.name, goal: input.goal ?? existing.goal, visibility, description: input.description === undefined ? existing.description : input.description, imageUrl: input.imageUrl === undefined ? existing.imageUrl : input.imageUrl, parentDishId: existing.parentDishId, items: nextItems };
         const db = this.database.requireDatabase();
         try {
             await db.transaction(async (tx) => {
@@ -94,7 +98,7 @@ export class DishesService {
                 if (locked.updatedAt.toISOString() !== existing.updatedAt)
                     throw new ConflictException({ code: 'DISH_UPDATE_CONFLICT', message: 'The recipe changed while saving. Reload it and retry.' });
                 const now = new Date(), publishedAt = visibility === 'public' ? (existing.publishedAt ? new Date(existing.publishedAt) : now) : null;
-                await tx.update(dishes).set({ name: next.name, goal: next.goal, visibility, description: next.description ?? null, imageUrl: next.imageUrl ?? null, parentDishId: next.parentDishId ?? null, publishedAt, updatedAt: now }).where(allOf(eq(dishes.id, id), eq(dishes.ownerId, ownerId)));
+                await tx.update(dishes).set({ servings: next.servings, steps: next.steps, name: next.name, goal: next.goal, visibility, description: next.description ?? null, imageUrl: next.imageUrl ?? null, parentDishId: next.parentDishId ?? null, publishedAt, updatedAt: now }).where(allOf(eq(dishes.id, id), eq(dishes.ownerId, ownerId)));
                 if (input.items)
                     await this.replaceItems(tx, id, next.items);
                 const [version] = await tx.select({ current: max(dishVersions.versionNumber) }).from(dishVersions).where(eq(dishVersions.dishId, id));
@@ -117,10 +121,10 @@ export class DishesService {
         visibility: DishVisibility;
     }): Promise<DishResponse> {
         const source = await this.getPublic(sourceId);
-        return this.create(ownerId, { name: options.name ?? `${source.name} remix`, goal: source.goal, visibility: options.visibility, description: source.description, imageUrl: null, parentDishId: source.id, items: source.items.map(({ ingredientId, grams, preparationId }) => ({ ingredientId, grams, preparationId })) });
+        return this.create(ownerId, { name: options.name ?? `${source.name} remix`, goal: source.goal, visibility: options.visibility, servings: source.servings, steps: source.steps, description: source.description, imageUrl: null, parentDishId: source.id, items: source.items.map(({ ingredientId, grams, preparationId }) => ({ ingredientId, grams, preparationId })) });
     }
     private async selectRows(db: FlavorPilotDatabase, condition: SQL, limit: number): Promise<DishSelectRow[]> {
-        return db.select({ moderationHidden:dishes.moderationHidden, versionNumber: sql<number>`(select coalesce(max(v.version_number), 1)::int from public.dish_versions v where v.dish_id = ${dishes.id})`, id: dishes.id, ownerId: dishes.ownerId, name: dishes.name, goal: dishes.goal, visibility: dishes.visibility, shareToken: dishes.shareToken, parentDishId: dishes.parentDishId, description: dishes.description, imageUrl: dishes.imageUrl, publishedAt: dishes.publishedAt, createdAt: dishes.createdAt, updatedAt: dishes.updatedAt, ownerUsername: profiles.username, ownerDisplayName: profiles.displayName, ownerAvatarUrl: profiles.avatarUrl }).from(dishes).leftJoin(profiles, eq(profiles.id, dishes.ownerId)).where(condition).orderBy(desc(dishes.publishedAt), desc(dishes.updatedAt)).limit(limit);
+        return db.select({ servings: dishes.servings, steps: dishes.steps, moderationHidden:dishes.moderationHidden, versionNumber: sql<number>`(select coalesce(max(v.version_number), 1)::int from public.dish_versions v where v.dish_id = ${dishes.id})`, id: dishes.id, ownerId: dishes.ownerId, name: dishes.name, goal: dishes.goal, visibility: dishes.visibility, shareToken: dishes.shareToken, parentDishId: dishes.parentDishId, description: dishes.description, imageUrl: dishes.imageUrl, publishedAt: dishes.publishedAt, createdAt: dishes.createdAt, updatedAt: dishes.updatedAt, ownerUsername: profiles.username, ownerDisplayName: profiles.displayName, ownerAvatarUrl: profiles.avatarUrl }).from(dishes).leftJoin(profiles, eq(profiles.id, dishes.ownerId)).where(condition).orderBy(desc(dishes.publishedAt), desc(dishes.updatedAt)).limit(limit);
     }
     private async lookup(condition: SQL, exposeToken: boolean): Promise<DishResponse> {
         const db = this.database.requireDatabase(), [row] = await this.selectRows(db, condition, 1);
@@ -142,7 +146,7 @@ export class DishesService {
         return result;
     }
     private serialize(row: DishSelectRow, items: DishItemRow[], exposeToken: boolean): DishResponse {
-        return { moderationHidden:row.moderationHidden, versionNumber: row.versionNumber, id: row.id, ownerId: row.ownerId, name: row.name, goal: row.goal, visibility: row.visibility, ...(exposeToken ? { shareToken: row.shareToken } : {}), parentDishId: row.parentDishId, description: row.description, imageUrl: row.imageUrl, publishedAt: row.publishedAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), owner: row.ownerUsername ? { id: row.ownerId, username: row.ownerUsername, displayName: row.ownerDisplayName, avatarUrl: row.ownerAvatarUrl } : undefined, items: items.map(item => ({ id: item.id, ingredientId: item.ingredientId, grams: Number(item.grams), preparationId: item.preparationId, position: item.position, note: item.note })) };
+        return { servings: row.servings, steps: row.steps, moderationHidden:row.moderationHidden, versionNumber: row.versionNumber, id: row.id, ownerId: row.ownerId, name: row.name, goal: row.goal, visibility: row.visibility, ...(exposeToken ? { shareToken: row.shareToken } : {}), parentDishId: row.parentDishId, description: row.description, imageUrl: row.imageUrl, publishedAt: row.publishedAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), owner: row.ownerUsername ? { id: row.ownerId, username: row.ownerUsername, displayName: row.ownerDisplayName, avatarUrl: row.ownerAvatarUrl } : undefined, items: items.map(item => ({ id: item.id, ingredientId: item.ingredientId, grams: Number(item.grams), preparationId: item.preparationId, position: item.position, note: item.note })) };
     }
     private async assertParent(ownerId: string, parentDishId: string | null) {
         if (!parentDishId)
@@ -172,6 +176,8 @@ export class DishesService {
         await tx.insert(dishItems).values(items.map((item, position) => ({ dishId, ingredientId: item.ingredientId, grams: item.grams.toString(), preparationId: item.preparationId, position })));
     }
     private snapshot(input: {
+        servings?: number | null;
+        steps?: DishResponse['steps'];
         name: string;
         goal: DishResponse['goal'];
         visibility: DishVisibility;
@@ -180,7 +186,7 @@ export class DishesService {
         parentDishId?: string | null;
         items: DishItem[];
     }): DishSnapshot {
-        return { name: input.name, goal: input.goal, visibility: input.visibility, description: input.description ?? null, imageUrl: input.imageUrl ?? null, parentDishId: input.parentDishId ?? null, items: input.items.map(item => ({ ...item })) };
+        return { servings: input.servings ?? null, steps: input.steps ?? [], name: input.name, goal: input.goal, visibility: input.visibility, description: input.description ?? null, imageUrl: input.imageUrl ?? null, parentDishId: input.parentDishId ?? null, items: input.items.map(item => ({ ...item })) };
     }
     private notFound() { return new NotFoundException({ code: 'DISH_NOT_FOUND', message: 'The requested dish was not found or is not visible to this user' }); }
     private translateError(error: unknown): void {

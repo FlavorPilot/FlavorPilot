@@ -86,9 +86,45 @@ The r2 request is composition-based, NOT the old `analysis` object:
 ```
 
 The controller parses and validates, computes server analysis and only then invokes AiService.
-Default `AI_ENABLED=false`; enabling it under production is rejected pending actual quotas.
-Response keeps `summary`, `main_problem`, `actions`. Text does not become a trusted recipe or
-score. `store:false`, timeout and output token limit are safeguards, not a complete cost policy.
+Default `AI_ENABLED=false`. Every generation uses the same database-backed entitlement,
+quota and budget reservation. `requestId` is optional for legacy explain clients; new clients
+always send a UUID and retain it for retries. Response keeps `summary`, `main_problem`,
+`actions` (at most three). Text does not become a trusted recipe or score.
+
+`GET /v1/account/capabilities` returns availability, paid/pilot access, monthly/daily remaining
+check units and UTC reset times. `POST /v1/ai/review-recipe` accepts a UUID requestId, EN/UK
+locale, scope `step` or `full`, optional activeStepId/dishId, and a recipe snapshot with name,
+goal, items, description, servings and ordered steps. A dishId requires current ownership.
+Responses contain validated comments, server contentHash, requestId and refreshed quota.
+Comments may suggest replacing one existing step; they cannot mutate recipes or scores.
+
+Limits: explain 3000 input/2000 output/2 units; step 5000/1600/1; full 12000/4000/4.
+Input counting uses OpenAI's `/responses/input_tokens` with the complete formatted input.
+Output includes invisible tokens. Maximum one active generation/account, four fresh attempts
+per minute and 20 seconds between step attempts. Pro: 300/month, 30/day; Studio: 1200/100;
+Kitchen: 3000/200. Free has no generation entitlement. Explicit pilot UUIDs use Pro quotas
+without changing their subscription. All periods use calendar UTC, not browser time.
+
+The tested snapshot is `gpt-5.4-mini-2026-03-17`, reasoning none, strict JSON and `store:false`.
+Startup rejects an enabled unpriced model or missing key/DB. Budgets default to $5/day and
+$50/month; changes require trusted server configuration and restart. Reserve the worst-case
+cost under a global transaction lock, then settle actual usage, without assuming cache discounts.
+Failed results return user units; known provider usage remains billed. Unknown outcomes retain
+the full monetary reservation and are never retried automatically. Crashed 90-second leases
+become unknown; reservations remain charged against their original period until operator
+reconciliation. There is no automatic uncertain-charge reconciliation yet.
+
+Exact account/snapshot/model/prompt/language results have a private 30-minute cache; new IDs
+for cache hits consume no units. Expired responses are deleted on subsequent reservations.
+The journal holds metadata and token counts, not recipe bodies or credentials; the separate
+closed cache necessarily contains generated text. Both deny direct Data API access.
+Stable errors include AI_PLAN_REQUIRED, AI_QUOTA_EXCEEDED, AI_RATE_LIMITED,
+AI_BUDGET_EXCEEDED, AI_INPUT_TOO_LARGE, AI_REQUEST_PENDING, AI_REQUEST_FINISHED,
+AI_REQUEST_CONFLICT, AI_RESPONSE_INCOMPLETE and AI_PROVIDER_UNAVAILABLE.
+
+Cloud create/read/version/remix now include servings and steps (legacy defaults null/[]).
+PATCH preserves omitted fields and accepts expectedVersionNumber for optimistic concurrency;
+a stale supplied version returns DISH_UPDATE_CONFLICT without overwriting the draft.
 
 ## Privacy and known limits
 

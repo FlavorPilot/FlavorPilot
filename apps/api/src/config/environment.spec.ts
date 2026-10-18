@@ -9,7 +9,11 @@ describe('environment flags', () => {
         expect(validateEnvironment({NODE_ENV:'test',ADMIN_REQUIRE_MFA:'false'}).ADMIN_REQUIRE_MFA).toBe(false);
         expect(()=>validateEnvironment({NODE_ENV:'production',ADMIN_REQUIRE_MFA:'false'})).toThrow('MFA');
     });
-    it('blocks production AI pending quota implementation', () => { expect(() => validateEnvironment({ NODE_ENV: 'production', AI_ENABLED: 'true' })).toThrow(); });
+    it('requires server persistence and key before enabling budgeted AI', () => {
+        expect(() => validateEnvironment({ NODE_ENV: 'production', AI_ENABLED: 'true' })).toThrow();
+        expect(validateEnvironment({NODE_ENV:'production',AI_ENABLED:'true',DATABASE_URL:'postgres://localhost/test',OPENAI_API_KEY:'test'}).AI_ENABLED).toBe(true);
+        expect(()=>validateEnvironment({AI_ENABLED:'true',DATABASE_URL:'postgres://localhost/test',OPENAI_API_KEY:'test',OPENAI_MODEL:'unpriced-model'})).toThrow('budget prices');
+    });
     it('rejects invalid ports', () => { expect(() => validateEnvironment({ API_PORT: '0' })).toThrow(); });
     it('rejects wildcard CORS in production', () => { expect(() => validateEnvironment({ NODE_ENV: 'production', CORS_ORIGINS: '*' })).toThrow(); });
 });

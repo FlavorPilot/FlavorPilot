@@ -97,7 +97,22 @@ The API service applies explicit filters even when direct DB sessions bypass RLS
 presence alone is not proof of tenant isolation. Database and auth provider errors must never
 expose full connection strings, query parameters or recipes in logs.
 
-## Rollback
+## Recipe content and AI usage
+
+Apply `supabase/migrations/20261018125915_recipe_cloud_and_ai_usage.sql` after trigger hardening,
+before deploying the matching API/web. The repeatable additive migration adds nullable servings,
+default-empty validated steps and two closed AI tables. Existing recipes, ownership, visibility,
+subscriptions and version snapshots are preserved; legacy snapshots may omit new fields.
+Fresh schema includes the same definitions. No paid access is seeded.
+
+`ai_requests` records account/request identity, content hash, model/prompt, status, units,
+monetary reservation, token usage and elapsed time. `ai_response_cache` holds private generated
+results for 30 minutes and is never exposed as a public recipe field. Both enable RLS and revoke
+all public/anon/authenticated privileges. Nest uses a global transaction advisory lock for short
+reservation/settlement transactions; no database lock remains held during provider HTTP calls.
+See [API.md](API.md) for quotas, timeout reservations and remaining reconciliation limitations.
+
+## Rollback procedure
 
 Do not reverse grants automatically on a production database. Roll back the API application and
 review whether old clients still require direct Data API access. Keep private access closed until

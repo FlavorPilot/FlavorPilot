@@ -27,8 +27,8 @@ export type NormalizedAnalyzeDishRequest = z.output<typeof analyzeDishRequestSch
 export const dishVisibilitySchema = z.enum(dishVisibilities);
 export const savedDishSchema = z.object({ id: z.string().trim().min(1).max(160), name: z.string().trim().min(1).max(160), items: z.array(dishItemSchema).min(1).max(24), goal: dishGoalSchema, visibility: dishVisibilitySchema, createdAt: z.string().datetime(), parentDishId: z.string().trim().min(1).max(160).optional(), ...recipeContentSchema.shape });
 // Rebuild r2: the API recalculates analysis; browser-supplied scores are never trusted.
-export const aiExplainRequestSchema = analyzeDishRequestSchema.extend({ locale: localeSchema, dishName: z.string().trim().max(160) });
+export const aiExplainRequestSchema = analyzeDishRequestSchema.extend({ requestId: z.string().uuid().optional(), locale: localeSchema, dishName: z.string().trim().max(160) });
 export type AiExplainRequest = z.infer<typeof aiExplainRequestSchema>;
-export const aiExplainActionSchema = z.object({ title: z.string(), explanation: z.string() });
-export const aiExplainResponseSchema = z.object({ summary: z.string(), main_problem: z.string(), actions: z.array(aiExplainActionSchema) });
+export const aiExplainActionSchema = z.object({ title: z.string().max(200), explanation: z.string().max(1800) });
+export const aiExplainResponseSchema = z.object({ summary: z.string().max(1800), main_problem: z.string().max(1800), actions: z.array(aiExplainActionSchema).max(3) });
 export type AiExplainResponse = z.infer<typeof aiExplainResponseSchema>;

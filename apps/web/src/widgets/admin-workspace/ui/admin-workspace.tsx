@@ -49,7 +49,14 @@ export function AdminWorkspace({controller:c,section,locale}:{controller:AdminCo
           [t.crmEnvironment,c.data.service.environment],[t.crmDatabase,c.data.service.database==='connected' ? t.crmConnected : c.data.service.database==='unavailable' ? t.crmUnavailable : t.crmNotConfigured],
           [t.crmAuth,c.data.service.authConfigured ? t.crmConfigured : t.crmNotConfigured],[t.crmAi,c.data.service.aiEnabled ? t.crmEnabled : t.crmDisabled],
           [t.crmBilling,t.crmNotConnected],[t.crmBackups,t.crmNotMonitored],[t.crmCheckedAt,when(c.data.service.checkedAt)],
-        ] as const).map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl><Versions model={c.data.service.modelVersion} catalogue={c.data.service.catalogueVersion} locale={locale}/></>}
+          ...(c.data.service.aiUsage?[
+            [t.crmAiUsage,c.data.service.aiUsage.model],[t.crmAiRequests,c.data.service.aiUsage.requests],[t.crmAiErrors,c.data.service.aiUsage.errors],
+            [t.crmAiUnknown,c.data.service.aiUsage.unknown],[t.crmAiInput,c.data.service.aiUsage.inputTokens],[t.crmAiOutput,c.data.service.aiUsage.outputTokens],
+            [t.crmAiReasoning,c.data.service.aiUsage.reasoningTokens],[t.crmAiSpent,c.data.service.aiUsage.spentUsd],[t.crmAiReserved,c.data.service.aiUsage.reservedUsd],
+            [t.crmAiBudget,c.data.service.aiUsage.monthlyBudgetUsd],[t.crmAiDailyBudget,c.data.service.aiUsage.dailyBudgetUsd],
+            [t.crmAiBudgetRemaining,Math.max(0,c.data.service.aiUsage.monthlyBudgetUsd-c.data.service.aiUsage.spentUsd-c.data.service.aiUsage.reservedUsd)],[t.crmAiLatency,c.data.service.aiUsage.averageLatencyMs],
+          ]:[]),
+        ] as const).map(([label,value])=><div key={label}><dt>{label}</dt><dd>{typeof value==='number'?formatNumber(value,locale,6):value}</dd></div>)}</dl><Versions model={c.data.service.modelVersion} catalogue={c.data.service.catalogueVersion} locale={locale}/></>}
       </>}
       {page && <div className="crm-paging"><Button disabled={c.page===1 || c.loading || c.busy} onClick={()=>c.setPage(c.page-1)}>{t.crmPrevious}</Button><span>{c.page} · {page.total}</span><Button disabled={c.page*page.limit>=page.total || c.loading || c.busy} onClick={()=>c.setPage(c.page+1)}>{t.crmNext}</Button></div>}
       <Dialog open={Boolean(c.data.user)} title={c.data.user?.profile.displayName || c.data.user?.profile.username || t.crmUsers} closeLabel={t.close} onClose={c.closeUser}>

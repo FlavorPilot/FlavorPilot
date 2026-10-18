@@ -50,7 +50,10 @@ unreviewed; grouping is based on catalogue roles/textures rather than a learned 
 ## Product and technical gaps
 
 - No real checkout, webhooks, Pro billing or user-selectable plan authority.
-- No production AI until usage/rate quotas are implemented. No chat UI that pretends otherwise.
+- AI usage/rate quotas and a private recipe assistant are implemented; enabling a hosted pilot
+  still requires the matching migration/deployment and a real provider smoke test. Billing and
+  expert evaluation of culinary feedback remain outstanding. Unknown provider outcomes retain
+  monetary reservations until operator reconciliation; there is no automatic reconciliation.
 - No complete moderation, abuse prevention, analytics, backup/restore or load testing.
 - Authenticated cloud save sources exist but must be tested with a configured provider.
 - Guest drafts are stored separately from account drafts. Signing in does not silently upload

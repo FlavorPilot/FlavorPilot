@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { dishAnalysisSchema } from '@flavorpilot/contracts';
 import { useDishEditor } from '@/features/dish-editor';
+import { useCulinaryAssistant } from '@/features/culinary-assistant';
+import { CulinaryAssistant } from '@/widgets/culinary-assistant';
 import { RecipeShareLink } from "@/features/share-recipe";
 import { SaveRecipeDialog } from '@/features/save-recipe';
 import { useSession } from '@/features/session';
@@ -44,6 +46,9 @@ function BuilderWorkspace({ locale, scope, token }: {
     const [notice, setNotice] = useState('');
     const [detail, setDetail] = useState(false);
     const [tab, setTab] = useState<'composition' | 'instructions'>('composition');
+    const assistant=useCulinaryAssistant({locale,token,active:tab==='instructions',dishId:editor.draft.linkedOrigin==='cloud'?editor.draft.linkedId:undefined,
+        recipe:{name:editor.draft.name,goal:editor.draft.goal,items:editor.draft.items,description:editor.draft.description,servings:editor.draft.servings,steps:editor.draft.steps},
+        onApply:(id,text)=>{editor.endEdit();editor.setStep(id,text);editor.endEdit();}});
     const [invalidServings, setInvalidServings] = useState(false);
     const [checking, setChecking] = useState(false);
     const [checkResult, setCheckResult] = useState<{
@@ -113,6 +118,7 @@ function BuilderWorkspace({ locale, scope, token }: {
           recipe={{name:editor.draft.name,description:editor.draft.description,servings:editor.draft.servings,steps:editor.draft.steps,goal:editor.draft.goal,items:editor.draft.items}}/>}/></WidgetBoundary>
     </div>
     <WidgetBoundary fallback={fallback}><DishRecommendations locale={locale} recommendations={editor.analysis.recommendations} onPreview={editor.preview} disabled={editor.draft.items.length >= 24}/></WidgetBoundary>
+    <WidgetBoundary fallback={fallback}><CulinaryAssistant locale={locale} state={assistant} view="explain" steps={editor.draft.steps} hasItems={editor.draft.items.length>0}/></WidgetBoundary>
     <div className="detail-toolbar"><div className="segmented" role="group" aria-label={t.viewMode}><button type="button" aria-pressed={!detail} onClick={() => toggleDetail(false)}>{t.focused}</button><button type="button" aria-pressed={detail} onClick={() => toggleDetail(true)}><Icon name="sliders" size={15}/>{t.detailed}</button></div>{hasApi && <Button variant="ghost" disabled={checking} onClick={verify}>{checking ? t.serverChecking : t.serverCheck}</Button>}</div>
     {checkResult && checkResult.key === latest.current && <Notice tone={checkResult.ok ? 'success' : 'warning'}>{checkResult.text}</Notice>}
     {detail && <div className="studio-grid studio-grid--details"><WidgetBoundary fallback={fallback}><SensoryProfile locale={locale} profile={editor.analysis.profile}/></WidgetBoundary><WidgetBoundary fallback={fallback}><IngredientPairings locale={locale} pairs={editor.analysis.pairResults}/></WidgetBoundary></div>}
@@ -121,9 +127,10 @@ function BuilderWorkspace({ locale, scope, token }: {
         <div className="recipe-workspace">
             <WidgetBoundary fallback={fallback}><RecipeInstructions key={editor.draftEpoch} content={editor.draft} locale={locale}
                 onDescription={editor.setDescription} onServings={editor.setServings} onAddStep={editor.addStep}
-                onStep={editor.setStep} onMoveStep={editor.moveStep} onRemoveStep={editor.removeStep} onEndEdit={editor.endEdit}
+                onStep={(id,text)=>{assistant.editedStep(id);editor.setStep(id,text);}} onMoveStep={editor.moveStep} onRemoveStep={editor.removeStep} onEndEdit={editor.endEdit}
                 onServingsInvalid={setInvalidServings}/></WidgetBoundary>
-            <WidgetBoundary fallback={fallback}><RecipeContext items={editor.draft.items} locale={locale}/></WidgetBoundary>
+            <div className="stack"><WidgetBoundary fallback={fallback}><RecipeContext items={editor.draft.items} locale={locale}/></WidgetBoundary>
+            <WidgetBoundary fallback={fallback}><CulinaryAssistant locale={locale} state={assistant} view="review" steps={editor.draft.steps} hasItems={editor.draft.items.length>0}/></WidgetBoundary></div>
         </div>
     </div>
     <p className="workspace-footnote"><Icon name="info" size={15}/>{t.knowledgeNote}</p>

@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AiUsageService } from '../ai/ai-usage.service';
 import { count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import type { AdminListQuery, AdminModerationRequest, AdminReviewRequest } from '@flavorpilot/contracts';
 import { ingredients, ingredientKnowledge, aiIngredientKnowledge, sourcedIdentities, nutrientHypotheses,
@@ -15,7 +16,7 @@ const userFields={id:profiles.id,username:profiles.username,displayName:profiles
 const reviewDefault={status:'new' as const,note:'',revision:0};
 @Injectable()
 export class AdminService {
-    constructor(private readonly database:DatabaseService,private readonly config:ConfigService) {}
+    constructor(private readonly database:DatabaseService,private readonly config:ConfigService,private readonly aiUsage:AiUsageService) {}
     async log(actorId:string,action:string,targetId?:string,reason?:string) {
         await this.database.requireDatabase().insert(adminAuditEvents).values({actorId,action,targetId,reason});
     }
@@ -134,6 +135,6 @@ export class AdminService {
         await this.log(actorId,'service.read');
         return {database,checkedAt:new Date().toISOString(),environment:this.config.get<string>('NODE_ENV','development'),apiVersion:'0.3.0',
             modelVersion:MODEL_VERSION,catalogueVersion:CATALOGUE_VERSION,authConfigured:Boolean(this.config.get('SUPABASE_URL') && this.config.get('SUPABASE_PUBLISHABLE_KEY')),
-            aiEnabled:this.config.get<boolean>('AI_ENABLED',false),billing:'not_connected',backups:'not_monitored'};
+            aiEnabled:this.config.get<boolean>('AI_ENABLED',false),aiUsage:await this.aiUsage.metrics(),billing:'not_connected',backups:'not_monitored'};
     }
 }

@@ -7,6 +7,7 @@ export async function request<T>(path: string, parse: (data: unknown) => T, opti
     body?: unknown;
     token?: string;
     signal?: AbortSignal;
+    timeoutMs?: number;
 } = {}): Promise<T> {
     if (!env.apiUrl)
         throw new ApiError(503, 'API_NOT_CONFIGURED');
@@ -15,7 +16,7 @@ export async function request<T>(path: string, parse: (data: unknown) => T, opti
     if (options.signal?.aborted)
         controller.abort();
     options.signal?.addEventListener('abort', abort, { once: true });
-    const timer = setTimeout(abort, 15000);
+    const timer = setTimeout(abort, options.timeoutMs ?? 15000);
     try {
         const response = await fetch(`${env.apiUrl}${path}`, {
             method: options.method ?? 'GET', cache: 'no-store', signal: controller.signal,
