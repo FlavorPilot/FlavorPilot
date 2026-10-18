@@ -13,7 +13,14 @@ were failed with zero units and zero charged micro USD; no usable GPT result was
 Added safe provider diagnostics: only HTTP status, stage and fixed allowlisted error/parameter
 labels enter server logs. Raw error messages, credentials and recipe content are excluded.
 API typecheck and all 24 API unit tests passed, including two diagnostic redaction tests.
-Provider error diagnosis and real successful inference are still pending at this checkpoint.
+The API production build also passed. Diagnostic commit `1ea5013` reached Railway SUCCESS
+(deployment `837abaae-1580-41b7-add3-15ee39649a25`) and Vercel READY. One additional synthetic
+explanation request confirmed that input-token preflight passes, but generation is rejected
+by OpenAI with HTTP 403, code `model_not_found`, no missing-scope marker. The configured
+`gpt-5.4-mini-2026-03-17` snapshot is listed in the official model documentation; access for
+the key's project still needs verification by its owner. All three hosted attempts are failed,
+with zero user units and zero recorded charges. No fallback model was substituted. Successful
+provider inference, hosted cache/idempotency smoke and expert review remain unverified.
 
 ## Cloud preparation and budgeted culinary assistant — 2026-10-18
 
