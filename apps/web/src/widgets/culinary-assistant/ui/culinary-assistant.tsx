@@ -2,7 +2,7 @@ import {useState} from 'react';
 import type { AiCapabilities,AiComment,AiExplainResponse,AiDishOutcome,AiGeneratedRecipe,RecipeStep } from '@flavorpilot/contracts';
 import { formatNumber,getDictionary,type Locale,type MessageKey } from '@/shared/i18n';
 import { Badge,Button,Dialog,Notice,WidgetFrame } from '@/shared/ui';
-const errorKeys:Record<string,MessageKey>={AI_INPUT_TOO_LARGE:'aiInputTooLarge',AI_PLAN_REQUIRED:'aiPlanRequired',AI_DISABLED:'aiDisabled',AI_RATE_LIMITED:'aiRateLimited',AI_QUOTA_EXCEEDED:'aiQuotaExceeded',AI_BUDGET_EXCEEDED:'aiBudgetExceeded',AI_REQUEST_PENDING:'aiPending',AI_REQUEST_FINISHED:'aiFinished',AI_REQUEST_CONFLICT:'aiFinished',AI_RESPONSE_INCOMPLETE:'aiIncomplete'};
+const errorKeys:Record<string,MessageKey>={AI_GUEST_STORAGE_UNAVAILABLE:'aiGuestStorageUnavailable',AI_GUEST_SESSION_INVALID:'aiGuestSessionInvalid',AI_INPUT_TOO_LARGE:'aiInputTooLarge',AI_PLAN_REQUIRED:'aiPlanRequired',AI_DISABLED:'aiDisabled',AI_RATE_LIMITED:'aiRateLimited',AI_QUOTA_EXCEEDED:'aiQuotaExceeded',AI_BUDGET_EXCEEDED:'aiBudgetExceeded',AI_REQUEST_PENDING:'aiPending',AI_REQUEST_FINISHED:'aiFinished',AI_REQUEST_CONFLICT:'aiFinished',AI_RESPONSE_INCOMPLETE:'aiIncomplete'};
 type State={signedIn:boolean;quota:AiCapabilities|null;busy:boolean;error:string;consent:boolean;automatic:boolean;available:boolean;activeStep:string;stale:boolean;comments:AiComment[];result:{kind:string;explanation?:AiExplainResponse}|null;run:(kind:'explain'|'step'|'full'|'generate')=>void;apply:(comment:AiComment)=>void;dismiss:(id:string)=>void;setConsent:(v:boolean)=>void;setAutomatic:(v:boolean)=>void;setActiveStep:(v:string)=>void;assessment:AiDishOutcome|null;assessmentStale:boolean;generation:{recipe:AiGeneratedRecipe;assumptions:string[]}|null;generationStale:boolean;generationBrief:string;setGenerationBrief:(v:string)=>void;applyRecipe:()=>void};
 export function CulinaryAssistant({locale,state:s,view,steps,hasItems}:{locale:Locale;state:State;view:'explain'|'review';steps:RecipeStep[];hasItems:boolean}){
  const t=getDictionary(locale).messages;
@@ -12,10 +12,16 @@ export function CulinaryAssistant({locale,state:s,view,steps,hasItems}:{locale:L
  const explain=view==='explain',visible=s.result&&(explain?s.result.kind==='explain':s.result.kind!=='explain');
  return <WidgetFrame id={`culinary-${view}`} title={explain?t.aiExplainTitle:t.aiReviewTitle} icon="spark">
   <p className="small muted">{explain?t.aiExplainHint:t.aiReviewHint}</p>
-  {!s.quota ? <p>{s.signedIn?(s.error?t.aiUnavailable:t.loading):t.aiConnect}</p> : !s.quota.enabled ? <Notice>{t.aiDisabled}</Notice> : s.quota.access==='none' ? <Notice>{t.aiPlanRequired}</Notice> : <>
-   {s.quota.access==='pilot'&&<p className="small">{t.aiPilot}</p>}
-   <p className="small">{t.aiRemaining}: {formatNumber(s.quota.remaining,locale,0)} · {t.aiDailyRemaining}: {formatNumber(s.quota.dailyRemaining,locale,0)}</p>
-   <p className="small muted">{t.aiMonthlyReset}: {new Date(s.quota.resetAt).toLocaleString(locale==='uk'?'uk-UA':'en-GB',{timeZone:'UTC'})} UTC<br/>{t.aiDailyReset}: {new Date(s.quota.dailyResetAt).toLocaleString(locale==='uk'?'uk-UA':'en-GB',{timeZone:'UTC'})} UTC</p>
+  {!s.quota ? <p>{s.error?t.aiUnavailable:t.loading}</p> : !s.quota.enabled ? <Notice>{t.aiDisabled}</Notice> : s.quota.access==='none' ? <Notice>{t.aiPlanRequired}</Notice> : <>
+   {s.quota.access==='pilot'&&<p className="small">{t.aiPilot}</p>}   {s.quota.reason==='AI_QUOTA_EXCEEDED'&&<Notice>{t.aiQuotaExceeded}</Notice>}
+   {s.quota.allowancePeriod==='test'?<>
+    <p className="small">{s.quota.access==='guest_test'?t.aiGuestTestAccess:t.aiFreeTestAccess}</p>
+    <p className="small">{t.aiTestRemaining}: {formatNumber(s.quota.remaining,locale,0)}</p>
+    <p className="small muted">{t.aiTestAllowanceHint}{s.quota.access==='guest_test'?` ${t.aiGuestTestHint}`:''}</p>
+   </>:<>
+    <p className="small">{t.aiRemaining}: {formatNumber(s.quota.remaining,locale,0)} · {t.aiDailyRemaining}: {formatNumber(s.quota.dailyRemaining,locale,0)}</p>
+    <p className="small muted">{t.aiMonthlyReset}: {new Date(s.quota.resetAt).toLocaleString(locale==='uk'?'uk-UA':'en-GB',{timeZone:'UTC'})} UTC<br/>{t.aiDailyReset}: {new Date(s.quota.dailyResetAt).toLocaleString(locale==='uk'?'uk-UA':'en-GB',{timeZone:'UTC'})} UTC</p>
+   </>}
    <label className="check-label"><input type="checkbox" checked={s.consent} onChange={e=>s.setConsent(e.target.checked)}/><span>{t.aiConsent}</span></label>
    {!explain&&<>
     <label className="field-label">{t.aiActiveStep}<select value={s.activeStep} onChange={e=>s.setActiveStep(e.target.value)}><option value="">{t.aiChooseStep}</option>{steps.map((step,i)=><option key={step.id} value={step.id}>{t.recipeStep} {formatNumber(i+1,locale,0)}</option>)}</select></label>

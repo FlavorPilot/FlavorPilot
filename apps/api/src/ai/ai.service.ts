@@ -1,3 +1,4 @@
+import type { AiActor } from './ai-actor';
 import { createHash, randomUUID } from 'node:crypto';
 import { BadGatewayException, BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -21,7 +22,7 @@ export class AiService {
   try{return await fetch(`https://api.openai.com/v1/${path}`,{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(timeout)});}
   catch{this.logger.warn(`OpenAI transport failed: stage=${path==='responses'?'responses':'input_tokens'}`);throw new AiProviderFailure('AI_PROVIDER_UNAVAILABLE',path==='responses');}
  }
- async run<T>(userId:string,requestId:string,feature:AiFeature,locale:Locale,context:unknown,schema:unknown,parse:(v:unknown)=>T,task='',prepare:(value:unknown)=>unknown=value=>value){
+ async run<T>(userId:AiActor,requestId:string,feature:AiFeature,locale:Locale,context:unknown,schema:unknown,parse:(v:unknown)=>T,task='',prepare:(value:unknown)=>unknown=value=>value){
   const hash=createHash('sha256').update(JSON.stringify({model:AI_MODEL,prompt:AI_PROMPT_VERSION,engine:MODEL_VERSION,catalogue:CATALOGUE_VERSION,feature,locale,context})).digest('hex');
   const reserved=await this.usage.reserve(userId,requestId,hash,feature);
   if(reserved.cached!==undefined)return {value:parse(reserved.cached),hash};
@@ -59,13 +60,13 @@ export class AiService {
    throw new BadGatewayException({code,message:'AI could not return a usable result'});
   }
  }
- async explain(userId:string,requestId:string,input:{locale:Locale;dishName:string;analysis:DishAnalysis;items:AiReviewRequest['recipe']['items']}){
+ async explain(userId:AiActor,requestId:string,input:{locale:Locale;dishName:string;analysis:DishAnalysis;items:AiReviewRequest['recipe']['items']}){
   const a=input.analysis;
   const context={dishName:input.dishName,items:this.catalogue(input.items,input.locale),analysis:{overallScore:a.overallScore,compatibilityScore:a.compatibilityScore,balanceScore:a.balanceScore,quantityScore:a.quantityScore,textureScore:a.textureScore,confidence:a.confidence,profile:a.profile,issues:a.issues.slice(0,6),recommendations:a.recommendations.slice(0,3)}};
   return (await this.run(userId,requestId,'explain',input.locale,context,explanationSchema,v=>aiExplainResponseSchema.parse(v))).value;
  }
  private catalogue(items:AiReviewRequest['recipe']['items'],locale:Locale){return items.map(i=>({...i,name:ingredientById.get(i.ingredientId)?.name[locale],preparation:preparationById.get(i.preparationId)?.name[locale]}));}
- async review(userId:string,input:AiReviewRequest,analysis:DishAnalysis){
+ async review(userId:AiActor,input:AiReviewRequest,analysis:DishAnalysis){
   const r=input.recipe,index=r.steps.findIndex(s=>s.id===input.activeStepId);
   const steps=input.scope==='step'?r.steps.slice(Math.max(0,index-1),index+2):r.steps;
   const includeOutcome=input.scope==='full'&&input.includeOutcome===true;
@@ -83,7 +84,7 @@ export class AiService {
   });
   return {...result.value,contentHash:result.hash,requestId:input.requestId,quota:await this.usage.capabilities(userId)};
  }
- async generate(userId:string,input:AiGenerateRequest){
+ async generate(userId:AiActor,input:AiGenerateRequest){
   const r=input.recipe,allowed=new Set(r.items.map(i=>i.ingredientId));
   const context={dishId:input.dishId??null,brief:input.brief,name:r.name,description:r.description,servings:r.servings,goal:r.goal,items:this.catalogue(r.items,input.locale)};
   const result=await this.run(userId,input.requestId,'generate',input.locale,context,generationFormat,v=>{

@@ -88,3 +88,35 @@ test('Ukrainian generated preview fits mobile; edited drafts reject stale apply 
  fail=true;await panel.getByRole('button',{name:'Згенерувати рецепт · 4',exact:true}).click();await expect(panel.getByRole('alert')).toContainText('Ліміт перевірок ШІ');await expect(page.getByRole('textbox',{name:'Крок 1',exact:true})).toHaveValue('Змінений рецепт.');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
+
+
+test('guest receives 50 test units without signup and keeps the server balance after reload',async({page})=>{
+ const token='a'.repeat(64);let remaining=50,sessions=0,reviews=0;
+ const quota=()=>({...capabilities,access:'guest_test',allowancePeriod:'test',remaining,dailyRemaining:remaining});
+ await page.route('**/v1/ai/capabilities',route=>{
+  const guest=route.request().headers()['x-ai-guest-token'];expect(guest===undefined||guest===token).toBe(true);
+  return route.fulfill({json:quota()});
+ });
+ await page.route('**/v1/ai/guest-session',route=>{sessions++;return route.fulfill({status:201,json:{token,quota:quota()}});});
+ await page.route('**/v1/ai/review-recipe',route=>{
+  expect(route.request().headers()['x-ai-guest-token']).toBe(token);expect(route.request().headers().authorization).toBeUndefined();
+  reviews++;remaining-=4;const data=route.request().postDataJSON();return route.fulfill({status:201,json:{requestId:data.requestId,contentHash:'guest',comments:[],outcome:forecast,quota:quota()}});
+ });
+ await page.goto('/en/builder');await page.getByLabel('Add an ingredient').fill('Salmon');await page.getByRole('option',{name:/Salmon/}).click();
+ await page.getByRole('tab',{name:'2. Preparation',exact:true}).click();
+ const panel=page.getByRole('region',{name:'Recipe assistant',exact:true});
+ await expect(panel).toContainText('Guest testing allowance: 50 AI units.');await expect(panel).toContainText('Test units remaining: 50');
+ expect(sessions).toBe(0);
+ await panel.getByRole('checkbox',{name:/Send this composition/}).check();await panel.getByRole('button',{name:'Assess dish & recipe · 4',exact:true}).click();
+ await expect(panel).toContainText('Test units remaining: 46');expect(sessions).toBe(1);
+ await page.reload();await page.getByRole('tab',{name:'2. Preparation',exact:true}).click();
+ await expect(panel).toContainText('Test units remaining: 46');expect(sessions).toBe(1);expect(reviews).toBe(1);
+ await expect(panel.getByRole('checkbox',{name:/Send this composition/})).not.toBeChecked();
+});
+
+test('Free test allowance displays 100 units without paid monthly reset copy',async({page})=>{
+ await page.route('**/v1/account/capabilities',route=>route.fulfill({json:{...capabilities,access:'free_test',allowancePeriod:'test',remaining:100,dailyRemaining:100}}));
+ await signup(page);await page.goto('/en/builder');await page.getByRole('tab',{name:'2. Preparation',exact:true}).click();
+ const panel=page.getByRole('region',{name:'Recipe assistant',exact:true});await expect(panel).toContainText('Free account testing allowance: 100 AI units.');await expect(panel).toContainText('Test units remaining: 100');
+ await expect(panel).not.toContainText('Checks left this month');
+});

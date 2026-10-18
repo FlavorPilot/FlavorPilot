@@ -6,6 +6,7 @@ export async function request<T>(path: string, parse: (data: unknown) => T, opti
     method?: string;
     body?: unknown;
     token?: string;
+    headers?: Record<string,string>;
     signal?: AbortSignal;
     timeoutMs?: number;
 } = {}): Promise<T> {
@@ -20,7 +21,7 @@ export async function request<T>(path: string, parse: (data: unknown) => T, opti
     try {
         const response = await fetch(`${env.apiUrl}${path}`, {
             method: options.method ?? 'GET', cache: 'no-store', signal: controller.signal,
-            headers: { Accept: 'application/json', ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+            headers: { Accept: 'application/json', ...options.headers, ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
                 ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}) },
             ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
         });

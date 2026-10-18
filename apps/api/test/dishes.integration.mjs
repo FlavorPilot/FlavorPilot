@@ -37,10 +37,10 @@ async function signup(label) {
     return { email, token: body.access_token, id: body.user.id };
 }
 
-async function api(path, { method = 'GET', token, body } = {}) {
+async function api(path, { method = 'GET', token, body, headers = {} } = {}) {
     const response = await fetch(`${base}${path}`, {
         method,
-        headers: { Accept: 'application/json', ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: { Accept: 'application/json', ...headers, ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
     const text = await response.text();
@@ -194,6 +194,85 @@ it('assesses dish outcomes and generates bounded recipes with shared accounting 
   assert.equal(failed.n,4);assert.equal(failed.units,0);
   await sql.unsafe(migration);const [kept]=await sql`select id from public.ai_requests where user_id=${owner.id} and request_id=${request.requestId}`;assert.ok(kept.id);
  }finally{globalThis.fetch=originalFetch;config.set('AI_ENABLED',false);config.set('AI_PILOT_USER_IDS','');}
+});
+
+it('gives Free 100 non-renewing test units and preserves paid/pilot access and refunds',async()=>{
+ const free=await signup('test-allowance'),config=app.get(ConfigService);
+ const {AiUsageService}=await import('../dist/ai/ai-usage.service.js'),usage=app.get(AiUsageService);
+ config.set('AI_ENABLED',true);config.set('AI_TEST_ACCESS_ENABLED',true);
+ try{
+  let q=await api('/account/capabilities',{token:free.token});assert.equal(q.body.access,'free_test');assert.equal(q.body.allowancePeriod,'test');assert.equal(q.body.remaining,100);assert.equal(q.body.dailyRemaining,100);
+  const held=await usage.reserve(free.id,randomUUID(),'free-failure','generate');assert.equal((await usage.capabilities(free.id)).remaining,96);
+  await usage.finish(held.id,{status:'failed',duration:1,usage:{input:100,output:100,reasoning:0}});assert.equal((await usage.capabilities(free.id)).remaining,100);
+  await sql`insert into public.ai_requests(user_id,test_access,request_id,content_hash,feature,model,prompt_version,status,units,reserved_microusd,created_at,expires_at) select ${free.id},true,gen_random_uuid(),'test-total-'||n,'full','test','test','succeeded',4,0,now()-interval '2 months',now() from generate_series(1,25) n`;
+  assert.equal((await usage.capabilities(free.id)).remaining,0);
+  await assert.rejects(usage.reserve(free.id,randomUUID(),'exhausted-test','step'),/AI_QUOTA_EXCEEDED/);
+  config.set('AI_TEST_ACCESS_ENABLED',false);assert.equal((await usage.capabilities(free.id)).access,'none');
+  await assert.rejects(usage.reserve(free.id,randomUUID(),'test-disabled','step'),/active plan/);
+  config.set('AI_TEST_ACCESS_ENABLED',true);assert.equal((await usage.capabilities(free.id)).remaining,0);
+  await sql`update public.subscriptions set tier='pro',status='active' where user_id=${free.id}`;
+  q=await usage.capabilities(free.id);assert.equal(q.access,'paid');assert.equal(q.allowancePeriod,'calendar');assert.equal(q.remaining,300);assert.equal(q.dailyRemaining,30);
+  await sql`update public.subscriptions set tier='free' where user_id=${free.id}`;
+  config.set('AI_PILOT_USER_IDS',free.id);q=await usage.capabilities(free.id);assert.equal(q.access,'pilot');assert.equal(q.remaining,300);
+  config.set('AI_ENABLED',false);assert.equal((await usage.capabilities(null)).enabled,false);
+  assert.equal((await api('/ai/guest-session',{method:'POST'})).status,503);
+ }finally{config.set('AI_ENABLED',false);config.set('AI_TEST_ACCESS_ENABLED',false);config.set('AI_PILOT_USER_IDS','');}
+});
+
+it('isolates guest AI credentials, bounds issuance and enforces 50 total units across concurrent requests',async()=>{
+ const config=app.get(ConfigService),originalFetch=globalThis.fetch;
+ const {AiUsageService}=await import('../dist/ai/ai-usage.service.js'),usage=app.get(AiUsageService);
+ const migration=readFileSync(new URL('../../../supabase/migrations/20261018151355_temporary_ai_test_allowances.sql',import.meta.url),'utf8');
+ await sql.unsafe(migration);await sql.unsafe(migration);
+ config.set('AI_ENABLED',true);config.set('AI_TEST_ACCESS_ENABLED',true);config.set('OPENAI_API_KEY','fake-local-key');
+ try{
+  const preview=await api('/ai/capabilities');assert.equal(preview.body.access,'guest_test');assert.equal(preview.body.remaining,50);
+  const [empty]=await sql`select count(*)::int n from public.ai_guest_sessions where true`;assert.equal(empty.n,0);
+  const session=await api('/ai/guest-session',{method:'POST'});assert.equal(session.status,201);assert.match(session.body.token,/^[a-f0-9]{64}$/);
+  const headers={'X-AI-Guest-Token':session.body.token};
+  const [stored]=await sql`select id,token_hash from public.ai_guest_sessions where true`;assert.notEqual(stored.token_hash,session.body.token);
+  const actor={guestId:stored.id};
+  await sql`update public.ai_guest_sessions set created_at=now() where id=${stored.id}`;
+  assert.equal((await api('/ai/guest-session',{method:'POST'})).status,429);
+  for(const path of ['/ai/capabilities','/ai/guest-session']){
+   const bad=await api(path,{method:path.endsWith('session')?'POST':'GET',token:'invalid',headers});assert.equal(bad.status,401);
+  }
+  assert.equal((await api('/ai/capabilities',{headers:{'X-AI-Guest-Token':'f'.repeat(64)}})).status,401);
+  assert.equal((await api('/account/capabilities',{headers})).status,401);
+  assert.equal((await api('/dishes/me',{headers})).status,401);
+  assert.equal((await api('/ai/review-recipe',{method:'POST',body:{}})).status,401);
+  const request={requestId:randomUUID(),locale:'en',scope:'full',recipe:{name:'Guest dish',goal:'balanced',items,description:'',servings:null,steps:[]}};
+  for(const path of ['/ai/review-recipe','/ai/generate-recipe']){
+   const body=path.endsWith('generate-recipe')?{requestId:randomUUID(),locale:'en',recipe:request.recipe,dishId:randomUUID()}:{...request,dishId:randomUUID()};
+   assert.equal((await api(path,{method:'POST',headers,body})).status,404);
+  }
+  let calls=0;
+  globalThis.fetch=async(url,options)=>{
+   if(!String(url).startsWith('https://api.openai.com/v1/'))return originalFetch(url,options);
+   if(String(url).endsWith('input_tokens'))return Response.json({input_tokens:100});
+   calls++;return Response.json({status:'completed',usage:{input_tokens:100,output_tokens:100},output:[{content:[{type:'output_text',text:JSON.stringify({comments:[]})}]}]});
+  };
+  let result=await api('/ai/review-recipe',{method:'POST',headers,body:request});assert.equal(result.status,201);assert.equal(result.body.quota.remaining,46);
+  const repeated=await api('/ai/review-recipe',{method:'POST',headers,body:request});assert.deepEqual(repeated.body,result.body);assert.equal(calls,1);
+  assert.equal((await api('/ai/capabilities',{headers})).body.remaining,46);
+  const account=await signup('guest-isolation');assert.equal((await api('/account/capabilities',{token:account.token,headers})).body.remaining,100);
+  config.set('AI_DAILY_BUDGET_USD',0.000001);await assert.rejects(usage.reserve(actor,randomUUID(),'guest-budget','full'),/AI_BUDGET_EXCEEDED/);config.set('AI_DAILY_BUDGET_USD',5);
+  await sql`insert into public.ai_requests(guest_id,test_access,request_id,content_hash,feature,model,prompt_version,status,units,reserved_microusd,created_at,expires_at) select ${stored.id},true,gen_random_uuid(),'guest-total-'||n,'full','test','test','succeeded',case when n=12 then 1 else 4 end,0,now()-interval '2 months',now() from generate_series(1,12) n`;
+  assert.equal((await usage.capabilities(actor)).remaining,1);
+  const attempts=await Promise.allSettled([usage.reserve(actor,randomUUID(),'guest-race-a','step'),usage.reserve(actor,randomUUID(),'guest-race-b','step')]);
+  assert.equal(attempts.filter(r=>r.status==='fulfilled').length,1);assert.equal(attempts.filter(r=>r.status==='rejected').length,1);
+  await usage.finish(attempts.find(r=>r.status==='fulfilled').value.id,{status:'succeeded',duration:1,usage:{input:100,output:100,reasoning:0},response:{comments:[]}});
+  assert.equal((await usage.capabilities(actor)).remaining,0);
+  assert.equal((await api('/ai/review-recipe',{method:'POST',headers,body:{...request,requestId:randomUUID(),recipe:{...request.recipe,name:'New snapshot'}}})).status,429);
+  assert.equal((await api('/ai/review-recipe',{method:'POST',headers,body:request})).status,201);assert.equal(calls,1);
+  config.set('AI_TEST_ACCESS_ENABLED',false);assert.equal((await api('/ai/review-recipe',{method:'POST',headers,body:request})).status,403);
+  config.set('AI_TEST_ACCESS_ENABLED',true);assert.equal((await api('/ai/capabilities',{headers})).body.remaining,0);
+  for(const role of ['anon','authenticated'])await assert.rejects(sql.begin(async tx=>{await tx.unsafe(`set local role ${role}`);await tx`select id from public.ai_guest_sessions where true`;}),/permission denied/);
+  await assert.rejects(sql`insert into public.ai_requests(user_id,request_id,content_hash,feature,model,prompt_version,status,units,reserved_microusd,expires_at) values(null,gen_random_uuid(),'no-actor','step','test','test','failed',0,0,now())`,/ai_requests_actor_check/);
+  await sql`insert into public.ai_guest_sessions(token_hash) select encode(digest(gen_random_uuid()::text,'sha256'),'hex') from generate_series(1,99)`;
+  assert.equal((await api('/ai/guest-session',{method:'POST'})).status,429);
+  await sql.unsafe(migration);assert.equal((await usage.capabilities(actor)).remaining,0);
+ }finally{globalThis.fetch=originalFetch;config.set('AI_ENABLED',false);config.set('AI_TEST_ACCESS_ENABLED',false);config.set('AI_DAILY_BUDGET_USD',5);}
 });
 
 it('hardens internal trigger RPC permissions while preserving signup and repeatable migration', async () => {

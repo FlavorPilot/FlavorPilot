@@ -9,7 +9,7 @@ const envSchema = z.object({
     CORS_ORIGINS: z.string().default('http://localhost:3000'), SWAGGER_ENABLED: bool(true),
     DATABASE_URL: optionalText, DATABASE_SSL: z.enum(['auto', 'require', 'disable']).default('auto'), DATABASE_POOL_SIZE: z.coerce.number().int().min(1).max(50).default(10),
     SUPABASE_URL: optionalText, SUPABASE_PUBLISHABLE_KEY: optionalText, OPENAI_API_KEY: optionalText, OPENAI_MODEL: z.string().default(AI_MODEL),
-    AI_ENABLED: bool(false), ADMIN_REQUIRE_MFA: bool(true),
+    AI_ENABLED: bool(false), AI_TEST_ACCESS_ENABLED: bool(false), ADMIN_REQUIRE_MFA: bool(true),
     AI_PILOT_USER_IDS: z.string().default('').refine(s=>s===''||s.split(',').every(id=>z.string().uuid().safeParse(id.trim()).success)),
     AI_DAILY_BUDGET_USD: z.coerce.number().positive().max(1000).default(5), AI_MONTHLY_BUDGET_USD: z.coerce.number().positive().max(10000).default(50)
 });
