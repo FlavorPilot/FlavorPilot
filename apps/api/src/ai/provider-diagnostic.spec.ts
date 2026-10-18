@@ -10,4 +10,12 @@ describe('safe provider diagnostics',()=>{
   expect(providerDiagnostic('responses',400,{error:{code:'sk-private',param:'private recipe'}})).toBe('OpenAI rejected responses: status=400 code=unclassified param=unspecified missingScope=false');
   expect(providerDiagnostic('responses',502,null)).toContain('code=unclassified');
  });
+ it('extracts only the project ID from the known access-denial message and a bounded trace ID',()=>{
+  const message='Project `proj_testABC123` does not have access to model `gpt-6-luna`; private recipe and sk-secret';
+  const result=providerDiagnostic('responses',403,{error:{code:'model_not_found',message}},'req_traceABC123');
+  expect(result).toContain('projectId=proj_testABC123 requestId=req_traceABC123');
+  expect(result).not.toContain('sk-secret');expect(result).not.toContain('private recipe');
+  expect(providerDiagnostic('responses',403,{error:{code:'model_not_found',message:'Project `proj_bad\nprivate` does not have access to model'}},'req_bad\nsecret')).not.toMatch(/projectId=|requestId=/);
+  expect(providerDiagnostic('responses',403,{error:{code:'invalid_api_key',message}},'sk-secret')).not.toMatch(/projectId=|requestId=/);
+ });
 });

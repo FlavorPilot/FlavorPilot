@@ -128,6 +128,9 @@ closed cache necessarily contains generated text. Both deny direct Data API acce
 Stable errors include AI_PLAN_REQUIRED, AI_QUOTA_EXCEEDED, AI_RATE_LIMITED,
 AI_BUDGET_EXCEEDED, AI_INPUT_TOO_LARGE, AI_REQUEST_PENDING, AI_REQUEST_FINISHED,
 AI_REQUEST_CONFLICT, AI_RESPONSE_INCOMPLETE and AI_PROVIDER_UNAVAILABLE.
+Server-only provider diagnostics retain allowlisted error labels and bounded request IDs.
+For a recognized model-access denial, extract the project ID to reconcile dashboard settings
+with the deployed key's project. Never log raw provider messages, keys or recipe bodies.
 
 Cloud create/read/version/remix now include servings and steps (legacy defaults null/[]).
 PATCH preserves omitted fields and accepts expectedVersionNumber for optimistic concurrency;

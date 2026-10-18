@@ -1,5 +1,14 @@
 # Actual validation — widget-monorepo-r2
 
+## Provider project diagnostics — 2026-10-18
+
+The operator supplied a dashboard screenshot with GPT-6 Luna allowed, while hosted requests
+still returned 403 model_not_found. Added extraction of a bounded project ID from the known
+access-denial message and a validated x-request-id header, without logging raw provider
+messages. API typecheck, 26 API tests and the production API build passed; redaction tests
+reject arbitrary IDs, line breaks and sensitive provider-message content. This enables project
+matching; the screenshot alone does not establish which project owns the deployed key.
+
 ## GPT-6 Luna migration — 2026-10-18
 
 The operator explicitly requested `gpt-6-luna` after the previous model's access rejection.
