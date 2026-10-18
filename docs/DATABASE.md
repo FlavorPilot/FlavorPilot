@@ -110,6 +110,16 @@ It only expands `ai_requests_feature_check` to include `generate`; existing rows
 units and monetary reservations are preserved. The migration is repeatable. Roll back the
 application without removing generation ledger rows or restoring the narrower check.
 
+For temporary 100-unit Free/50-unit guest access, subsequently apply
+`20261018151355_temporary_ai_test_allowances.sql`. It creates the closed `ai_guest_sessions`
+table (random identity, hashed credential, creation time), adds optional guest_id and a
+false-by-default test_access marker to the existing ledger, and permits a nullable user_id.
+An XOR constraint requires exactly one account/guest identity; guests also have a unique
+request index and a period index. Existing account FKs, uniqueness, cache and accounting remain.
+No allowance or subscription is seeded or upgraded. All new tables enable RLS and revoke
+PUBLIC/anon/authenticated access. Roll back by disabling AI_TEST_ACCESS_ENABLED and reverting
+the app; keep guest/test ledger rows for accounting. Fresh schema includes the same migration.
+
 `ai_requests` records account/request identity, content hash, model/prompt, status, units,
 monetary reservation, token usage and elapsed time. `ai_response_cache` holds private generated
 results for 30 minutes and is never exposed as a public recipe field. Both enable RLS and revoke

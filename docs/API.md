@@ -123,8 +123,30 @@ generate 8000/5000/4 (at most $0.0033 reserved). All share the same quotas and m
 Input counting uses OpenAI's `/responses/input_tokens` with the complete formatted input.
 Output includes invisible tokens. Maximum one active generation/account, four fresh attempts
 per minute and 20 seconds between step attempts. Pro: 300/month, 30/day; Studio: 1200/100;
-Kitchen: 3000/200. Free has no generation entitlement. Explicit pilot UUIDs use Pro quotas
+Kitchen: 3000/200. Free normally has no generation entitlement. Explicit pilot UUIDs use Pro quotas
 without changing their subscription. All periods use calendar UTC, not browser time.
+
+Temporary test access is separately controlled by API-only `AI_TEST_ACCESS_ENABLED=false`.
+When enabled together with AI_ENABLED, Free accounts receive 100 test units and guests receive
+50. These test allowances do not refill; accounting sums successful/live-reserved test units
+across calendar boundaries. Paid/pilot access keeps its existing priority and calendar limits.
+Capabilities distinguish `free_test`/`guest_test` and `allowancePeriod:test`; legacy paid/pilot
+responses use `calendar`. For test allowances the reset timestamps are compatibility fields,
+not a promised refill; clients display the test balance instead of monthly/daily reset text.
+Disabling the flag removes test access, including cached results; re-enabling preserves usage.
+
+`GET /v1/ai/capabilities` permits a guest availability preview without allocating an identity.
+The first explicit AI action calls `POST /v1/ai/guest-session`, receiving a cryptographically
+random token retained in this browser. Subsequent AI/capability calls send `X-AI-Guest-Token`.
+Only its SHA-256 hash is stored; tokens must never enter URLs/logs. Issuance is bounded globally
+to 100/day and at most one per second under a database lock; existing guests remain usable.
+Invalid account bearer tokens return 401 even if a guest token is supplied. Account bearer
+authorization takes precedence. Guest credentials authorize only these AI operations, never
+cloud recipes, account capabilities or administration; any guest dishId request is denied.
+All AI actors share the existing concurrency, rate, output and $5/day/$50/month budget checks.
+The guest limit is per retained browser identity, not per verified person: clearing storage or
+using another browser can create another identity within issuance/budget limits. No account or
+Supabase anonymous user is created. There is no automatic test-mode expiry or quota refill.
 
 The configured model is `gpt-6-luna`, reasoning none, strict JSON and `store:false`.
 Use the documented public model ID; no dated Luna snapshot is currently published. Requests

@@ -1,5 +1,14 @@
 # Known limitations — do not treat these as completed work
 
+## Temporary AI test allowances
+
+With AI_TEST_ACCESS_ENABLED, Free receives 100 units and guests 50. A guest is identified by
+a random AI-only credential retained in the browser, with server-side accounting; this is not
+proof of a unique person. Clearing browser storage or switching browsers can obtain another
+identity, bounded by global session issuance and the shared monetary budget. Existing private
+account routes remain protected. Test access has no automatic end date; the operator disables
+the flag when testing ends. A disabled/re-enabled flag does not reset consumed test units.
+
 ## Environment validation blockers
 
 - Registry access returned DNS error EAI_AGAIN in this build environment. The complete install
