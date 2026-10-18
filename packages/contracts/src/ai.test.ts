@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {aiReviewRequestSchema,aiReviewResultSchema} from './ai';
+import {aiReviewRequestSchema,aiReviewResultSchema,aiGenerateRequestSchema,aiGenerateResultSchema,aiDishOutcomeSchema} from './ai';
 const step='a1111111-1111-4111-8111-111111111111';
 const request={requestId:'b1111111-1111-4111-8111-111111111111',locale:'uk',scope:'step',activeStepId:step,recipe:{name:'Recipe',goal:'balanced',items:[{ingredientId:'salmon',grams:100,preparationId:'raw'}],steps:[{id:step,text:'Prepare fish.'}]}};
 describe('AI snapshot boundaries',()=>{
@@ -14,5 +14,21 @@ describe('AI snapshot boundaries',()=>{
   const comment={id:step,kind:'technique',stepId:step,message:'Explain this.',suggestedText:null};
   expect(aiReviewResultSchema.safeParse({comments:Array(7).fill(comment)}).success).toBe(false);
   expect(aiReviewResultSchema.safeParse({comments:[{...comment,kind:'publish'}]}).success).toBe(false);
+ });
+ it('assesses a composition before steps exist, but step review still requires one',()=>{
+  expect(aiReviewRequestSchema.safeParse({...request,scope:'full',includeOutcome:true,recipe:{...request.recipe,steps:[]}}).success).toBe(true);
+  expect(aiReviewRequestSchema.safeParse({...request,includeOutcome:true}).success).toBe(false);
+  expect(aiGenerateRequestSchema.safeParse({requestId:request.requestId,locale:'uk',recipe:{...request.recipe,steps:[]},brief:'x'.repeat(1001)}).success).toBe(false);
+  expect(aiGenerateRequestSchema.safeParse({requestId:request.requestId,locale:'uk',recipe:{...request.recipe,steps:[]},tier:'pro'}).success).toBe(false);
+ });
+ it('bounds outcome and generation outputs without accepting score or composition mutations',()=>{
+  const outcome={verdict:'promising',summary:'May work.',taste:'Rich.',texture:'Tender.',strengths:[],risks:[],cookingAdvice:[{title:'Heat',instruction:'Sear briefly.',reason:'Preserve moisture.'}],assumptions:[]};
+  expect(aiDishOutcomeSchema.safeParse(outcome).success).toBe(true);
+  expect(aiDishOutcomeSchema.safeParse({...outcome,score:100}).success).toBe(false);
+  expect(aiDishOutcomeSchema.safeParse({...outcome,cookingAdvice:[]}).success).toBe(false);
+  const generated={recipe:{name:'Draft',description:'A proposed method.',servings:null,steps:[{id:step,text:'Prepare salmon.',ingredientIds:['salmon']}]},assumptions:[]};
+  expect(aiGenerateResultSchema.safeParse(generated).success).toBe(true);
+  expect(aiGenerateResultSchema.safeParse({...generated,recipe:{...generated.recipe,items:[]}}).success).toBe(false);
+  expect(aiGenerateResultSchema.safeParse({...generated,recipe:{...generated.recipe,steps:[...generated.recipe.steps,...generated.recipe.steps]}}).success).toBe(false);
  });
 });

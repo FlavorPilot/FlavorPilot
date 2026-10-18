@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post, UseGuards, Header, NotFoundException } fro
 import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { aiExplainRequestSchema, aiReviewRequestSchema } from '@flavorpilot/contracts';
+import { aiExplainRequestSchema, aiReviewRequestSchema, aiGenerateRequestSchema } from '@flavorpilot/contracts';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/auth.types';
 import { DatabaseService } from '../database/database.service';
@@ -32,6 +32,13 @@ export class AiController {
         if(input.dishId){const [owned]=await this.database.requireDatabase().execute(sql`select id from public.dishes where id=${input.dishId} and owner_id=${user.id} limit 1`);if(!owned)throw new NotFoundException({code:'DISH_NOT_FOUND',message:'Recipe not found'});}
         const analysis=this.flavor.analyze({items:input.recipe.items,goal:input.recipe.goal,includeRecommendations:false});
         return this.ai.review(user.id,input,analysis);
+    }
+    @Post('generate-recipe') @Header('Cache-Control','no-store')
+    async generate(@Body() body:unknown,@CurrentUser() user:AuthenticatedUser){
+        const input=parseInput(aiGenerateRequestSchema,body);
+        if(input.dishId){const [owned]=await this.database.requireDatabase().execute(sql`select id from public.dishes where id=${input.dishId} and owner_id=${user.id} limit 1`);if(!owned)throw new NotFoundException({code:'DISH_NOT_FOUND',message:'Recipe not found'});}
+        this.flavor.analyze({items:input.recipe.items,goal:input.recipe.goal,includeRecommendations:false});
+        return this.ai.generate(user.id,input);
     }
 }
 @Controller('account') @UseGuards(SupabaseAuthGuard)

@@ -334,7 +334,7 @@ do $$ begin
 end $$;
 create table if not exists public.ai_requests (
  id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles(id) on delete cascade,
- request_id uuid not null, content_hash text not null, feature text not null check(feature in ('explain','step','full')),
+ request_id uuid not null, content_hash text not null, feature text not null check(feature in ('explain','step','full','generate')),
  model text not null, prompt_version text not null, status text not null check(status in ('reserved','succeeded','failed','unknown')),
  units integer not null check(units between 0 and 4), reserved_microusd integer not null check(reserved_microusd>=0),
  charged_microusd integer not null default 0 check(charged_microusd>=0), input_tokens integer, output_tokens integer,

@@ -48,7 +48,8 @@ function BuilderWorkspace({ locale, scope, token }: {
     const [tab, setTab] = useState<'composition' | 'instructions'>('composition');
     const assistant=useCulinaryAssistant({locale,token,active:tab==='instructions',dishId:editor.draft.linkedOrigin==='cloud'?editor.draft.linkedId:undefined,
         recipe:{name:editor.draft.name,goal:editor.draft.goal,items:editor.draft.items,description:editor.draft.description,servings:editor.draft.servings,steps:editor.draft.steps},
-        onApply:(id,text)=>{editor.endEdit();editor.setStep(id,text);editor.endEdit();}});
+        onApply:(id,text)=>{editor.endEdit();editor.setStep(id,text);editor.endEdit();},
+        onApplyRecipe:recipe=>{editor.endEdit();editor.applyGeneratedRecipe(recipe);editor.endEdit();}});
     const [invalidServings, setInvalidServings] = useState(false);
     const [checking, setChecking] = useState(false);
     const [checkResult, setCheckResult] = useState<{

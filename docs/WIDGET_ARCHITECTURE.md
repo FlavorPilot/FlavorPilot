@@ -67,6 +67,11 @@ storage. An enabled automatic review needs an actual edit while Preparation is a
 opening a tab or changing the locale alone never generates a request. Both assistant panels
 share one controller. Its response only applies to the same content/language snapshot and
 uses the editor reducer/undo history. See [the recipe workspace plan](RECIPE_WORKSPACE_PLAN.md).
+Full review keeps a separate finished-dish forecast and cooking advice so automatic step
+comments cannot erase it. Generation has its own preview and optional brief; edits invalidate
+old suggestions. A confirmation applies the generated text as one reducer operation with Undo,
+without changing selected ingredients, grams, preparation methods, goal or saved identity.
+Nothing is saved to the account or published by generation or preview application.
 
 ## Feedback and public discussion
 

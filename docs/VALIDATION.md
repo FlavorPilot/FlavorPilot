@@ -1,5 +1,32 @@
 # Actual validation — widget-monorepo-r2
 
+## Finished-dish forecast and recipe generation — 2026-10-18
+
+Full review now optionally returns a qualitative dish verdict, expected taste/texture, strengths,
+risks, specific cooking actions with reasons and assumptions. It also accepts compositions
+without steps. Legacy full-review responses retain their previous shape. A separate generator
+creates a preview from selected ingredients/grams/preparations, preserves servings and validates
+ingredient-ID coverage. Explicit confirmation applies text in one undoable operation, preserving
+composition and cloud identity. A full assessment survives later step reviews. All new UI copy
+has EN/UK entries, including stale, error, preview, confirmation and qualitative verdict labels.
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed: structure/boundaries, 16 pure editor/locale checks, 27 kernel checks, all workspace typechecks and 110 Vitest tests |
+| `npm run test:integration` | 24 passed with disposable PostgreSQL/Auth/provider stubs, including repeatable migration, empty-step forecast, generation ID/servings validation, exact accounting and cache |
+| Final compiled API check | `node --test apps/api/test/dishes.integration.mjs`: 24 passed after production build, including denial of generation against another account's existing private dish |
+| `npm run test:e2e` | Full browser run: 30 passed, one new undo assertion used an unsuitable exact label selector; page snapshot showed the correct restored description |
+| Focused assistant rerun | All five cases passed after fixing the selector; also checks forecast persistence across step review, explicit apply/cancel/Undo, unchanged composition, mobile confirmation and stale/error preservation |
+| `npm run build` | Passed: shared workspaces, Nest API and Next production output |
+| Visual inspection | Actual component captures `.local/ai-outcome-en.png` and `.local/ai-generation-uk-mobile.png`; readable forecast, cooking advice and Ukrainian preview/action at 375 px |
+| Evaluation dry-run | Three full-review cases now request outcome; maximum remains 12 units / $0.0096, with no provider call from the dry-run |
+
+The first browser launch was refused because Windows reserved port 55421; the test run used
+the supported FLAVORPILOT_E2E_AUTH_PORT override to free port 45421. No production Auth setting
+was changed. The small production migration expands only the ledger feature constraint to
+`generate`, preserving existing rows, grants and RLS. Hosted inference of the new response
+formats remains a separate rollout check; these local stubs do not establish culinary quality.
+
 ## Hosted GPT-6 Luna smoke passed — 2026-10-18
 
 After the operator replaced OPENAI_API_KEY in Railway, deployment

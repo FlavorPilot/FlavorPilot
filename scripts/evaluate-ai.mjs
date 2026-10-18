@@ -13,7 +13,7 @@ if(url.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(url.hostname))th
 const results=[];
 for(const c of cases.slice(0,limit)){
  const {id,locale,review,steps,...recipe}=c;
- const response=await fetch(`${base.replace(/\/$/,'')}/ai/review-recipe`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({requestId:randomUUID(),locale,scope:'full',recipe:{...recipe,description:'',servings:null,steps:steps.map(text=>({id:randomUUID(),text}))}}),signal:AbortSignal.timeout(70000)});
+ const response=await fetch(`${base.replace(/\/$/,'')}/ai/review-recipe`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({requestId:randomUUID(),locale,scope:'full',includeOutcome:true,recipe:{...recipe,description:'',servings:null,steps:steps.map(text=>({id:randomUUID(),text}))}}),signal:AbortSignal.timeout(70000)});
  const data=await response.json();results.push({id,status:response.status,review,result:data,expertVerdict:null});
  if(!response.ok)break;
 }

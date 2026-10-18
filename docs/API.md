@@ -97,8 +97,24 @@ locale, scope `step` or `full`, optional activeStepId/dishId, and a recipe snaps
 goal, items, description, servings and ordered steps. A dishId requires current ownership.
 Responses contain validated comments, server contentHash, requestId and refreshed quota.
 Comments may suggest replacing one existing step; they cannot mutate recipes or scores.
+New full-review clients send `includeOutcome:true` to receive `outcome`: a qualitative verdict,
+predicted taste/texture, strengths, risks, 1–4 cooking actions with sensory reasons and explicit
+assumptions. Full review accepts an ingredient composition without steps; single-step review
+still requires an existing nonempty active step. Legacy full requests omit outcome to preserve
+their strict response contracts. Automatic step comments never replace the last full outcome.
 
-Limits: explain 3000 input/2000 output/2 units; step 5000/1600/1; full 12000/4000/4.
+`POST /v1/ai/generate-recipe` accepts requestId, locale, optional owned dishId, recipe snapshot
+and an optional brief (1000 characters maximum). It returns a separate recipe proposal with
+title, description, preserved nullable servings, 1–16 bounded steps and assumptions. Every step
+lists ingredientIds; Nest rejects unknown IDs, missing selected ingredients, changed servings
+and malformed output. Grams, methods, goal, visibility and ownership are never generated or
+mutated. Textual claims still need human review; ID validation cannot prove culinary accuracy.
+The browser previews the proposal, confirms replacement and applies name/description/servings/
+steps as one undoable editor operation, preserving selected composition and cloud identity.
+The same cached generation retains stable server-issued step IDs and uses no additional units.
+
+Limits: explain 3000 input/2000 output/2 units; step 5000/1600/1; full 12000/4000/4;
+generate 8000/5000/4 (at most $0.0033 reserved). All share the same quotas and money budgets.
 Input counting uses OpenAI's `/responses/input_tokens` with the complete formatted input.
 Output includes invisible tokens. Maximum one active generation/account, four fresh attempts
 per minute and 20 seconds between step attempts. Pro: 300/month, 30/day; Studio: 1200/100;

@@ -17,7 +17,7 @@ export class AiUsageService {
   const limits=AI_PLANS[paid ? plan.tier : pilot ? 'pro' : 'free'];
   const [used]=await db.execute<UsageRow>(sql`select coalesce(sum(units),0)::int month_units,coalesce(sum(units) filter(where created_at>=${p.day}),0)::int day_units from public.ai_requests where user_id=${userId} and created_at>=${p.month} and (status='succeeded' or (status='reserved' and expires_at>now()))`);
   const enabled=this.config.get<boolean>('AI_ENABLED',false),remaining=Math.max(0,limits.month-Number(used?.month_units??0)),dailyRemaining=Math.max(0,limits.day-Number(used?.day_units??0));
-  return {enabled,access:paid?'paid':pilot?'pilot':'none',remaining,dailyRemaining,resetAt:p.resetAt,dailyResetAt:p.dailyResetAt,costs:{explain:2,step:1,full:4},reason:!enabled?'AI_DISABLED':!paid&&!pilot?'AI_PLAN_REQUIRED':!remaining||!dailyRemaining?'AI_QUOTA_EXCEEDED':null};
+  return {enabled,access:paid?'paid':pilot?'pilot':'none',remaining,dailyRemaining,resetAt:p.resetAt,dailyResetAt:p.dailyResetAt,costs:{explain:2,step:1,full:4,generate:4},reason:!enabled?'AI_DISABLED':!paid&&!pilot?'AI_PLAN_REQUIRED':!remaining||!dailyRemaining?'AI_QUOTA_EXCEEDED':null};
  }
  async reserve(userId:string,requestId:string,hash:string,feature:AiFeature):Promise<{id:string;cached?:unknown}> {
   const db=this.database.requireDatabase();

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { analyzeDish, recommendedIngredientGrams } from '@flavorpilot/flavor-engine';
-import { MAX_RECIPE_STEPS, MAX_STEP_TEXT, MAX_RECIPE_DESCRIPTION, MAX_RECIPE_SERVINGS, type DishItem, type IngredientRecommendation } from '@flavorpilot/contracts';
+import { MAX_RECIPE_STEPS, MAX_STEP_TEXT, MAX_RECIPE_DESCRIPTION, MAX_RECIPE_SERVINGS, aiGeneratedRecipeSchema, type AiGeneratedRecipe, type DishItem, type IngredientRecommendation } from '@flavorpilot/contracts';
 import { emptyDraft, hasDraftContent, loadWorkingDraft, saveWorkingDraft, takeStudioTransfer, fingerprint, MAX_ITEMS, type Draft, type Recipe } from '@/entities/dish';
 import { ingredientById, defaultDish, validateCatalog, firstPreparation } from '@/entities/ingredient';
 import { getDictionary, type Locale, type MessageKey } from '@/shared/i18n';
@@ -155,12 +155,18 @@ export function useDishEditor(locale: Locale, scope = 'guest') {
         const draft: Draft = { ...state.present, name: recipe.name, linkedId: recipe.id, linkedOrigin: recipe.origin === 'cloud' ? 'cloud' : 'local', linkedVersionNumber:recipe.origin==='cloud' ? recipe.versionNumber : undefined, createdAt: recipe.createdAt, visibility: recipe.visibility };
         dispatch({ type: 'markSaved', draft });
     }
+    function applyGeneratedRecipe(value:AiGeneratedRecipe){
+        const parsed=aiGeneratedRecipeSchema.safeParse(value);if(!parsed.success)return;
+        const recipe=parsed.data;
+        replace({...state.present,name:recipe.name,description:recipe.description,servings:recipe.servings,steps:recipe.steps.map(({id,text})=>({id,text}))});
+        setDraftEpoch(value=>value+1);
+    }
     return { draft: state.present, draftEpoch, analysis, previewAnalysis, candidate, error, ready, draftStatus, blockedStorage,
         dirty: fingerprint(state.present) !== state.saved, canUndo: state.past.length > 0, canRedo: state.future.length > 0,
         setName: (name: string) => replace({ ...state.present, name }, 'name'),
         setDescription: (description: string) => { if (description.length <= MAX_RECIPE_DESCRIPTION) replace({ ...state.present, description }, 'description'); },
         setServings: (servings: number | null) => { if (servings === null || (Number.isInteger(servings) && servings > 0 && servings <= MAX_RECIPE_SERVINGS)) replace({ ...state.present, servings }, 'servings'); },
-        addStep, setStep, moveStep,
+        addStep, setStep, moveStep, applyGeneratedRecipe,
         removeStep: (id: string) => replace({ ...state.present, steps: state.present.steps.filter(step => step.id !== id) }),
         endEdit: () => dispatch({ type: 'endEdit' }),
         setGoal: (goal: Draft['goal']) => replace({ ...state.present, goal }),

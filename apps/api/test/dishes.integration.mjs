@@ -149,6 +149,53 @@ it('enforces AI entitlements, idempotency, input/output controls and uncertain-c
  }finally{globalThis.fetch=originalFetch;config.set('AI_ENABLED',false);config.set('AI_PILOT_USER_IDS','');config.set('AI_DAILY_BUDGET_USD',5);}
 });
 
+it('assesses dish outcomes and generates bounded recipes with shared accounting and stable cached step IDs',async()=>{
+ const owner=await signup('dish-outcome'),other=await signup('generation-other');
+ const config=app.get(ConfigService),originalFetch=globalThis.fetch;
+ config.set('AI_ENABLED',true);config.set('OPENAI_API_KEY','fake-local-key');config.set('AI_PILOT_USER_IDS',owner.id);
+ const recipe={name:'Outcome',goal:'balanced',items,description:'',servings:2,steps:[]};
+ const outcome={verdict:'mixed',summary:'Rich fish with a sharp finish.',taste:'Rich and acidic.',texture:'Tender with a browned surface.',strengths:['Contrast'],risks:['Dry fish'],cookingAdvice:[{title:'Add lime last',instruction:'Add lime after searing.',reason:'Keep the fresh aroma.'}],assumptions:['Pan searing is intended.']};
+ let generations=0,mode='valid';const providerStepId=randomUUID();
+ globalThis.fetch=async(url,options)=>{
+  if(!String(url).startsWith('https://api.openai.com/v1/'))return originalFetch(url,options);
+  const input=JSON.parse(options.body);
+  if(String(url).endsWith('input_tokens'))return Response.json({input_tokens:1000});
+  generations++;
+  assert.match(input.input[0].content[0].text,/Every human-readable output must be in Ukrainian/);
+  const generated=input.text.format.name==='recipe_draft';
+  const value=generated?{recipe:{name:'Lime salmon',description:'A separate draft.',servings:mode==='servings'?3:2,steps:[{id:providerStepId,text:'Sear salmon, then add lime.',ingredientIds:mode==='extra'?['salmon','lime','unknown-oil']:mode==='missing'?['salmon']:['salmon','lime']}]},assumptions:[]}:{comments:[],...(input.text.format.schema.properties.outcome?{outcome}:{})};
+  if(generated){assert.equal(input.max_output_tokens,5000);assert.match(input.input[0].content[0].text,/do not add unselected oil/);}
+  return Response.json({status:'completed',usage:{input_tokens:1000,output_tokens:300,output_tokens_details:{reasoning_tokens:0}},output:[{content:[{type:'output_text',text:JSON.stringify(value)}]}]});
+ };
+ try{
+  const migration=readFileSync(fileURLToPath(new URL('../../../supabase/migrations/20261018143026_dish_outcome_and_recipe_generation.sql',import.meta.url)),'utf8');
+  await sql.unsafe(migration);await sql.unsafe(migration);
+  const denied=await api('/ai/generate-recipe',{method:'POST',token:other.token,body:{requestId:randomUUID(),locale:'uk',recipe}});assert.equal(denied.status,403);assert.equal(generations,0);
+  const bad=await api('/ai/generate-recipe',{method:'POST',token:owner.token,body:{requestId:randomUUID(),locale:'uk',recipe:{...recipe,items:[{ingredientId:'unknown',preparationId:'raw',grams:100}]}}});assert.equal(bad.status,400);assert.equal(generations,0);
+  const missing=await api('/ai/generate-recipe',{method:'POST',token:owner.token,body:{requestId:randomUUID(),locale:'uk',dishId:randomUUID(),recipe}});assert.equal(missing.status,404);assert.equal(generations,0);
+  const saved=await api('/dishes',{method:'POST',token:owner.token,body:{...recipe,visibility:'private'}});assert.equal(saved.status,201);
+  const foreign=await api('/ai/generate-recipe',{method:'POST',token:other.token,body:{requestId:randomUUID(),locale:'uk',dishId:saved.body.id,recipe}});assert.equal(foreign.status,404);assert.equal(generations,0);
+  const review=await api('/ai/review-recipe',{method:'POST',token:owner.token,body:{requestId:randomUUID(),locale:'uk',scope:'full',includeOutcome:true,recipe}});
+  assert.equal(review.status,201,JSON.stringify(review.body));assert.deepEqual(review.body.outcome,outcome);assert.deepEqual(review.body.comments,[]);
+  const request={requestId:randomUUID(),locale:'uk',recipe,brief:'Simple cooking.'};
+  const generated=await api('/ai/generate-recipe',{method:'POST',token:owner.token,body:request});
+  assert.equal(generated.status,201,JSON.stringify(generated.body));assert.equal(generated.body.quota.remaining,292);
+  assert.notEqual(generated.body.recipe.steps[0].id,providerStepId);assert.equal('items' in generated.body.recipe,false);
+  const repeated=await api('/ai/generate-recipe',{method:'POST',token:owner.token,body:request});assert.equal(repeated.status,201);assert.deepEqual(repeated.body.recipe,generated.body.recipe);assert.equal(generations,2);
+  const cached=await api('/ai/generate-recipe',{method:'POST',token:owner.token,body:{...request,requestId:randomUUID()}});assert.equal(cached.status,201);assert.deepEqual(cached.body.recipe,generated.body.recipe);assert.equal(generations,2);
+  const [charge]=await sql`select feature,units,reserved_microusd,charged_microusd from public.ai_requests where user_id=${owner.id} and request_id=${request.requestId}`;
+  assert.equal(charge.feature,'generate');assert.equal(charge.units,4);assert.equal(charge.reserved_microusd,3300);assert.equal(charge.charged_microusd,250);
+  for(mode of ['extra','missing','servings']){
+   await sql`update public.ai_requests set created_at=now()-interval '2 minutes' where user_id=${owner.id}`;
+   const invalid=await api('/ai/generate-recipe',{method:'POST',token:owner.token,body:{...request,requestId:randomUUID(),brief:mode}});
+   assert.equal(invalid.status,502);assert.equal(invalid.body.code,'AI_RESPONSE_INVALID');
+  }
+  const [failed]=await sql`select count(*)::int n,sum(units)::int units from public.ai_requests where user_id=${owner.id} and feature='generate' and status='failed'`;
+  assert.equal(failed.n,3);assert.equal(failed.units,0);
+  await sql.unsafe(migration);const [kept]=await sql`select id from public.ai_requests where user_id=${owner.id} and request_id=${request.requestId}`;assert.ok(kept.id);
+ }finally{globalThis.fetch=originalFetch;config.set('AI_ENABLED',false);config.set('AI_PILOT_USER_IDS','');}
+});
+
 it('hardens internal trigger RPC permissions while preserving signup and repeatable migration', async () => {
     const migration = readFileSync(fileURLToPath(new URL('../../../supabase/migrations/20261018122502_harden_trigger_function_permissions.sql', import.meta.url)), 'utf8');
     await sql.unsafe(migration);

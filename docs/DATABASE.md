@@ -104,6 +104,11 @@ before deploying the matching API/web. The repeatable additive migration adds nu
 default-empty validated steps and two closed AI tables. Existing recipes, ownership, visibility,
 subscriptions and version snapshots are preserved; legacy snapshots may omit new fields.
 Fresh schema includes the same definitions. No paid access is seeded.
+For dish outcome and generation, subsequently apply
+`20261018143026_dish_outcome_and_recipe_generation.sql` before the matching API/web rollout.
+It only expands `ai_requests_feature_check` to include `generate`; existing rows, grants, RLS,
+units and monetary reservations are preserved. The migration is repeatable. Roll back the
+application without removing generation ledger rows or restoring the narrower check.
 
 `ai_requests` records account/request identity, content hash, model/prompt, status, units,
 monetary reservation, token usage and elapsed time. `ai_response_cache` holds private generated
