@@ -7,6 +7,7 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { resetTestDatabase } from './reset-database.mjs';
 import { startAuthStub } from './auth-stub.mjs';
+import { analyzeDish, MODEL_VERSION, CATALOGUE_VERSION } from '@flavorpilot/flavor-engine';
 
 const databaseUrl = process.env.FLAVORPILOT_TEST_DATABASE_URL ?? 'postgres://postgres:postgres@127.0.0.1:54329/flavorpilot_test';
 process.env.DATABASE_URL = databaseUrl;
@@ -63,6 +64,104 @@ after(async () => {
 });
 
 describe('dish ownership on PostgreSQL', () => {
+    it('stores private server-computed feedback and preserves independent before/after cooking snapshots', async () => {
+        const owner=await signup('feedback-owner'), other=await signup('feedback-other');
+        const created=await api('/dishes',{method:'POST',token:owner.token,body:{name:'Feedback fish',goal:'fresh',items}});
+        const recipe={name:'Feedback fish',description:'',servings:null,steps:[],goal:'fresh',items};
+        const input={recipe,dishId:created.body.id,modelVersion:MODEL_VERSION,catalogueVersion:CATALOGUE_VERSION,cooked:false,agreement:'partial',concerns:['balance'],note:'My expectation'};
+        assert.equal((await api('/feedback',{method:'POST',body:input})).status,401);
+        assert.equal((await api('/feedback',{method:'POST',token:other.token,body:input})).status,404);
+        assert.equal((await api('/feedback',{method:'POST',token:owner.token,body:{...input,analysis:{overallScore:100}}})).status,400);
+        assert.equal((await api('/feedback',{method:'POST',token:owner.token,body:{...input,modelVersion:'old'}})).status,409);
+        assert.equal((await api('/feedback',{method:'POST',token:owner.token,body:{...input,recipe:{...recipe,items:[...items,{...items[0]}]}}})).status,400);
+        const saved=await api('/feedback',{method:'POST',token:owner.token,body:input});
+        assert.equal(saved.status,201);
+        assert.equal(saved.body.dishVersionNumber,1);
+        assert.deepEqual(saved.body.analysis,analyzeDish(items,'fresh',false));
+        assert.deepEqual(saved.body.recipe,recipe);
+        assert.equal((await api(`/feedback/${saved.body.id}`)).status,401);
+        assert.equal((await api(`/feedback/${saved.body.id}`,{token:other.token})).status,404);
+        assert.equal((await api(`/feedback/${saved.body.id}`,{method:'DELETE',token:other.token})).status,404);
+        const after=await api('/feedback',{method:'POST',token:owner.token,body:{...input,cooked:true,note:'Actual result'}});
+        assert.notEqual(after.body.id,saved.body.id);
+        const retry=await api('/feedback',{method:'POST',token:owner.token,body:{...input,cooked:true,note:'Updated result'}});
+        assert.equal(retry.body.id,after.body.id);
+        const counts=await sql`select count(*)::int as n from public.model_feedback where author_id=${owner.id}`;
+        assert.equal(counts[0].n,2);
+        const changedItems=[{...items[0],grams:180},items[1]];
+        await api(`/dishes/${created.body.id}`,{method:'PATCH',token:owner.token,body:{items:changedItems}});
+        const old=await api(`/feedback/${saved.body.id}`,{token:owner.token});
+        assert.deepEqual(old.body.analysis,saved.body.analysis);
+        assert.equal(old.body.dishVersionNumber,1);
+        const oldVersion=await api('/feedback',{method:'POST',token:owner.token,body:{...input,dishVersionNumber:1,note:'Reviewed the original after an edit'}});
+        assert.equal(oldVersion.body.id,saved.body.id);
+        assert.equal(oldVersion.body.dishVersionNumber,1);
+        const changed=await api('/feedback',{method:'POST',token:owner.token,body:{...input,recipe:{...recipe,items:changedItems},cooked:true}});
+        assert.equal(changed.body.dishVersionNumber,2);
+        const draft=await api('/feedback',{method:'POST',token:owner.token,body:{...input,recipe:{...recipe,description:'Unsaved instructions',servings:2,steps:[{id:crypto.randomUUID(),text:'Cook and taste.'}]}}});
+        assert.equal(draft.body.dishVersionNumber,null);
+        assert.equal(draft.body.recipe.steps[0].text,'Cook and taste.');
+        assert.equal((await api(`/feedback/${saved.body.id}`,{method:'DELETE',token:owner.token})).status,204);
+        assert.equal((await api(`/feedback/${saved.body.id}`,{token:owner.token})).status,404);
+    });
+    it('authorizes public comments, one-level replies and deletion without removing other people’s replies', async () => {
+        const owner=await signup('comments-owner'), visitor=await signup('comments-visitor');
+        const created=await api('/dishes',{method:'POST',token:owner.token,body:{name:'Discussion fish',goal:'fresh',visibility:'public',items}});
+        assert.equal(created.body.versionNumber,1);
+        const endpoint=`/dishes/${created.body.id}/comments`;
+        assert.equal((await api(endpoint)).status,200);
+        assert.equal((await api(endpoint,{method:'POST',body:{text:'Question',versionNumber:1}})).status,401);
+        assert.equal((await api(endpoint,{method:'POST',token:visitor.token,body:{text:' ',versionNumber:1}})).status,400);
+        const comment=await api(endpoint,{method:'POST',token:visitor.token,body:{text:'I cooked this.',hasCooked:true,versionNumber:1}});
+        assert.equal(comment.status,201);assert.equal(comment.body.hasCooked,true);assert.equal(comment.body.author.id,visitor.id);
+        const reply=await api(endpoint,{method:'POST',token:owner.token,body:{text:'Thank you!',parentId:comment.body.id,versionNumber:1}});
+        assert.equal(reply.status,201);assert.equal(reply.body.replyTo.text,'I cooked this.');
+        assert.equal((await api(endpoint,{method:'POST',token:visitor.token,body:{text:'Nested reply',parentId:reply.body.id,versionNumber:1}})).status,409);
+        const another=await api('/dishes',{method:'POST',token:owner.token,body:{name:'Other dish',visibility:'public',items}});
+        assert.equal((await api(`/dishes/${another.body.id}/comments`,{method:'POST',token:visitor.token,body:{text:'Wrong parent',parentId:comment.body.id,versionNumber:1}})).status,409);
+        assert.equal((await api(`${endpoint}/${comment.body.id}`,{method:'DELETE',token:owner.token})).status,404);
+        await api(`/dishes/${created.body.id}`,{method:'PATCH',token:owner.token,body:{name:'Changed recipe'}});
+        assert.equal((await api(endpoint,{method:'POST',token:visitor.token,body:{text:'Stale version',versionNumber:1}})).status,409);
+        assert.equal((await api(`${endpoint}/${comment.body.id}`,{method:'DELETE',token:visitor.token})).status,204);
+        const page=await api(endpoint);
+        const deleted=page.body.items.find(row=>row.id===comment.body.id), retained=page.body.items.find(row=>row.id===reply.body.id);
+        assert.equal(deleted.text,null);assert.equal(deleted.author,null);assert.equal(deleted.deleted,true);
+        assert.equal(retained.text,'Thank you!');assert.equal(retained.replyTo.text,null);
+        assert.equal((await api(endpoint,{method:'POST',token:owner.token,body:{text:'Reply to deleted',parentId:comment.body.id,versionNumber:2}})).status,409);
+        assert.equal(JSON.stringify(page.body).includes('shareToken'),false);
+        assert.equal(JSON.stringify(page.body).includes('access_token'),false);
+        assert.equal((await api('/dishes/not-a-uuid/comments')).status,400);
+        assert.equal((await api(`${endpoint}?cursor=invalid`)).status,400);
+    });
+    it('hides discussion when a recipe is private or unlisted, but lets authors remove their own words',async()=>{
+        const owner=await signup('hidden-comments-owner'), visitor=await signup('hidden-comments-visitor');
+        const recipe=await api('/dishes',{method:'POST',token:owner.token,body:{name:'Visibility discussion',visibility:'public',items}});
+        const endpoint=`/dishes/${recipe.body.id}/comments`;
+        const comment=await api(endpoint,{method:'POST',token:visitor.token,body:{text:'My words',versionNumber:1}});
+        for(const visibility of ['private','unlisted']) {
+            await api(`/dishes/${recipe.body.id}`,{method:'PATCH',token:owner.token,body:{visibility}});
+            assert.equal((await api(endpoint)).status,404);
+            assert.equal((await api(endpoint,{token:owner.token})).status,404);
+            assert.equal((await api(endpoint,{method:'POST',token:visitor.token,body:{text:'Hidden',versionNumber:1}})).status,404);
+        }
+        assert.equal((await api(`${endpoint}/${comment.body.id}`,{method:'DELETE',token:visitor.token})).status,204);
+    });
+    it('paginates equal comment timestamps without duplicates or omissions and protects new tables from direct REST roles',async()=>{
+        const owner=await signup('comment-paging');
+        const recipe=await api('/dishes',{method:'POST',token:owner.token,body:{name:'Paged comments',visibility:'public',items}});
+        for(let i=0;i<7;i++) await sql`insert into public.dish_comments(dish_id,author_id,body,version_number,created_at) values(${recipe.body.id},${owner.id},${`Comment ${i}`},1,'2026-10-18T10:00:00.000Z')`;
+        let cursor,seen=[];
+        do {
+            const page=await api(`/dishes/${recipe.body.id}/comments?limit=3${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`);
+            assert.equal(page.status,200);seen.push(...page.body.items.map(row=>row.id));cursor=page.body.nextCursor;
+        }while(cursor);
+        assert.equal(seen.length,7);assert.equal(new Set(seen).size,7);
+        for(const role of ['anon','authenticated'])for(const table of ['model_feedback','dish_comments'])await assert.rejects(sql.begin(async tx=>{await tx.unsafe(`set local role ${role}`);await tx.unsafe(`select id from public.${table}`);}),/permission denied/);
+        const migration=readFileSync(new URL('../../../supabase/migrations/0009_model_feedback_and_comments.sql',import.meta.url),'utf8');
+        await sql.unsafe(migration);await sql.unsafe(migration);
+        const stillPresent=await sql`select count(*)::int as n from public.dish_comments where dish_id=${recipe.body.id}`;
+        assert.equal(stillPresent[0].n,7);
+    });
     it('analyses and saves new catalogue foods through the authenticated API', async () => {
         const account = await signup('expanded-catalogue');
         const expandedItems = [{ ingredientId: 'shiitake', preparationId: 'roasted', grams: 150 }, { ingredientId: 'pumpkin_seed', preparationId: 'raw', grams: 15 }];

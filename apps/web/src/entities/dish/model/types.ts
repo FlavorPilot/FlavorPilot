@@ -11,6 +11,8 @@ export interface Recipe extends RecipeContent {
     parentDishId?: string;
     author?: string;
     shareToken?: string;
+    ownerId?: string;
+    versionNumber?: number;
 }
 export interface Draft extends RecipeContent {
     name: string;
@@ -18,6 +20,7 @@ export interface Draft extends RecipeContent {
     goal: DishGoal;
     linkedId?: string;
     linkedOrigin?: 'local' | 'cloud';
+    linkedVersionNumber?: number;
     createdAt?: string;
     parentDishId?: string;
     visibility: DishVisibility;

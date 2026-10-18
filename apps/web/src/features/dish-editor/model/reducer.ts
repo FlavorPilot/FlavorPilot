@@ -49,7 +49,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
             return { ...state, present: next, past: [...state.past, state.present].slice(-50), future: state.future.slice(1), editGroup: undefined };
         }
         case 'markSaved': {
-            const attach = (draft: Draft): Draft => ({ ...draft, linkedId: action.draft.linkedId, linkedOrigin: action.draft.linkedOrigin, createdAt: action.draft.createdAt });
+            const attach = (draft: Draft): Draft => ({ ...draft, linkedId: action.draft.linkedId, linkedOrigin: action.draft.linkedOrigin, linkedVersionNumber:action.draft.linkedVersionNumber, createdAt: action.draft.createdAt });
             return { ...state, present: action.draft, past: state.past.map(attach), future: state.future.map(attach), saved: fingerprint(action.draft), editGroup: undefined };
         }
     }

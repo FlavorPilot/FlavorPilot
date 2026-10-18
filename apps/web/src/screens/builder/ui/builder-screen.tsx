@@ -6,6 +6,7 @@ import { useDishEditor } from '@/features/dish-editor';
 import { RecipeShareLink } from "@/features/share-recipe";
 import { SaveRecipeDialog } from '@/features/save-recipe';
 import { useSession } from '@/features/session';
+import { ModelFeedback } from '@/features/model-feedback';
 import { fingerprint, hasDraftContent, recipeExport, type Recipe } from '@/entities/dish';
 import { request } from '@/shared/api';
 import { hasApi } from '@/shared/config';
@@ -106,7 +107,10 @@ function BuilderWorkspace({ locale, scope, token }: {
     {editor.candidate && editor.previewAnalysis && <ChangePreview locale={locale} item={editor.candidate} before={editor.analysis} after={editor.previewAnalysis} onApply={editor.applyPreview} onCancel={editor.cancelPreview}/>}
     <div className="studio-grid">
       <WidgetBoundary fallback={fallback}><DishComposition locale={locale} items={editor.draft.items} totalWeight={editor.analysis.totalWeight} onAdd={editor.add} onUpdate={editor.update} onRemove={editor.remove} onExample={editor.loadExample}/></WidgetBoundary>
-      <WidgetBoundary fallback={fallback}><DishAnalysis locale={locale} analysis={editor.analysis} itemCount={editor.draft.items.length}/></WidgetBoundary>
+      <WidgetBoundary fallback={fallback}><DishAnalysis locale={locale} analysis={editor.analysis} itemCount={editor.draft.items.length}
+        feedback={<ModelFeedback locale={locale} token={token} dishId={editor.draft.linkedOrigin==='cloud' ? editor.draft.linkedId : undefined}
+          dishVersionNumber={editor.draft.linkedOrigin==='cloud' ? editor.draft.linkedVersionNumber : undefined}
+          recipe={{name:editor.draft.name,description:editor.draft.description,servings:editor.draft.servings,steps:editor.draft.steps,goal:editor.draft.goal,items:editor.draft.items}}/>}/></WidgetBoundary>
     </div>
     <WidgetBoundary fallback={fallback}><DishRecommendations locale={locale} recommendations={editor.analysis.recommendations} onPreview={editor.preview} disabled={editor.draft.items.length >= 24}/></WidgetBoundary>
     <div className="detail-toolbar"><div className="segmented" role="group" aria-label={t.viewMode}><button type="button" aria-pressed={!detail} onClick={() => toggleDetail(false)}>{t.focused}</button><button type="button" aria-pressed={detail} onClick={() => toggleDetail(true)}><Icon name="sliders" size={15}/>{t.detailed}</button></div>{hasApi && <Button variant="ghost" disabled={checking} onClick={verify}>{checking ? t.serverChecking : t.serverCheck}</Button>}</div>

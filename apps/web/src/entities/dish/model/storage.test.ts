@@ -14,6 +14,17 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 describe('device recipes and scoped working drafts', () => {
+    it('preserves the cloud source version for feedback without exporting identity metadata', () => {
+        const recipe={...emptyDraft(),id:'3f304f16-c0bc-41d3-8082-28298bbe3451',name:'Versioned dish',origin:'cloud' as const,createdAt:'2026-10-18T10:00:00.000Z',items,versionNumber:3};
+        openRecipeDraft(recipe,'edit','version-test');
+        const draft=takeStudioTransfer('version-test')!;
+        expect(draft.linkedVersionNumber).toBe(3);
+        expect(draft.linkedId).toBe(recipe.id);
+        const exported=recipeExport(draft,'Dish');
+        expect(exported).not.toHaveProperty('linkedVersionNumber');
+        expect(exported).not.toHaveProperty('linkedId');
+        expect(importRecipe({...exported,linkedVersionNumber:99,linkedId:recipe.id})).not.toHaveProperty('linkedVersionNumber');
+    });
     it('retains v0.3 recipe records and distinguishes local origin', () => {
         values.set(key, JSON.stringify([{ id: 'legacy-1', name: 'Legacy', goal: 'fresh', visibility: 'public', createdAt: '2026-08-20T00:00:00.000Z', items }]));
         expect(localRecipes()[0]).toMatchObject({ id: 'legacy-1', origin: 'local' });

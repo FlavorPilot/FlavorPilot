@@ -71,6 +71,17 @@ States: empty composition or read-only localized ingredients, preparation and gr
 
 Rule: The first tab owns ingredient editing. No copy of the composition is maintained here.
 
+## RecipeComments
+
+Path: `apps/web/src/widgets/recipe-comments`.
+
+Input: discussion feature state/actions, locale, current user ID, recipe version and refresh callback.
+
+States: loading, empty, guest/sign-in, composer, replying, paging, errors/retry, stale recipe,
+posted/deleted status and deletion confirmation. Each comment displays its recipe version.
+Rule: no networking/storage in the widget. Its local state owns focus and confirmation only.
+The screen mounts it only for actual public cloud recipes, not examples or share-link pages.
+
 ## DishAnalysis
 
 Path: `apps/web/src/widgets/dish-analysis`.
@@ -80,6 +91,9 @@ Input: analysis + itemCount + locale.
 States: insufficient input, assessment, issue, details, published composition.
 
 Rule: Displays actual overall and balance separately; never invents a score.
+
+An optional feedback slot receives the model-feedback action composed by a screen. The widget
+does not authenticate or submit a feedback request itself.
 
 Published composition has an information note and independent coverage notes for protein, fat,
 carbohydrate, sugars, sodium and energy. Each note receives kernel contributions, never sums

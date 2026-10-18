@@ -1,12 +1,13 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { DishItem, DishResponse, DishVisibility, NormalizedCreateDishRequest, NormalizedUpdateDishRequest, PublicDishListResponse } from '@flavorpilot/contracts';
-import { count, desc, eq, ilike, inArray, lt, max, ne, type SQL } from 'drizzle-orm';
+import { count, desc, eq, ilike, inArray, lt, max, ne, sql, type SQL } from 'drizzle-orm';
 import { allOf } from '../common/sql';
 import { assertValidDishItems } from '../common/catalog-validation';
 import { DatabaseService, type FlavorPilotDatabase } from '../database/database.service';
 import { dishes, dishItems, dishVersions, profiles, subscriptions, type DishSnapshot } from '../database/schema';
 import { hasActivePaidEntitlement } from './subscription-entitlement';
 interface DishSelectRow {
+    versionNumber: number;
     id: string;
     ownerId: string;
     name: string;
@@ -118,7 +119,7 @@ export class DishesService {
         return this.create(ownerId, { name: options.name ?? `${source.name} remix`, goal: source.goal, visibility: options.visibility, description: source.description, imageUrl: null, parentDishId: source.id, items: source.items.map(({ ingredientId, grams, preparationId }) => ({ ingredientId, grams, preparationId })) });
     }
     private async selectRows(db: FlavorPilotDatabase, condition: SQL, limit: number): Promise<DishSelectRow[]> {
-        return db.select({ id: dishes.id, ownerId: dishes.ownerId, name: dishes.name, goal: dishes.goal, visibility: dishes.visibility, shareToken: dishes.shareToken, parentDishId: dishes.parentDishId, description: dishes.description, imageUrl: dishes.imageUrl, publishedAt: dishes.publishedAt, createdAt: dishes.createdAt, updatedAt: dishes.updatedAt, ownerUsername: profiles.username, ownerDisplayName: profiles.displayName, ownerAvatarUrl: profiles.avatarUrl }).from(dishes).leftJoin(profiles, eq(profiles.id, dishes.ownerId)).where(condition).orderBy(desc(dishes.publishedAt), desc(dishes.updatedAt)).limit(limit);
+        return db.select({ versionNumber: sql<number>`(select coalesce(max(v.version_number), 1)::int from public.dish_versions v where v.dish_id = ${dishes.id})`, id: dishes.id, ownerId: dishes.ownerId, name: dishes.name, goal: dishes.goal, visibility: dishes.visibility, shareToken: dishes.shareToken, parentDishId: dishes.parentDishId, description: dishes.description, imageUrl: dishes.imageUrl, publishedAt: dishes.publishedAt, createdAt: dishes.createdAt, updatedAt: dishes.updatedAt, ownerUsername: profiles.username, ownerDisplayName: profiles.displayName, ownerAvatarUrl: profiles.avatarUrl }).from(dishes).leftJoin(profiles, eq(profiles.id, dishes.ownerId)).where(condition).orderBy(desc(dishes.publishedAt), desc(dishes.updatedAt)).limit(limit);
     }
     private async lookup(condition: SQL, exposeToken: boolean): Promise<DishResponse> {
         const db = this.database.requireDatabase(), [row] = await this.selectRows(db, condition, 1);
@@ -140,7 +141,7 @@ export class DishesService {
         return result;
     }
     private serialize(row: DishSelectRow, items: DishItemRow[], exposeToken: boolean): DishResponse {
-        return { id: row.id, ownerId: row.ownerId, name: row.name, goal: row.goal, visibility: row.visibility, ...(exposeToken ? { shareToken: row.shareToken } : {}), parentDishId: row.parentDishId, description: row.description, imageUrl: row.imageUrl, publishedAt: row.publishedAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), owner: row.ownerUsername ? { id: row.ownerId, username: row.ownerUsername, displayName: row.ownerDisplayName, avatarUrl: row.ownerAvatarUrl } : undefined, items: items.map(item => ({ id: item.id, ingredientId: item.ingredientId, grams: Number(item.grams), preparationId: item.preparationId, position: item.position, note: item.note })) };
+        return { versionNumber: row.versionNumber, id: row.id, ownerId: row.ownerId, name: row.name, goal: row.goal, visibility: row.visibility, ...(exposeToken ? { shareToken: row.shareToken } : {}), parentDishId: row.parentDishId, description: row.description, imageUrl: row.imageUrl, publishedAt: row.publishedAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), owner: row.ownerUsername ? { id: row.ownerId, username: row.ownerUsername, displayName: row.ownerDisplayName, avatarUrl: row.ownerAvatarUrl } : undefined, items: items.map(item => ({ id: item.id, ingredientId: item.ingredientId, grams: Number(item.grams), preparationId: item.preparationId, position: item.position, note: item.note })) };
     }
     private async assertParent(ownerId: string, parentDishId: string | null) {
         if (!parentDishId)

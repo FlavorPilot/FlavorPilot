@@ -7,6 +7,7 @@ import { FlavorModule } from './flavor/flavor.module';
 import { AiModule } from './ai/ai.module';
 import { DishesModule } from './dishes/dishes.module';
 import { HealthModule } from './health/health.module';
-@Module({ imports: [ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env'], validate: validateEnvironment }), DatabaseModule, AuthModule, FlavorModule, AiModule, DishesModule, HealthModule] })
+import { FeedbackModule } from './feedback/feedback.module';
+@Module({ imports: [ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env'], validate: validateEnvironment }), DatabaseModule, AuthModule, FlavorModule, AiModule, DishesModule, HealthModule, FeedbackModule] })
 export class AppModule {
 }

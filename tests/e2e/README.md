@@ -1,5 +1,14 @@
 # Browser E2E
 
+The suite uses isolated web/API/auth ports 3100/4100/55421 and an ignored `.next-e2e`
+Next output directory. Normal development remains on 3000/4000. Optional overrides are
+`FLAVORPILOT_E2E_WEB_PORT`, `FLAVORPILOT_E2E_API_PORT`, `FLAVORPILOT_E2E_AUTH_PORT`.
+
+`feedback-discussion.spec.ts` checks private draft feedback (including preparation text),
+retry without losing answers, stale-input feedback labels, owner/visitor separation, comments,
+plain-text escaping, replies/deletion, recipe-version conflicts, preservation of comment drafts,
+and Ukrainian discussion at mobile width. See [the feedback design](../../docs/FEEDBACK.md).
+
 Playwright covers the critical path in `critical.spec.ts`: signup and login, the builder,
 local save, reload, edit, private visibility, a public dish, an unlisted link, remix, delete,
 language switch, the mobile builder, and an API failure that leaves the local draft in place.

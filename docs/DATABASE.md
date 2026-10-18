@@ -46,6 +46,15 @@ For a fresh install, run `schema.sql`, `seed.sql`, `seed-identities.sql`,
 0008 is not additionally required on a freshly seeded database. Generation and source checks are
 documented in [CATALOGUE.md](CATALOGUE.md). No remote migration is run by the generator or build.
 
+## Feedback and discussion
+
+Apply `supabase/migrations/0009_model_feedback_and_comments.sql` after 0008 for private
+`model_feedback` and public-recipe `dish_comments`. Fresh `schema.sql` includes both. The
+migration adds tables/indexes/constraints and a same-recipe, one-level reply validation trigger;
+it does not alter recipes, catalogue scores or visibility. Both tables have RLS and direct
+public/anon/authenticated privileges revoked; Nest enforces current visibility and ownership.
+See [FEEDBACK.md](FEEDBACK.md). Deploy the API/web together after the migration.
+
 ## Existing v0.3.0 database
 
 Back up and verify a restorable copy first. Test on a separate staging copy with two users.

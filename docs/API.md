@@ -21,6 +21,19 @@ null and is not included; published zero is covered. These source-reference amou
 apply cooking-loss/yield factors and never affect the culinary score. Contracts parse this
 composition instead of stripping it from the server response. Rebuild the API and web together.
 
+## Feedback and comments
+
+Protected: `POST /feedback`, `GET /feedback/:id`, `DELETE /feedback/:id` (owner only).
+Feedback snapshots are private, recomputed server-side and bound to model/catalogue versions;
+before/after-cooking reports are distinct. Extra client score/owner fields are rejected.
+
+Public recipes only: `GET /dishes/:dishId/comments?limit=20&cursor=...` (compound timestamp/UUID
+cursor), `POST /dishes/:dishId/comments` (authenticated text/hasCooked/parentId/versionNumber),
+`DELETE /dishes/:dishId/comments/:id` (comment author only; body cleared, replies preserved).
+Private/unlisted discussions return 404. Stale recipe versions return 409. Dish responses now
+include `versionNumber`; the contract defaults older responses to 1 for compatibility.
+See [FEEDBACK.md](FEEDBACK.md) for schemas, ownership, snapshots and error/retry behavior.
+
 ## AI request change
 
 The r2 request is composition-based, NOT the old `analysis` object:

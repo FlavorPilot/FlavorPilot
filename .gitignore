@@ -3,6 +3,7 @@ node_modules/
 **/node_modules/
 **/dist/
 **/.next/
+**/.next-e2e/
 .core-test/
 **/*.tsbuildinfo
 .env

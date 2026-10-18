@@ -55,6 +55,18 @@ other on desktop and follow reading order on mobile. Both panels stay mounted be
 accessible tabs so changing stages preserves temporary input. No AI requests or paid-plan
 controls are included in this first delivery. See [the recipe workspace plan](RECIPE_WORKSPACE_PLAN.md).
 
+## Feedback and public discussion
+
+The assessment widget exposes an optional feedback slot, composed by the builder/recipe
+screens with the `model-feedback` feature. That feature freezes the current recipe when the
+form opens and sends only on explicit submission. Analysis snapshots are recomputed and stored
+by Nest. Private feedback never appears in the public recipe discussion.
+
+RecipeScreen composes `recipe-comments` using the `recipe-discussion` feature controller and
+entity repositories. The widget owns focus and deletion-confirmation state only; all loading,
+pagination, authenticated mutations and retry state live in the feature. Cloud recipe version
+metadata survives editor transfer/save/undo without entering recipe JSON exports.
+
 ## Adding a widget
 
 Create widgets/<task-name>/ui and index.ts. Define props in the UI module. Add the action in

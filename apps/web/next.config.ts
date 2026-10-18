@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { NextConfig } from 'next';
 const config: NextConfig = {
+    distDir: process.env.FLAVORPILOT_E2E === 'true' ? '.next-e2e' : '.next',
     transpilePackages: ['@flavorpilot/contracts', '@flavorpilot/flavor-engine'],
     // Next 16.3 skips this trace file when Vercel injects its deploy adapter.
     output: process.env.VERCEL ? undefined : 'standalone', outputFileTracingRoot: path.resolve(__dirname, '../..'), poweredByHeader: false,

@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { CompositionAmount, DishAnalysis as Analysis } from '@flavorpilot/contracts';
 import { ingredientById, preparationById } from '@/entities/ingredient';
 import { getDictionary, formatNumber, type Locale } from '@/shared/i18n';
@@ -22,10 +22,11 @@ function CompositionReference({ nutrients, locale }: { nutrients: CompositionAmo
       </dd></div>)}</dl>
     </section>;
 }
-export function DishAnalysis({ analysis, locale, itemCount }: {
+export function DishAnalysis({ analysis, locale, itemCount, feedback }: {
     analysis: Analysis;
     locale: Locale;
     itemCount: number;
+    feedback?: ReactNode;
 }) {
     const d = getDictionary(locale);
     const t = d.messages;
@@ -39,6 +40,7 @@ export function DishAnalysis({ analysis, locale, itemCount }: {
       <div className={`primary-issue ${issue ? 'primary-issue--warning' : ''}`}><Icon name={issue ? 'warning' : 'check'} size={18}/><div><strong>{issue ? t.attention : t.noIssues}</strong><p>{issue ? d.issues[issue.code] : t.noIssuesNote}</p>{issue?.ingredientId && <small>{ingredientById.get(issue.ingredientId)?.name[locale]}</small>}</div></div>
       <details className="disclosure"><summary>{t.details}</summary><p>{t.scoreExplanation}</p><p><strong>{t.confidence}: {formatNumber(analysis.confidence, locale, 0)}</strong> / 100. {t.confidenceNote}</p><p>{t.knowledgeNote}</p></details>
     </>}
+    {itemCount >= 2 && feedback}
     {analysis.composition.totalItems > 0 && <CompositionReference nutrients={analysis.composition.nutrients} locale={locale}/>}
   </WidgetFrame>;
 }

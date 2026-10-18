@@ -10,6 +10,7 @@ const TRANSFER_KEY = 'flavorpilot:open-in-studio:v2';
 const draftSchema = z.object({
     name: z.string().max(160), items: z.array(dishItemSchema).max(24), goal: dishGoalSchema,
     linkedId: z.string().optional(), linkedOrigin: z.enum(['local', 'cloud']).optional(),
+    linkedVersionNumber: z.number().int().positive().optional(),
     createdAt: z.string().datetime().optional(), parentDishId: z.string().optional(), visibility: dishVisibilitySchema,
     ...recipeContentSchema.shape,
 });
@@ -52,7 +53,7 @@ export function deleteLocalRecipe(id: string) {
 export function openRecipeDraft(recipe: Recipe, mode: 'edit' | 'remix', scope = 'guest'): void {
     const draft: Draft = { name: recipe.name, items: recipe.items, goal: recipe.goal, ...recipeContentSchema.parse(recipe),
         visibility: mode === 'remix' ? 'private' : recipe.visibility,
-        ...(mode === 'edit' && recipe.origin !== 'example' ? { linkedId: recipe.id, linkedOrigin: recipe.origin, createdAt: recipe.createdAt } : {}),
+        ...(mode === 'edit' && recipe.origin !== 'example' ? { linkedId: recipe.id, linkedOrigin: recipe.origin, createdAt: recipe.createdAt, ...(recipe.origin==='cloud' && recipe.versionNumber ? {linkedVersionNumber:recipe.versionNumber} : {}) } : {}),
         ...(mode === 'remix' && recipe.origin === 'cloud' ? { parentDishId: recipe.id } : recipe.parentDishId ? { parentDishId: recipe.parentDishId } : {}),
     };
     // Do not consume during the first StrictMode effect and then lose it on the second mount.

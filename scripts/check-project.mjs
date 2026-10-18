@@ -14,7 +14,7 @@ const packages=new Map();for(const p of ['apps/web','apps/api','packages/contrac
 for(const [name,p] of packages){const j=read(p+'/package.json');for(const [dep,v] of Object.entries(j.dependencies??{}))if(dep.startsWith('@flavorpilot/')){assert.ok(packages.has(dep),`${name} references missing ${dep}`);assert.equal(v,pkg.version);}}
 let internalImports=0;
 function walk(dir){for(const x of fs.readdirSync(dir,{withFileTypes:true})){
- if(['node_modules','dist','.next','.core-test','.git'].includes(x.name))continue;
+ if(['node_modules','dist','.next','.next-e2e','.core-test','.git'].includes(x.name))continue;
  const file=path.join(dir,x.name);
  if(x.isDirectory()){walk(file);continue;}
  assert.ok(!/\s\(\d+\)\./.test(x.name),`Flattened-copy filename ${file}`);
@@ -23,7 +23,7 @@ function walk(dir){for(const x of fs.readdirSync(dir,{withFileTypes:true})){
  function visit(n){
   if((ts.isImportDeclaration(n)||ts.isExportDeclaration(n))&&n.moduleSpecifier&&ts.isStringLiteral(n.moduleSpecifier)){
    const spec=n.moduleSpecifier.text;
-   if(spec.startsWith('.')&&!(path.basename(file)==='next-env.d.ts'&&spec.split(/[\\/]/).includes('.next'))){
+   if(spec.startsWith('.')&&!(path.basename(file)==='next-env.d.ts'&&spec.split(/[\\/]/).some(part=>['.next','.next-e2e'].includes(part)))){
     internalImports++;const base=path.resolve(path.dirname(file),spec);
     assert.ok([base,base+'.ts',base+'.tsx',base+'.json',path.join(base,'index.ts'),path.join(base,'index.tsx')].some(p=>fs.existsSync(p)&&fs.statSync(p).isFile()),`Unresolved local import ${spec} in ${file}`);
    }

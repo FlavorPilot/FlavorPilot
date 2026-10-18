@@ -152,7 +152,7 @@ export function useDishEditor(locale: Locale, scope = 'guest') {
         setCandidate({ ingredientId: recommendation.ingredientId, grams: Math.min(5000, recommendation.recommendedGrams), preparationId });
     }
     function markedSaved(recipe: Recipe) {
-        const draft: Draft = { ...state.present, name: recipe.name, linkedId: recipe.id, linkedOrigin: recipe.origin === 'cloud' ? 'cloud' : 'local', createdAt: recipe.createdAt, visibility: recipe.visibility };
+        const draft: Draft = { ...state.present, name: recipe.name, linkedId: recipe.id, linkedOrigin: recipe.origin === 'cloud' ? 'cloud' : 'local', linkedVersionNumber:recipe.origin==='cloud' ? recipe.versionNumber : undefined, createdAt: recipe.createdAt, visibility: recipe.visibility };
         dispatch({ type: 'markSaved', draft });
     }
     return { draft: state.present, draftEpoch, analysis, previewAnalysis, candidate, error, ready, draftStatus, blockedStorage,

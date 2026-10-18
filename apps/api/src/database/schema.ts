@@ -1,5 +1,5 @@
-import type { DishGoal, DishItem, DishVisibility } from '@flavorpilot/contracts';
-import { index, integer, jsonb, numeric, pgEnum, pgTable, smallint, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import type { DishGoal, DishItem, DishVisibility, DishAnalysis, FeedbackRecipeSnapshot, NormalizedModelFeedbackRequest } from '@flavorpilot/contracts';
+import { boolean, index, integer, jsonb, numeric, pgEnum, pgTable, smallint, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 export const dishVisibilityEnum = pgEnum('dish_visibility', ['public', 'unlisted', 'private']);
 export const subscriptionTierEnum = pgEnum('subscription_tier', ['free', 'pro', 'studio', 'kitchen']);
 const created = () => timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow();
@@ -31,3 +31,18 @@ export const favorites = pgTable('favorites', {
 export const subscriptions = pgTable('subscriptions', {
     userId: uuid('user_id').primaryKey().references(() => profiles.id, { onDelete: 'cascade' }), tier: subscriptionTierEnum('tier').notNull().default('free'), providerCustomerId: text('provider_customer_id'), providerSubscriptionId: text('provider_subscription_id'), status: text('status').notNull().default('inactive'), currentPeriodEnd: timestamp('current_period_end', { withTimezone: true, mode: 'date' }), updatedAt: updated()
 });
+export const modelFeedback = pgTable('model_feedback', {
+    id: uuid('id').primaryKey().defaultRandom(), authorId: uuid('author_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+    dishId: uuid('dish_id').references(() => dishes.id, { onDelete: 'set null' }), dishVersionNumber: integer('dish_version_number'),
+    snapshotKey: text('snapshot_key').notNull(), recipeSnapshot: jsonb('recipe_snapshot').$type<FeedbackRecipeSnapshot>().notNull(),
+    analysisSnapshot: jsonb('analysis_snapshot').$type<DishAnalysis>().notNull(), modelVersion: text('model_version').notNull(), catalogueVersion: text('catalogue_version').notNull(),
+    cooked: boolean('cooked').notNull(), agreement: text('agreement').$type<NormalizedModelFeedbackRequest['agreement']>().notNull(),
+    concerns: jsonb('concerns').$type<NormalizedModelFeedbackRequest['concerns']>().notNull(), note: text('note').notNull().default(''),
+    createdAt: created(), updatedAt: updated(),
+}, t => [uniqueIndex('model_feedback_author_snapshot_idx').on(t.authorId, t.snapshotKey)]);
+export const dishComments = pgTable('dish_comments', {
+    id: uuid('id').primaryKey().defaultRandom(), dishId: uuid('dish_id').notNull().references(() => dishes.id, { onDelete: 'cascade' }),
+    authorId: uuid('author_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }), parentId: uuid('parent_id'),
+    text: text('body'), hasCooked: boolean('has_cooked').notNull().default(false), versionNumber: integer('version_number').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date', precision: 3 }).notNull().defaultNow(), deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+}, t => [index('dish_comments_page_idx').on(t.dishId, t.createdAt, t.id)]);

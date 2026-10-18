@@ -5,11 +5,14 @@ import { analyzeDish } from '@flavorpilot/flavor-engine';
 import { dishRepository, emptyRecipeContent, openRecipeDraft, type Recipe } from '@/entities/dish';
 import { ingredientById, preparationById, publicDishSeeds } from '@/entities/ingredient';
 import { useSession } from '@/features/session';
+import { ModelFeedback } from '@/features/model-feedback';
+import { useRecipeDiscussion } from '@/features/recipe-discussion';
 import { getDictionary, formatNumber, type Locale } from '@/shared/i18n';
 import { Badge, Button, EmptyState, Icon, LinkButton, Notice, Skeleton, WidgetFrame } from '@/shared/ui';
 import { DishAnalysis } from '@/widgets/dish-analysis';
 import { SensoryProfile } from '@/widgets/sensory-profile';
 import { IngredientPairings } from '@/widgets/ingredient-pairings';
+import { RecipeComments } from '@/widgets/recipe-comments';
 export function RecipeScreen({ locale, id, shared = false }: {
     locale: Locale;
     id: string;
@@ -46,6 +49,12 @@ export function RecipeScreen({ locale, id, shared = false }: {
         return () => { active = false; };
     }, [id, shared, locale, t.notFoundText]);
     const analysis = useMemo(() => recipe ? analyzeDish(recipe.items, recipe.goal, false) : null, [recipe]);
+    const discussionId = !shared && recipe?.origin==='cloud' && recipe.visibility==='public' ? recipe.id : null;
+    const discussion = useRecipeDiscussion(discussionId,recipe?.versionNumber ?? 1,session?.user.id,session?.access_token);
+    async function refreshRecipe() {
+        try {setRecipe(await dishRepository.publicOne(id));}
+        catch {setError(t.apiUnavailable);throw new Error('Recipe refresh failed');}
+    }
     function remix() {
         if (!recipe)
             return;
@@ -69,7 +78,8 @@ export function RecipeScreen({ locale, id, shared = false }: {
         {recipe.servings !== null && <p>{t.recipeServings}: {formatNumber(recipe.servings, locale, 0)}</p>}
         <ol>{recipe.steps.map(step => <li key={step.id} className="recipe-reading">{step.text}</li>)}</ol>
     </WidgetFrame>}
-    <div className="studio-grid"><WidgetFrame id="recipe-composition" title={t.composition} icon="flask"><div className="read-only-items">{recipe.items.map((item, index) => <div key={index}><span>{ingredientById.get(item.ingredientId)?.name[locale] ?? item.ingredientId}<small>{preparationById.get(item.preparationId)?.name[locale] ?? item.preparationId}</small></span><strong>{formatNumber(item.grams, locale)} {t.grams}</strong></div>)}</div></WidgetFrame><DishAnalysis locale={locale} analysis={analysis} itemCount={recipe.items.length}/></div>
+    <div className="studio-grid"><WidgetFrame id="recipe-composition" title={t.composition} icon="flask"><div className="read-only-items">{recipe.items.map((item, index) => <div key={index}><span>{ingredientById.get(item.ingredientId)?.name[locale] ?? item.ingredientId}<small>{preparationById.get(item.preparationId)?.name[locale] ?? item.preparationId}</small></span><strong>{formatNumber(item.grams, locale)} {t.grams}</strong></div>)}</div></WidgetFrame><DishAnalysis locale={locale} analysis={analysis} itemCount={recipe.items.length} feedback={recipe.origin === 'cloud' && session && recipe.ownerId === session.user.id ? <ModelFeedback key={session.user.id} locale={locale} token={session.access_token} dishId={recipe.id} dishVersionNumber={recipe.versionNumber} recipe={{name:recipe.name,description:recipe.description,servings:recipe.servings,steps:recipe.steps,goal:recipe.goal,items:recipe.items}}/> : undefined}/></div>
+    {discussionId && <RecipeComments discussion={discussion} locale={locale} userId={session?.user.id} versionNumber={recipe.versionNumber ?? 1} onRefreshRecipe={refreshRecipe}/>}
     <div className="studio-grid studio-grid--details"><SensoryProfile locale={locale} profile={analysis.profile}/><IngredientPairings locale={locale} pairs={analysis.pairResults}/></div>
   </div>;
 }

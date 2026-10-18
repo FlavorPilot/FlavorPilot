@@ -15,6 +15,7 @@ export type NormalizedUpdateDishRequest = z.output<typeof updateDishRequestSchem
 export const dishItemResponseSchema = dishItemSchema.extend({ id: uuidSchema, position: z.number().int().nonnegative(), note: z.string().nullable() });
 export const dishOwnerSchema = z.object({ id: uuidSchema, username: z.string(), displayName: z.string().nullable(), avatarUrl: z.string().nullable() });
 export const dishResponseSchema = z.object({
+    versionNumber: z.number().int().positive().default(1),
     id: uuidSchema, ownerId: uuidSchema, name: z.string(), goal: dishGoalSchema, visibility: dishVisibilitySchema, shareToken: uuidSchema.optional(), parentDishId: uuidSchema.nullable(), description: z.string().nullable(), imageUrl: z.string().nullable(), publishedAt: z.string().datetime().nullable(), createdAt: z.string().datetime(), updatedAt: z.string().datetime(), owner: dishOwnerSchema.optional(), items: z.array(dishItemResponseSchema)
 });
 export type DishResponse = z.infer<typeof dishResponseSchema>;
