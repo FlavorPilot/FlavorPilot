@@ -22,7 +22,7 @@ on loopback 45429 with a temporary WSL stdio bridge to the same isolated flavorp
 cluster; no PostgreSQL configuration, production database or machine port-proxy rule changed.
 The existing supported Auth port override stayed 45421. No schema migration or new dependency.
 Explanation input cap is 8000 tokens, output 2000 and charge 2 units; the same $5/day/$50/month
-shared budget remains authoritative. The new prompt/cache version is culinary-review-5.
+shared budget remains authoritative. The new prompt/cache version is culinary-review-6.
 These local checks establish behavior and accounting, not culinary accuracy; hosted output
 inspection is recorded separately after rollout.
 

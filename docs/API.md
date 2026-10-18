@@ -109,7 +109,7 @@ Unknown IDs/candidates, invented metadata and numerical prose are rejected with 
 numbers are displayed from server-owned data. Reductions are requested as qualitative trials; the schema supplies no exact new reduction
 dose or predicted score change. The UI does not mutate/apply any advice.
 Legacy callers retain summary/main_problem/actions without composition; old deployed clients
-can read the derived legacy fields while the matching UI rolls out. `culinary-review-5` separates
+can read the derived legacy fields while the matching UI rolls out. `culinary-review-6` separates
 the new context/prompt from cached older score recitations. Recipe edits affect the content hash.
 The richer context uses an 8000-input-token cap; output stays 2000 tokens and cost stays 2 units,
 with a worst-case monetary reservation of $0.0018. Token counting uses the complete JSON schema

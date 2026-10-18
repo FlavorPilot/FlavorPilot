@@ -1,5 +1,5 @@
 export const AI_MODEL='gpt-6-luna';
-export const AI_PROMPT_VERSION='culinary-review-5';
+export const AI_PROMPT_VERSION='culinary-review-6';
 export const AI_LIMITS={explain:{input:8000,output:2000,units:2},step:{input:5000,output:1600,units:1},full:{input:12000,output:4000,units:4},generate:{input:8000,output:5000,units:4}} as const;
 export type AiFeature=keyof typeof AI_LIMITS;
 export const AI_PLANS={free:{month:0,day:0},pro:{month:300,day:30},studio:{month:1200,day:100},kitchen:{month:3000,day:200}} as const;
