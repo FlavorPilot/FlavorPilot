@@ -4,8 +4,8 @@ import { sourcedIdentities } from './sourced-identities';
 import { nutrientHypotheses } from './nutrient-hypotheses';
 import { catalogueIngredients } from './scoring-catalogue';
 import { AI_HYPOTHESIS_VERSION, expandedHypothesisRationales } from './expanded-product-hypotheses';
-/** Formula version is retained; authored catalogue additions are versioned separately. */
-export const MODEL_VERSION = '0.3.0-hypothesis';
+/** Recommendation trials changed; primary assessment coefficients are retained. */
+export const MODEL_VERSION = '0.3.1-hypothesis';
 export const CATALOGUE_VERSION = '2026-10-18-ai-2';
 /** Closed alpha aims for reviewed coverage, not a generated catalogue of this size. */
 export const ALPHA_REVIEW_TARGET = { min: 80, max: 120 } as const;

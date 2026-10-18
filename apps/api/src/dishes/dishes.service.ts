@@ -7,6 +7,7 @@ import { DatabaseService, type FlavorPilotDatabase } from '../database/database.
 import { dishes, dishItems, dishVersions, profiles, subscriptions, type DishSnapshot } from '../database/schema';
 import { hasActivePaidEntitlement } from './subscription-entitlement';
 interface DishSelectRow {
+    moderationHidden: boolean;
     versionNumber: number;
     id: string;
     ownerId: string;
@@ -39,13 +40,13 @@ export class DishesService {
             filters.push(lt(dishes.publishedAt, new Date(input.cursor)));
         if (input.search)
             filters.push(ilike(dishes.name, `%${input.search.replace(/[%_]/g, '\\$&')}%`));
-        const rows = await this.selectRows(db, allOf(eq(dishes.visibility, 'public'), ...filters), input.limit + 1);
+        const rows = await this.selectRows(db, allOf(eq(dishes.visibility, 'public'), eq(dishes.moderationHidden,false), ...filters), input.limit + 1);
         const hasMore = rows.length > input.limit, page = hasMore ? rows.slice(0, input.limit) : rows;
         const grouped = await this.loadItems(db, page.map(row => row.id)), last = page.at(-1);
         return { items: page.map(row => this.serialize(row, grouped.get(row.id) ?? [], false)), nextCursor: hasMore && last?.publishedAt ? last.publishedAt.toISOString() : null };
     }
-    async getPublic(id: string): Promise<DishResponse> { return this.lookup(allOf(eq(dishes.id, id), eq(dishes.visibility, 'public')), false); }
-    async getByShareToken(token: string): Promise<DishResponse> { return this.lookup(allOf(eq(dishes.shareToken, token), ne(dishes.visibility, 'private')), false); }
+    async getPublic(id: string): Promise<DishResponse> { return this.lookup(allOf(eq(dishes.id, id), eq(dishes.visibility, 'public'),eq(dishes.moderationHidden,false)), false); }
+    async getByShareToken(token: string): Promise<DishResponse> { return this.lookup(allOf(eq(dishes.shareToken, token), ne(dishes.visibility, 'private'),eq(dishes.moderationHidden,false)), false); }
     async getMine(ownerId: string, id: string): Promise<DishResponse> { return this.lookup(allOf(eq(dishes.id, id), eq(dishes.ownerId, ownerId)), true); }
     async listMine(ownerId: string): Promise<DishResponse[]> {
         const db = this.database.requireDatabase(), rows = await this.selectRows(db, eq(dishes.ownerId, ownerId), 100);
@@ -119,7 +120,7 @@ export class DishesService {
         return this.create(ownerId, { name: options.name ?? `${source.name} remix`, goal: source.goal, visibility: options.visibility, description: source.description, imageUrl: null, parentDishId: source.id, items: source.items.map(({ ingredientId, grams, preparationId }) => ({ ingredientId, grams, preparationId })) });
     }
     private async selectRows(db: FlavorPilotDatabase, condition: SQL, limit: number): Promise<DishSelectRow[]> {
-        return db.select({ versionNumber: sql<number>`(select coalesce(max(v.version_number), 1)::int from public.dish_versions v where v.dish_id = ${dishes.id})`, id: dishes.id, ownerId: dishes.ownerId, name: dishes.name, goal: dishes.goal, visibility: dishes.visibility, shareToken: dishes.shareToken, parentDishId: dishes.parentDishId, description: dishes.description, imageUrl: dishes.imageUrl, publishedAt: dishes.publishedAt, createdAt: dishes.createdAt, updatedAt: dishes.updatedAt, ownerUsername: profiles.username, ownerDisplayName: profiles.displayName, ownerAvatarUrl: profiles.avatarUrl }).from(dishes).leftJoin(profiles, eq(profiles.id, dishes.ownerId)).where(condition).orderBy(desc(dishes.publishedAt), desc(dishes.updatedAt)).limit(limit);
+        return db.select({ moderationHidden:dishes.moderationHidden, versionNumber: sql<number>`(select coalesce(max(v.version_number), 1)::int from public.dish_versions v where v.dish_id = ${dishes.id})`, id: dishes.id, ownerId: dishes.ownerId, name: dishes.name, goal: dishes.goal, visibility: dishes.visibility, shareToken: dishes.shareToken, parentDishId: dishes.parentDishId, description: dishes.description, imageUrl: dishes.imageUrl, publishedAt: dishes.publishedAt, createdAt: dishes.createdAt, updatedAt: dishes.updatedAt, ownerUsername: profiles.username, ownerDisplayName: profiles.displayName, ownerAvatarUrl: profiles.avatarUrl }).from(dishes).leftJoin(profiles, eq(profiles.id, dishes.ownerId)).where(condition).orderBy(desc(dishes.publishedAt), desc(dishes.updatedAt)).limit(limit);
     }
     private async lookup(condition: SQL, exposeToken: boolean): Promise<DishResponse> {
         const db = this.database.requireDatabase(), [row] = await this.selectRows(db, condition, 1);
@@ -141,13 +142,13 @@ export class DishesService {
         return result;
     }
     private serialize(row: DishSelectRow, items: DishItemRow[], exposeToken: boolean): DishResponse {
-        return { versionNumber: row.versionNumber, id: row.id, ownerId: row.ownerId, name: row.name, goal: row.goal, visibility: row.visibility, ...(exposeToken ? { shareToken: row.shareToken } : {}), parentDishId: row.parentDishId, description: row.description, imageUrl: row.imageUrl, publishedAt: row.publishedAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), owner: row.ownerUsername ? { id: row.ownerId, username: row.ownerUsername, displayName: row.ownerDisplayName, avatarUrl: row.ownerAvatarUrl } : undefined, items: items.map(item => ({ id: item.id, ingredientId: item.ingredientId, grams: Number(item.grams), preparationId: item.preparationId, position: item.position, note: item.note })) };
+        return { moderationHidden:row.moderationHidden, versionNumber: row.versionNumber, id: row.id, ownerId: row.ownerId, name: row.name, goal: row.goal, visibility: row.visibility, ...(exposeToken ? { shareToken: row.shareToken } : {}), parentDishId: row.parentDishId, description: row.description, imageUrl: row.imageUrl, publishedAt: row.publishedAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), owner: row.ownerUsername ? { id: row.ownerId, username: row.ownerUsername, displayName: row.ownerDisplayName, avatarUrl: row.ownerAvatarUrl } : undefined, items: items.map(item => ({ id: item.id, ingredientId: item.ingredientId, grams: Number(item.grams), preparationId: item.preparationId, position: item.position, note: item.note })) };
     }
     private async assertParent(ownerId: string, parentDishId: string | null) {
         if (!parentDishId)
             return;
-        const [parent] = await this.database.requireDatabase().select({ ownerId: dishes.ownerId, visibility: dishes.visibility }).from(dishes).where(eq(dishes.id, parentDishId)).limit(1);
-        if (!parent || (parent.visibility !== 'public' && parent.ownerId !== ownerId))
+        const [parent] = await this.database.requireDatabase().select({ ownerId: dishes.ownerId, visibility: dishes.visibility,hidden:dishes.moderationHidden }).from(dishes).where(eq(dishes.id, parentDishId)).limit(1);
+        if (!parent || ((parent.visibility !== 'public' || parent.hidden) && parent.ownerId !== ownerId))
             throw new BadRequestException({ code: 'INVALID_PARENT_DISH', message: 'A remix parent must be public or owned by the authenticated user' });
     }
     private async assertCapacity(ownerId: string, visibility: DishVisibility, excludeId?: string) {

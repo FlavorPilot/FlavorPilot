@@ -137,11 +137,12 @@ test('recommendations never duplicate an existing ingredient',()=>{const ids=new
 test('recommendation quantities, methods and balance delta match the actual preview',()=>{
  const before=analyzeDish(defaultDish,'fresh');
  for(const r of before.recommendations){
-  const ingredient=scoring.catalogueById.get(r.ingredientId),preparationId=ingredient.preparations.includes('raw')?'raw':ingredient.preparations[0];
+  const ingredient=scoring.catalogueById.get(r.ingredientId),preparationId=r.preparationId;
+  assert.ok(ingredient.preparations.includes(preparationId));
   assert.ok(Number.isFinite(r.recommendedGrams)&&r.recommendedGrams>0&&r.recommendedGrams<=5000);
   const after=analyzeDish([...defaultDish,{ingredientId:r.ingredientId,grams:r.recommendedGrams,preparationId}],'fresh',false);
-  // Public score is rounded to an integer; the delta is derived before rounding.
-  assert.ok(Math.abs((after.balanceScore-before.balanceScore)-r.balanceDelta)<=1.01);
+  assert.equal(after.balanceScore-before.balanceScore,r.balanceDelta);
+  assert.equal(after.overallScore-before.overallScore,r.overallDelta);
  }
 });
 test('disabling recommendations keeps all primary scores identical',()=>{const a=analyzeDish(defaultDish,'fresh'),b=analyzeDish(defaultDish,'fresh',false);assert.deepEqual({...a,recommendations:[]},b);});

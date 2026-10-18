@@ -20,6 +20,7 @@ export function ModelFeedback({ recipe, dishId, dishVersionNumber, token, locale
     const [agreement,setAgreement] = useState<NormalizedModelFeedbackRequest['agreement'] | null>(null);
     const [concerns,setConcerns] = useState<NormalizedModelFeedbackRequest['concerns']>([]);
     const [note,setNote] = useState('');
+    const [allowTeamReview,setAllowTeamReview] = useState(false);
     const [busy,setBusy] = useState(false), [error,setError] = useState('');
     const [saved,setSaved] = useState<{key:string;record:ModelFeedbackResponse} | null>(null);
     function open() {
@@ -27,6 +28,7 @@ export function ModelFeedback({ recipe, dishId, dishVersionNumber, token, locale
         setCapture({recipe:structuredClone(recipe),dishId,dishVersionNumber,key});
         setCooked(previous?.cooked ?? null); setAgreement(previous?.agreement ?? null);
         setConcerns(previous?.concerns ?? []); setNote(previous?.note ?? ''); setError('');
+        setAllowTeamReview(false); // Each submission requires a fresh, optional opt-in.
     }
     async function submit() {
         if (!capture || !token || cooked === null || !agreement || busy) return;
@@ -34,7 +36,7 @@ export function ModelFeedback({ recipe, dishId, dishVersionNumber, token, locale
         try {
             const record = await feedbackRepository.save({recipe:capture.recipe,...(capture.dishId ? {dishId:capture.dishId} : {}),
                 ...(capture.dishVersionNumber ? {dishVersionNumber:capture.dishVersionNumber} : {}),
-                modelVersion:MODEL_VERSION,catalogueVersion:CATALOGUE_VERSION,cooked,agreement,concerns,note},token);
+                modelVersion:MODEL_VERSION,catalogueVersion:CATALOGUE_VERSION,cooked,agreement,concerns,note,allowTeamReview},token);
             setSaved({key:capture.key,record}); setCapture(null);
         } catch (problem) {
             setError(problem instanceof ApiError && problem.code==='MODEL_VERSION_CHANGED' ? t.feedbackModelChanged : t.feedbackError);
@@ -49,6 +51,7 @@ export function ModelFeedback({ recipe, dishId, dishVersionNumber, token, locale
       {saved?.key===key && <p className="small" role="status">{t.feedbackSaved}</p>}
       <Dialog open={Boolean(capture)} title={t.feedbackTitle} closeLabel={t.close} onClose={() => {if(!busy)setCapture(null);}}>
         <p className="muted small">{t.feedbackPrivate}</p>
+        <label className="check-label"><input type="checkbox" checked={allowTeamReview} disabled={busy} onChange={event=>setAllowTeamReview(event.target.checked)}/>{t.feedbackTeamConsent}</label>
         {analysis && <dl className="feedback-scores">{([['overall',analysis.overallScore],['compatibility',analysis.compatibilityScore],['balance',analysis.balanceScore],['quantity',analysis.quantityScore],['texture',analysis.textureScore]] as const).map(([label,value]) => <div key={label}><dt>{t[label]}</dt><dd>{value}/100</dd></div>)}</dl>}
         <fieldset className="feedback-fieldset" disabled={busy}><legend>{t.feedbackCooked}</legend>
           <label className="check-label"><input type="radio" name="feedback-cooked" checked={cooked===true} onChange={() => setCooked(true)}/>{t.feedbackCookedYes}</label>

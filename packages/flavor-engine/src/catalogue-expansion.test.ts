@@ -92,8 +92,9 @@ describe('expanded culinary hypotheses and published composition', () => {
         const result = analyzeDish(items, 'fresh');
         expect(result.recommendations.some(row => aiIngredientKnowledge.has(row.ingredientId))).toBe(true);
         for (const suggestion of result.recommendations) {
-            const preview = analyzeDish([...items, { ingredientId: suggestion.ingredientId, preparationId: 'raw', grams: suggestion.recommendedGrams }], 'fresh', false);
-            expect(Math.abs(preview.balanceScore - result.balanceScore - suggestion.balanceDelta)).toBeLessThanOrEqual(1.01);
+            const preview = analyzeDish([...items, { ingredientId: suggestion.ingredientId, preparationId: suggestion.preparationId, grams: suggestion.recommendedGrams }], 'fresh', false);
+            expect(preview.balanceScore - result.balanceScore).toBe(suggestion.balanceDelta);
+            expect(preview.overallScore - result.overallScore).toBe(suggestion.overallDelta);
         }
     });
 });

@@ -1,5 +1,51 @@
 @import './tokens.css';
 
+.crm-layout { display: grid; grid-template-columns: 210px minmax(0,1fr); gap: 24px; align-items: start; }
+.crm-nav { display: grid; gap: 5px; position: sticky; top: 90px; }
+.crm-nav button { text-align: left; border: 1px solid transparent; background: transparent; color: var(--muted); padding: 12px; border-radius: var(--radius-sm); cursor: pointer; }
+.crm-nav button[aria-current] { color: var(--accent); border-color: var(--border); background: var(--surface); }
+.crm-content,.crm-support,.crm-record > div { min-width: 0; }
+.crm-search { display: flex; gap: 8px; margin: 16px 0; }
+.crm-search input { width: 100%; min-width: 0; }
+.crm-records { display: grid; gap: 10px; margin-top: 16px; }
+.crm-record { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.crm-record small { display: block; color: var(--muted); margin: 4px 0; }
+.crm-record p { margin: 5px 0; }
+.crm-record .inline-actions { flex-wrap: wrap; }
+.crm-paging { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 20px; }
+.crm-paging span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.crm-metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 12px 0; }
+.crm-metrics > div { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; display: grid; }
+.crm-metrics span { color: var(--muted); font-size: 13px; }
+.crm-metrics strong { font-size: 30px; line-height: 1.4; }
+.crm-facts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 12px 0; }
+.crm-facts > div { padding: 8px; background: var(--surface-sunken); border-radius: var(--radius-sm); min-width: 0; overflow-wrap: anywhere; }
+.crm-facts dt { color: var(--muted); font-size: 12px; }
+.crm-facts dd { margin: 4px 0 0; }
+.crm-record-detail { border-bottom: 1px solid var(--border); padding: 12px 0; overflow-wrap: anywhere; }
+.crm-record-detail summary { cursor: pointer; padding: 8px 0; }
+.crm-record-detail summary span { display: block; font-size: 12px; }
+.crm-record-detail > div { margin-top: 18px; }
+.crm-messages { display: grid; gap: 12px; margin: 20px 0; }
+.crm-message { padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow-wrap: anywhere; }
+.crm-message--staff { border-left: 3px solid var(--accent); }
+.crm-message small { display: block; color: var(--muted); font-size: 11px; }
+.crm-message p { white-space: pre-wrap; margin-bottom: 0; }
+.crm-support textarea,.crm-content textarea { width: 100%; resize: vertical; min-width: 0; }
+.crm-mfa { max-width: 500px; }
+.crm-mfa img { max-width: 100%; background: white; border-radius: var(--radius-sm); }
+.crm-secret { display: grid; overflow-wrap: anywhere; }
+.crm-secret span { color: var(--muted); font-size: 12px; }
+@media (max-width: 760px) {
+  .crm-layout { grid-template-columns: minmax(0,1fr); gap: 16px; }
+  .crm-nav { position: static; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .crm-nav button { padding: 9px; font-size: 13px; }
+  .crm-record { flex-direction: column; align-items: stretch; }
+  .crm-metrics { gap: 8px; }
+  .crm-metrics > div { padding: 10px; }
+  .crm-facts { grid-template-columns: minmax(0,1fr); }
+}
+
 .model-feedback { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
 .model-feedback > p { margin: 0 0 6px; }
 .model-feedback .button { white-space: normal; text-align: left; }
@@ -420,22 +466,6 @@ legend {
 
 .sidebar__bottom {
   margin-top: auto;
-}
-
-.model-note {
-  display: flex;
-  gap: 9px;
-  padding: 17px 11px;
-  color: var(--muted);
-  font-size: 11px;
-  border-top: 1px solid #2a342b;
-}
-
-.model-note small {
-  display: block;
-  font-size: 10px;
-  color: var(--subtle);
-  margin-top: 5px;
 }
 
 .side-plan {

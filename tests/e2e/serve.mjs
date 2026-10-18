@@ -20,6 +20,7 @@ const api = spawn(process.execPath, ['dist/main.js'], {
         SUPABASE_URL: stub.url,
         SUPABASE_PUBLISHABLE_KEY: stub.key,
         AI_ENABLED: 'false',
+        ADMIN_REQUIRE_MFA: 'false', // Isolated auth stub only; production rejects this setting.
         NODE_ENV: 'test',
         PORT: apiPort,
         API_HOST: '127.0.0.1',

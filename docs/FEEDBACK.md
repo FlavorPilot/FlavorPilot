@@ -17,6 +17,12 @@ and texture concerns and include a 2,000-character note. Cooked status is self-r
 Before-cooking opinions and after-cooking reports use different records; neither is a verified
 measurement of taste. The model is not trained or adjusted automatically on submission.
 
+Team access is now an explicit optional checkbox, unchecked on every submission. Older
+feedback and older clients stay closed by default. Authors can withdraw permission from
+their account after reload; no resubmission of the original recipe is required. Admin review
+state/notes are separate from the captured input and calculation, and changed answers reopen
+review. See [ADMINISTRATION.md](ADMINISTRATION.md) for access and migration 0010.
+
 `POST /v1/feedback` accepts a strict recipe snapshot, the client's model/catalogue versions,
 optional owned cloud dish/version IDs, and feedback fields. It accepts no client analysis,
 score or ownership claim. Nest validates references and recalculates using the kernel with

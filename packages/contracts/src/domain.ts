@@ -125,14 +125,18 @@ export interface PairResult {
     complementScore: number;
     explicitAdjustment: number;
 }
-export const recommendationReasons = ['strongPairing', 'addsAcidity', 'balancesFat', 'addsFreshness', 'addsUmami', 'addsSweetness', 'addsPungency', 'addsCrunch', 'supportsGoal', 'improvesBalance'] as const;
+export const recommendationReasons = ['strongPairing', 'addsAcidity', 'balancesFat', 'addsFreshness', 'addsUmami', 'addsSweetness', 'addsPungency', 'addsCrunch', 'supportsGoal', 'improvesBalance', 'improvesModel'] as const;
 export type RecommendationReason = typeof recommendationReasons[number];
 export interface IngredientRecommendation {
     ingredientId: string;
     compatibility: number;
     utility: number;
     recommendedGrams: number;
+    preparationId: string;
+    /** Difference between the same rounded scores shown in the actual preview. */
+    overallDelta: number;
     balanceDelta: number;
+    profileChanges: Array<{ dimension: SensoryDimension; before: number; after: number }>;
     reasons: RecommendationReason[];
 }
 export const compositionNutrients = ['protein', 'fat', 'carbohydrate', 'sugars', 'sodium', 'energy'] as const;

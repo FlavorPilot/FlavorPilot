@@ -7,8 +7,9 @@ Run `supabase/schema.sql`, then `supabase/seed.sql` in a new project. The schema
 bootstrap. Do not run it on a nonempty existing database: types and tables are created afresh.
 
 Tables: profiles, ingredients, preparation_methods, ingredient_pairings, dishes, dish_items,
-dish_versions, favorites, subscriptions. No paying users, fake accounts or public recipes are
-seeded. The seed inserts unreviewed catalogue hypotheses with `confidence=0` and does not replace
+dish_versions, favorites, subscriptions, model_feedback, dish_comments, admin_memberships,
+admin_audit_events, feedback_reviews, support_tickets, support_messages. No paying users, fake
+accounts or public recipes are seeded. The seed inserts unreviewed catalogue hypotheses with `confidence=0` and does not replace
 existing records. The application currently calculates from the bundled catalogue, not live DB
 edits: change the catalogue through review, rebuild packages, then regenerate/reconcile seed.
 
@@ -54,6 +55,15 @@ migration adds tables/indexes/constraints and a same-recipe, one-level reply val
 it does not alter recipes, catalogue scores or visibility. Both tables have RLS and direct
 public/anon/authenticated privileges revoked; Nest enforces current visibility and ownership.
 See [FEEDBACK.md](FEEDBACK.md). Deploy the API/web together after the migration.
+
+## Administration and support
+
+Apply `supabase/migrations/0010_administration.sql` after 0009. It adds admin_memberships,
+admin_audit_events, feedback_reviews, support_tickets and support_messages; all deny direct
+public/anon/authenticated access. Recipe moderation state/revision is separate from visibility;
+existing feedback gains a false-by-default team-review permission. Fresh schema includes both.
+No owner is promoted automatically. Use the controlled procedure in
+[ADMINISTRATION.md](ADMINISTRATION.md). Apply the migration before matching API/web bundles.
 
 ## Existing v0.3.0 database
 

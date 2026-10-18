@@ -181,6 +181,8 @@ AI по умолчанию выключен; production-включение за�
 - [DEVELOPMENT.md](docs/DEVELOPMENT.md): команды, тесты, дисциплина lockfile.
 - [DEPLOYMENT.md](docs/DEPLOYMENT.md): Vercel / Nest-контейнер / Supabase.
 - [ACCEPTANCE.md](docs/ACCEPTANCE.md): реальные сценарии приёмки.
+- [CRM_CONCEPT.md](docs/CRM_CONCEPT.md): концепт CRM и управления всеми областями сайта, архитектура и этапы внедрения.
+- [ADMINISTRATION.md](docs/ADMINISTRATION.md): первая версия админки, поддержка, назначение владельца, MFA и миграция 0010.
 - [AGENT.md](AGENT.md): правила для дальнейшей разработки с агентом.
 
 Архив ничего не пушит в GitHub, не меняет remote и не переносит private `.env` автоматически.

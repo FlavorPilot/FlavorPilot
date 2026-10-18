@@ -2,6 +2,7 @@ import { Injectable, ServiceUnavailableException, UnauthorizedException } from '
 import { ConfigService } from '@nestjs/config';
 import { z } from 'zod';
 import type { AuthenticatedUser } from './auth.types';
+import { verifiedSessionAssurance } from './verified-session';
 const userSchema = z.object({ id: z.string().uuid(), email: z.string().email().optional(), role: z.string().optional(), user_metadata: z.record(z.string(), z.unknown()).optional() });
 @Injectable()
 export class SupabaseAuthService {
@@ -24,6 +25,7 @@ export class SupabaseAuthService {
         const result = userSchema.safeParse(await response.json().catch(() => null));
         if (!result.success)
             throw new ServiceUnavailableException({ code: 'AUTH_PROVIDER_INVALID_RESPONSE', message: 'The authentication provider returned an invalid user payload' });
-        return { id: result.data.id, email: result.data.email, role: result.data.role, userMetadata: result.data.user_metadata ?? {} };
+        return { id: result.data.id, email: result.data.email, role: result.data.role, userMetadata: result.data.user_metadata ?? {},
+            assurance:verifiedSessionAssurance(token,result.data.id,url) };
     }
 }

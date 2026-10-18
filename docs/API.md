@@ -21,6 +21,31 @@ null and is not included; published zero is covered. These source-reference amou
 apply cooking-loss/yield factors and never affect the culinary score. Contracts parse this
 composition instead of stripping it from the server response. Rebuild the API and web together.
 
+### Recommendation response — model 0.3.1-hypothesis
+
+Each recommendation now includes `preparationId`, positive integer `overallDelta`, integer
+`balanceDelta`, and up to three `profileChanges` (`dimension`, `before`, `after`, sensory scale
+0–10). Deltas subtract the same rounded scores displayed in preview. `improvesModel` is an
+additional localized reason; it replaces the unsupported fallback claim of strong pairing.
+The original compatibility/usefulness fields remain heuristic scores, not probabilities.
+
+The engine searches the full scoring catalogue excluding existing ingredient IDs. It compares
+portions at the catalogue minimum and ideal **final-dish shares** using
+`grams = currentWeight * share / (100 - share)`, bounded to 0.1–5000 g, the working maximum
+and ideal share. The maximum is a guard rather than a target for diluting the original dish.
+Within each food, the best unrounded overall score wins; ties prefer the ideal share then
+the smaller dose. Rank by actual overall improvement, then the existing usefulness formula,
+then stable ingredient ID. Keep the existing compatibility/balance eligibility gate and require
+a positive displayed overall delta. Show at most eight distinct role/prepared-texture groups
+(six cards in the web UI); no filler when fewer qualify. Empty and 24-item dishes return none.
+Existing preparations, all primary score coefficients, and manual-add default amounts are unchanged.
+Reasons use the prepared candidate and actual simulated profile/texture changes, not its name.
+
+Migration: rebuild shared contracts/engine, API and web together. No SQL migration or rewriting
+stored recipes/feedback is required. Feedback snapshots already omit recommendations; preserve
+their original model versions. Fresh feedback uses 0.3.1; an old open client may need reloading
+after the API update to pass the existing version check. Catalogue version/profiles are unchanged.
+
 ## Feedback and comments
 
 Protected: `POST /feedback`, `GET /feedback/:id`, `DELETE /feedback/:id` (owner only).
@@ -33,6 +58,16 @@ cursor), `POST /dishes/:dishId/comments` (authenticated text/hasCooked/parentId/
 Private/unlisted discussions return 404. Stale recipe versions return 409. Dish responses now
 include `versionNumber`; the contract defaults older responses to 1 for compatibility.
 See [FEEDBACK.md](FEEDBACK.md) for schemas, ownership, snapshots and error/retry behavior.
+
+## Administration and support
+
+`/admin/*` requires a verified session, active server owner assignment, and MFA for data routes.
+`/support/*` is authenticated and owner-scoped; staff paths are separately guarded.
+`GET /feedback/mine` and `PATCH /feedback/:id/permission` let an author inspect permission
+metadata and withdraw team review. Earlier feedback remains closed by default.
+Dish responses include `moderationHidden` (default false for old responses). Public, shared,
+discussion and remix paths enforce distribution restrictions without rewriting author visibility.
+See [ADMINISTRATION.md](ADMINISTRATION.md) for all routes, pagination, conflicts and bootstrap.
 
 ## AI request change
 

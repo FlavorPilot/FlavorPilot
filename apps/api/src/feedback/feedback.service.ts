@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import type { CommentListQuery, CommentListResponse, CommentResponse, FeedbackRecipeSnapshot, ModelFeedbackResponse, NormalizedCreateCommentRequest, NormalizedModelFeedbackRequest } from '@flavorpilot/contracts';
+import type { AdminListQuery,CommentListQuery, CommentListResponse, CommentResponse, FeedbackRecipeSnapshot, ModelFeedbackResponse, NormalizedCreateCommentRequest, NormalizedModelFeedbackRequest } from '@flavorpilot/contracts';
 import { analyzeDish, MODEL_VERSION, CATALOGUE_VERSION } from '@flavorpilot/flavor-engine';
-import { desc, eq, inArray, lt, max, or, type SQL } from 'drizzle-orm';
+import { count,desc, eq, inArray, lt, max, or, sql,type SQL } from 'drizzle-orm';
 import { allOf } from '../common/sql';
 import { assertValidDishItems } from '../common/catalog-validation';
 import { DatabaseService, type FlavorPilotDatabase } from '../database/database.service';
-import { dishes, dishVersions, modelFeedback, dishComments, profiles } from '../database/schema';
+import { dishes, dishVersions, modelFeedback, dishComments, profiles,feedbackReviews } from '../database/schema';
 
 /** Stable input order also normalizes optional fields on older dish-version snapshots. */
 export const feedbackRecipeKey = (recipe: FeedbackRecipeSnapshot) => JSON.stringify({
@@ -36,12 +36,16 @@ export class FeedbackService {
                 }
             }
             const snapshotKey = createHash('sha256').update(JSON.stringify([MODEL_VERSION,CATALOGUE_VERSION,input.dishId ?? null,dishVersionNumber,recipe,input.cooked])).digest('hex');
+            const [previous]=await tx.select().from(modelFeedback).where(allOf(eq(modelFeedback.authorId,authorId),eq(modelFeedback.snapshotKey,snapshotKey))).for('update');
             const [saved] = await tx.insert(modelFeedback).values({ authorId, dishId: input.dishId ?? null, dishVersionNumber, snapshotKey,
                 recipeSnapshot: recipe, analysisSnapshot: analysis, modelVersion: MODEL_VERSION, catalogueVersion: CATALOGUE_VERSION,
-                cooked: input.cooked, agreement: input.agreement, concerns: input.concerns, note: input.note,
+                cooked: input.cooked, agreement: input.agreement, concerns: input.concerns, note: input.note,allowTeamReview:input.allowTeamReview,
             }).onConflictDoUpdate({ target: [modelFeedback.authorId,modelFeedback.snapshotKey], set: {
-                cooked: input.cooked, agreement: input.agreement, concerns: input.concerns, note: input.note, updatedAt: new Date(),
+                cooked: input.cooked, agreement: input.agreement, concerns: input.concerns, note: input.note,allowTeamReview:input.allowTeamReview, updatedAt: new Date(),
             }}).returning();
+            // A concurrent first insert can win after the lookup; its conflict-update must also reopen review.
+            if(!previous || previous.agreement!==input.agreement || previous.note!==input.note || JSON.stringify(previous.concerns)!==JSON.stringify(input.concerns) || previous.allowTeamReview!==input.allowTeamReview)
+                await tx.update(feedbackReviews).set({status:'new',revision:sql`${feedbackReviews.revision}+1`,updatedAt:new Date()}).where(eq(feedbackReviews.feedbackId,saved.id));
             return saved;
         });
         return this.feedbackResponse(record);
@@ -51,6 +55,20 @@ export class FeedbackService {
         if (!row) throw this.notFound();
         return this.feedbackResponse(row);
     }
+    async mine(authorId:string,q:AdminListQuery){
+        const db=this.database.requireDatabase(),filter=eq(modelFeedback.authorId,authorId);
+        const [items,[n]]=await Promise.all([
+            db.select({id:modelFeedback.id,recipe:modelFeedback.recipeSnapshot,cooked:modelFeedback.cooked,allowTeamReview:modelFeedback.allowTeamReview,createdAt:modelFeedback.createdAt})
+                .from(modelFeedback).where(filter).orderBy(desc(modelFeedback.createdAt),desc(modelFeedback.id)).limit(q.limit).offset((q.page-1)*q.limit),
+            db.select({n:count()}).from(modelFeedback).where(filter),
+        ]);
+        return {items:items.map(({recipe,createdAt,...r})=>({...r,name:recipe.name,createdAt:createdAt.toISOString()})),total:Number(n.n),page:q.page,limit:q.limit};
+    }
+    async withdraw(authorId:string,id:string){
+        const rows=await this.database.requireDatabase().update(modelFeedback).set({allowTeamReview:false,updatedAt:new Date()})
+            .where(allOf(eq(modelFeedback.id,id),eq(modelFeedback.authorId,authorId))).returning({id:modelFeedback.id});
+        if(!rows.length)throw this.notFound();return {ok:true};
+    }
     async deleteFeedback(authorId: string, id: string) {
         const rows = await this.database.requireDatabase().delete(modelFeedback).where(allOf(eq(modelFeedback.id,id),eq(modelFeedback.authorId,authorId))).returning({id:modelFeedback.id});
         if (!rows.length) throw this.notFound();
@@ -59,7 +77,7 @@ export class FeedbackService {
         const db = this.database.requireDatabase();
         // Reading and writing lock the recipe so a visibility change cannot cross the authorization check.
         return db.transaction(async tx => {
-            const [dish] = await tx.select({id:dishes.id}).from(dishes).where(allOf(eq(dishes.id,dishId),eq(dishes.visibility,'public'))).for('share');
+            const [dish] = await tx.select({id:dishes.id}).from(dishes).where(allOf(eq(dishes.id,dishId),eq(dishes.visibility,'public'),eq(dishes.moderationHidden,false))).for('share');
             if (!dish) throw this.notFound();
             const filters: SQL[] = [];
             if (query.cursor) {
@@ -75,7 +93,7 @@ export class FeedbackService {
     }
     async createComment(authorId: string, dishId: string, input: NormalizedCreateCommentRequest): Promise<CommentResponse> {
         return this.database.requireDatabase().transaction(async tx => {
-            const [dish] = await tx.select({id:dishes.id}).from(dishes).where(allOf(eq(dishes.id,dishId),eq(dishes.visibility,'public'))).for('update');
+            const [dish] = await tx.select({id:dishes.id}).from(dishes).where(allOf(eq(dishes.id,dishId),eq(dishes.visibility,'public'),eq(dishes.moderationHidden,false))).for('update');
             if (!dish) throw this.notFound();
             const versionNumber = await this.currentVersion(tx,dishId);
             if (input.versionNumber !== versionNumber) throw new ConflictException({code:'DISH_VERSION_CHANGED',message:'The recipe changed. Refresh it before commenting.'});
@@ -115,7 +133,7 @@ export class FeedbackService {
     }
     private feedbackResponse(row: typeof modelFeedback.$inferSelect): ModelFeedbackResponse {
         return {id:row.id,dishId:row.dishId,dishVersionNumber:row.dishVersionNumber,recipe:row.recipeSnapshot,analysis:row.analysisSnapshot,modelVersion:row.modelVersion,catalogueVersion:row.catalogueVersion,
-            cooked:row.cooked,agreement:row.agreement,concerns:row.concerns,note:row.note,createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString()};
+            allowTeamReview:row.allowTeamReview,cooked:row.cooked,agreement:row.agreement,concerns:row.concerns,note:row.note,createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString()};
     }
     private notFound() { return new NotFoundException({code:'FEEDBACK_NOT_FOUND',message:'The requested record is not available'}); }
 }

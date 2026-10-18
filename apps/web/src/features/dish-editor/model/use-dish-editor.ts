@@ -146,10 +146,10 @@ export function useDishEditor(locale: Locale, scope = 'guest') {
         replace({ ...state.present, items });
     }
     function preview(recommendation: IngredientRecommendation) {
-        const preparationId = firstPreparation(recommendation.ingredientId);
-        if (!preparationId || !Number.isFinite(recommendation.recommendedGrams) || recommendation.recommendedGrams <= 0)
+        const preparationId = recommendation.preparationId;
+        if (!ingredientById.get(recommendation.ingredientId)?.preparations.includes(preparationId) || !Number.isFinite(recommendation.recommendedGrams) || recommendation.recommendedGrams <= 0 || recommendation.recommendedGrams > 5000)
             return;
-        setCandidate({ ingredientId: recommendation.ingredientId, grams: Math.min(5000, recommendation.recommendedGrams), preparationId });
+        setCandidate({ ingredientId: recommendation.ingredientId, grams: recommendation.recommendedGrams, preparationId });
     }
     function markedSaved(recipe: Recipe) {
         const draft: Draft = { ...state.present, name: recipe.name, linkedId: recipe.id, linkedOrigin: recipe.origin === 'cloud' ? 'cloud' : 'local', linkedVersionNumber:recipe.origin==='cloud' ? recipe.versionNumber : undefined, createdAt: recipe.createdAt, visibility: recipe.visibility };

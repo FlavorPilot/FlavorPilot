@@ -3,4 +3,5 @@ export interface AuthenticatedUser {
     email?: string;
     role?: string;
     userMetadata: Record<string, unknown>;
+    assurance?: 'aal1' | 'aal2' | 'unknown';
 }

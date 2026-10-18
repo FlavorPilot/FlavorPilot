@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, Header, HttpCode, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
-import { commentListQuerySchema, createCommentRequestSchema, modelFeedbackRequestSchema } from '@flavorpilot/contracts';
+import { Body, Controller, Delete, Get, Header, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { adminListQuerySchema,commentListQuerySchema, createCommentRequestSchema, feedbackPermissionSchema,modelFeedbackRequestSchema } from '@flavorpilot/contracts';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/auth.types';
@@ -12,6 +12,10 @@ export class FeedbackController {
     constructor(private readonly service: FeedbackService) {}
     @Post() @Header('Cache-Control','no-store')
     save(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) { return this.service.saveFeedback(user.id,parseInput(modelFeedbackRequestSchema,body)); }
+    @Get('mine') @Header('Cache-Control','no-store')
+    mine(@CurrentUser() user:AuthenticatedUser,@Query() query:unknown){return this.service.mine(user.id,parseInput(adminListQuerySchema,query));}
+    @Patch(':id/permission') @Header('Cache-Control','no-store')
+    withdraw(@CurrentUser() user:AuthenticatedUser,@Param('id',new ParseUUIDPipe()) id:string,@Body() body:unknown){parseInput(feedbackPermissionSchema,body);return this.service.withdraw(user.id,id);}
     @Get(':id') @Header('Cache-Control','no-store')
     get(@CurrentUser() user: AuthenticatedUser, @Param('id',new ParseUUIDPipe()) id: string) { return this.service.getFeedback(user.id,id); }
     @Delete(':id') @HttpCode(204) @Header('Cache-Control','no-store')

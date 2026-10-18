@@ -14,7 +14,7 @@ export const modelFeedbackRequestSchema = z.object({
     modelVersion: z.string().min(1).max(80), catalogueVersion: z.string().min(1).max(80),
     cooked: z.boolean(), agreement: z.enum(feedbackAgreements),
     concerns: z.array(z.enum(feedbackConcerns)).max(4).default([]).refine(values => new Set(values).size === values.length),
-    note: z.string().trim().max(2000).default(''),
+    note: z.string().trim().max(2000).default(''), allowTeamReview: z.boolean().default(false),
 }).strict().refine(value => value.agreement !== 'matches' || value.concerns.length === 0, { message: 'Matching feedback cannot include discrepancies' })
     .refine(value => value.dishVersionNumber === undefined || value.dishId !== undefined, { message: 'A recipe version requires a recipe ID' });
 export type ModelFeedbackRequest = z.input<typeof modelFeedbackRequestSchema>;
@@ -23,9 +23,11 @@ export const modelFeedbackResponseSchema = z.object({
     id: z.string().uuid(), dishId: z.string().uuid().nullable(), dishVersionNumber: z.number().int().positive().nullable(),
     recipe: feedbackRecipeSchema, analysis: dishAnalysisSchema,
     modelVersion: z.string(), catalogueVersion: z.string(), cooked: z.boolean(), agreement: z.enum(feedbackAgreements),
-    concerns: z.array(z.enum(feedbackConcerns)), note: z.string(), createdAt: z.string().datetime(), updatedAt: z.string().datetime(),
+    concerns: z.array(z.enum(feedbackConcerns)), note: z.string(), allowTeamReview:z.boolean().default(false), createdAt: z.string().datetime(), updatedAt: z.string().datetime(),
 });
 export type ModelFeedbackResponse = z.infer<typeof modelFeedbackResponseSchema>;
+export const feedbackPermissionSchema=z.object({allowTeamReview:z.literal(false)}).strict();
+export const ownFeedbackPageSchema=z.object({items:z.array(z.object({id:z.string().uuid(),name:z.string(),cooked:z.boolean(),allowTeamReview:z.boolean(),createdAt:z.string().datetime()})),total:z.number().int().nonnegative(),page:z.number(),limit:z.number()});
 
 export const createCommentRequestSchema = z.object({
     text: z.string().trim().min(1).max(2000), hasCooked: z.boolean().default(false),

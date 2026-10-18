@@ -198,9 +198,9 @@ const buildIssues = (items: WeightedItem[], profile: SensoryProfile, textureScor
         issues.push({ code: 'flatTexture', severity: 'info' });
     return issues;
 };
-const coreAnalysis = (items: DishItem[], goal: DishGoal) => {
-    const weightedItems = toWeightedItems(items), totalWeight = weightedItems.reduce((sum, item) => sum + item.item.grams, 0);
-    const { profile, observed } = dishProfile(weightedItems), pairs = pairResults(weightedItems), compatibilityScore = weightedPairAverage(pairs);
+const analyzeWeightedItems = (weightedItems: WeightedItem[], goal: DishGoal, pairs = pairResults(weightedItems)) => {
+    const totalWeight = weightedItems.reduce((sum, item) => sum + item.item.grams, 0);
+    const { profile, observed } = dishProfile(weightedItems), compatibilityScore = weightedPairAverage(pairs);
     const balanceScore = calculateBalance(profile, goal, observed), quantityScore = calculateQuantityScore(weightedItems, totalWeight), textureScore = calculateTextureScore(weightedItems);
     const dominant = findDominantIngredient(weightedItems);
     const explicitCoverage = pairs.length === 0 ? 0 : pairs.filter(pair => pair.explicitAdjustment !== 0).length / pairs.length;
@@ -208,6 +208,7 @@ const coreAnalysis = (items: DishItem[], goal: DishGoal) => {
     const overallScore = weightedItems.length === 0 ? 0 : clamp(compatibilityScore * .38 + balanceScore * .32 + quantityScore * .16 + textureScore * .14);
     return { weightedItems, totalWeight, profile, pairs, compatibilityScore, balanceScore, quantityScore, textureScore, dominant, confidence, overallScore, issues: buildIssues(weightedItems, profile, textureScore, observed, dominant) };
 };
+const coreAnalysis = (items: DishItem[], goal: DishGoal) => analyzeWeightedItems(toWeightedItems(items), goal);
 export const recommendedIngredientGrams = (ingredient: Ingredient, totalWeight: number) => {
     const base = Math.max(totalWeight, 240) * (ingredient.share.ideal / 100);
     if (base < 3)
@@ -216,51 +217,94 @@ export const recommendedIngredientGrams = (ingredient: Ingredient, totalWeight: 
         return round(base, 1);
     return Math.round(Math.min(base, 180));
 };
-const recommendationReasons = (candidate: Ingredient, currentProfile: SensoryProfile, compatibility: number, balanceDelta: number, textureScore: number, goal: DishGoal): RecommendationReason[] => {
+type CoreAnalysis = ReturnType<typeof coreAnalysis>;
+const recommendationReasons = (candidate: PreparedIngredient, current: CoreAnalysis, simulated: CoreAnalysis, compatibility: number, goal: DishGoal): RecommendationReason[] => {
     const reasons: RecommendationReason[] = [];
+    const increased = (dimension: (typeof sensoryDimensions)[number]) => simulated.profile[dimension] > current.profile[dimension];
+    const balanceDelta = simulated.balanceScore - current.balanceScore;
     if (compatibility >= 78)
         reasons.push('strongPairing');
-    if (candidate.profile.acidity >= 6.5)
+    if (candidate.profile.acidity >= 6.5 && increased('acidity'))
         reasons.push('addsAcidity');
-    if (candidate.profile.acidity >= 6 && currentProfile.fat >= 5)
+    if (candidate.profile.acidity >= 6 && current.profile.fat >= 5 && increased('acidity') && balanceDelta > 0)
         reasons.push('balancesFat');
-    if (candidate.profile.freshness >= 7.5)
+    if (candidate.profile.freshness >= 7.5 && increased('freshness'))
         reasons.push('addsFreshness');
-    if (candidate.profile.umami >= 7.5)
+    if (candidate.profile.umami >= 7.5 && increased('umami'))
         reasons.push('addsUmami');
-    if (candidate.profile.sweetness >= 6.5 && currentProfile.sweetness < 3.4)
+    if (candidate.profile.sweetness >= 6.5 && current.profile.sweetness < 3.4 && increased('sweetness'))
         reasons.push('addsSweetness');
-    if (candidate.profile.pungency >= 5.5)
+    if (candidate.profile.pungency >= 5.5 && increased('pungency'))
         reasons.push('addsPungency');
-    if (textureScore < 72 && (candidate.textures.includes('crisp') || candidate.textures.includes('crunchy')))
+    if (simulated.textureScore > current.textureScore && (candidate.textures.includes('crisp') || candidate.textures.includes('crunchy')))
         reasons.push('addsCrunch');
-    if (goalDefinitions[goal].preferredRoles.some(role => candidate.roles.includes(role)))
+    if (balanceDelta > 0 && goalDefinitions[goal].preferredRoles.some(role => candidate.ingredient.roles.includes(role)))
         reasons.push('supportsGoal');
     if (balanceDelta >= 1.2)
         reasons.push('improvesBalance');
-    return unique(reasons).slice(0, 3);
+    return reasons.length ? unique(reasons).slice(0, 3) : ['improvesModel'];
+};
+
+/** Test catalogue minimum/ideal shares in the resulting dish, not in its old weight.
+ * The maximum is a guard, not a target that encourages diluting the original dish.
+ * This is a bounded trial search, not a continuous culinary optimum. */
+const recommendationAmounts = (ingredient: Ingredient, totalWeight: number): number[] => {
+    const gramsAtShare = (share: number) => totalWeight * share / (100 - share);
+    const lower = Math.max(.1, Math.ceil(gramsAtShare(ingredient.share.min) * 10) / 10);
+    const upper = Math.min(5000, Math.floor(gramsAtShare(Math.min(ingredient.share.ideal, ingredient.share.max)) * 10) / 10);
+    if (!Number.isFinite(lower) || !Number.isFinite(upper) || lower > upper)
+        return [];
+    return unique([ingredient.share.min, ingredient.share.ideal]
+        .map(share => clamp(round(gramsAtShare(share), 1), lower, upper)));
 };
 const generateRecommendations = (items: DishItem[], goal: DishGoal, current: ReturnType<typeof coreAnalysis>): IngredientRecommendation[] => {
-    if (current.weightedItems.length === 0)
+    if (current.weightedItems.length === 0 || items.length >= 24)
         return [];
-    const existing = new Set(items.map(item => item.ingredientId)), candidateResults: IngredientRecommendation[] = [];
+    const existing = new Set(items.map(item => item.ingredientId));
+    const candidateResults: Array<{ recommendation: IngredientRecommendation; improvement: number; utility: number; group: string }> = [];
     for (const candidate of ingredients) {
         if (existing.has(candidate.id))
             continue;
-        const grams = recommendedIngredientGrams(candidate, current.totalWeight), preparationId = candidate.preparations.includes('raw') ? 'raw' : candidate.preparations[0];
+        const preparationId = candidate.preparations.includes('raw') ? 'raw' : candidate.preparations[0];
         const preparedCandidate = getPreparedIngredient(candidate, preparationId);
-        const pairScores = current.weightedItems.map(item => ({ score: calculatePair(item, preparedCandidate).score, weight: item.impact }));
+        const pairScores = current.weightedItems.map(item => ({ pair: calculatePair(item, preparedCandidate), weight: item.impact }));
         const totalImpact = pairScores.reduce((sum, pair) => sum + pair.weight, 0);
-        const compatibility = totalImpact === 0 ? 50 : pairScores.reduce((sum, pair) => sum + pair.score * pair.weight, 0) / totalImpact;
-        const simulated = coreAnalysis([...items, { ingredientId: candidate.id, grams, preparationId }], goal);
+        const compatibility = totalImpact === 0 ? 50 : pairScores.reduce((sum, pair) => sum + pair.pair.score * pair.weight, 0) / totalImpact;
+        const trials = recommendationAmounts(candidate, current.totalWeight).map(grams => {
+            const item = { ingredientId: candidate.id, grams, preparationId };
+            const weightedCandidate = toWeightedItems([item])[0];
+            // Existing pairs are unchanged by an addition; reuse them in each trial.
+            const pairs = [...current.pairs, ...pairScores.map(pair => ({ ...pair.pair, weight: Math.sqrt(pair.weight * weightedCandidate.impact) }))];
+            return { grams, simulated: analyzeWeightedItems([...current.weightedItems, weightedCandidate], goal, pairs),
+                distanceFromIdeal: Math.abs(grams / (current.totalWeight + grams) * 100 - candidate.share.ideal) };
+        }).sort((a, b) => b.simulated.overallScore - a.simulated.overallScore || a.distanceFromIdeal - b.distanceFromIdeal || a.grams - b.grams);
+        const best = trials[0];
+        if (!best)
+            continue;
+        const { grams, simulated } = best;
+        const overallDelta = round(simulated.overallScore) - round(current.overallScore);
         const balanceDelta = simulated.balanceScore - current.balanceScore;
+        // Do not fill the grid with additions that fail to improve its displayed model score.
+        if (overallDelta <= 0 || (compatibility < 48 && balanceDelta < 2))
+            continue;
         const goalMatch = goalDefinitions[goal].preferredRoles.some(role => candidate.roles.includes(role));
         const balanceContribution = clamp(50 + balanceDelta * 6.5);
         const utility = clamp(compatibility * .5 + balanceContribution * .34 + (goalMatch ? 10 : 2) + (simulated.textureScore - current.textureScore > 4 ? 4 : 0));
-        const reasons = recommendationReasons(candidate, current.profile, compatibility, balanceDelta, current.textureScore, goal);
-        candidateResults.push({ ingredientId: candidate.id, compatibility: round(compatibility), utility: round(utility), recommendedGrams: grams, balanceDelta: round(balanceDelta, 1), reasons: reasons.length > 0 ? reasons : ['strongPairing'] });
+        const reasons = recommendationReasons(preparedCandidate, current, simulated, compatibility, goal);
+        const profileChanges = sensoryDimensions.filter(dimension => simulated.profile[dimension] !== current.profile[dimension])
+            .map(dimension => ({ dimension, before: current.profile[dimension], after: simulated.profile[dimension] }))
+            .sort((a, b) => Math.abs(b.after - b.before) - Math.abs(a.after - a.before)).slice(0, 3);
+        // One representative of the same culinary role/texture, without food-ID allowlists.
+        const group = JSON.stringify([[...candidate.roles].sort(), [...preparedCandidate.textures].sort()]);
+        candidateResults.push({ recommendation: { ingredientId: candidate.id, preparationId, compatibility: round(compatibility), utility: round(utility), recommendedGrams: grams, overallDelta, balanceDelta: round(simulated.balanceScore) - round(current.balanceScore), profileChanges, reasons }, improvement: simulated.overallScore - current.overallScore, utility, group });
     }
-    return candidateResults.filter(candidate => candidate.compatibility >= 48 || candidate.balanceDelta >= 2).sort((a, b) => b.utility - a.utility).slice(0, 8);
+    candidateResults.sort((a, b) => b.improvement - a.improvement || b.utility - a.utility || (a.recommendation.ingredientId < b.recommendation.ingredientId ? -1 : 1));
+    const groups = new Set<string>();
+    return candidateResults.filter(candidate => {
+        if (groups.has(candidate.group)) return false;
+        groups.add(candidate.group);
+        return true;
+    }).slice(0, 8).map(candidate => candidate.recommendation);
 };
 export const analyzeDish = (items: DishItem[], goal: DishGoal = 'balanced', includeRecommendations = true): DishAnalysis => {
     const core = coreAnalysis(items, goal);

@@ -1,5 +1,5 @@
 import type { IngredientRecommendation } from '@flavorpilot/contracts';
-import { ingredientById } from '@/entities/ingredient';
+import { ingredientById, preparationById } from '@/entities/ingredient';
 import { getDictionary, formatNumber, type Locale } from '@/shared/i18n';
 import { Badge, Button, EmptyState, Icon, WidgetFrame } from '@/shared/ui';
 export function DishRecommendations({ recommendations, locale, onPreview, disabled = false }: {
@@ -15,7 +15,17 @@ export function DishRecommendations({ recommendations, locale, onPreview, disabl
       <header><span className="recommendation-number">{String(index + 1).padStart(2, '0')}</span><Badge>{formatNumber(recommendation.recommendedGrams, locale)} {t.grams}</Badge></header>
       <h3>{ingredientById.get(recommendation.ingredientId)?.name[locale]}</h3>
       <p>{recommendation.reasons.slice(0, 2).map(reason => d.reasons[reason]).join(' · ') || t.modelEstimate}</p>
-      <details className="recommendation-details"><summary>{t.reason}</summary><dl><div><dt>{t.compatibility}</dt><dd>{recommendation.compatibility}/100</dd></div><div><dt>{t.utility}</dt><dd>{recommendation.utility}/100</dd></div></dl></details>
+      <p>{t.overallChange}: +{formatNumber(recommendation.overallDelta, locale)}</p>
+      <details className="recommendation-details"><summary>{t.reason}</summary>
+        <p>{t.recommendationTrialNote}</p>
+        <dl>
+          <div><dt>{t.preparationPreview}</dt><dd>{preparationById.get(recommendation.preparationId)?.name[locale]}</dd></div>
+          <div><dt>{t.balanceChange}</dt><dd>{recommendation.balanceDelta > 0 ? '+' : ''}{formatNumber(recommendation.balanceDelta, locale)}</dd></div>
+          <div><dt>{t.compatibility}</dt><dd>{recommendation.compatibility}/100</dd></div>
+          <div><dt>{t.utility}</dt><dd>{recommendation.utility}/100</dd></div>
+          {recommendation.profileChanges.map(change => <div key={change.dimension}><dt>{d.dimensions[change.dimension]}</dt><dd>{formatNumber(change.before, locale, 2)} → {formatNumber(change.after, locale, 2)}</dd></div>)}
+        </dl>
+      </details>
       <Button onClick={() => onPreview(recommendation)} disabled={disabled}>{t.preview}<Icon name="arrow" size={16}/></Button>
     </article>)}</div>}
   </WidgetFrame>;

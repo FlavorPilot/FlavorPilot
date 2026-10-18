@@ -2,6 +2,34 @@
 
 Current results are in [VALIDATION.md](VALIDATION.md) and ../validation-report.json. Old r1 checks are not claimed as full application validation.
 
+## Administration and support 2026 10 18
+
+The complete browser suite passed 21 scenarios, including three new CRM/support cases:
+role gating/revocation, private-data exclusion, UK/mobile catalogue, author permission
+withdrawal, operator review/moderation and two-user support with a lost response and an
+unsent reply preserved through refresh. Actual browser screenshots were inspected; working
+shares were corrected to display the already-percentage source values once. All 20 local
+API/PostgreSQL integration cases passed, including migration 0010 and operator bootstrap.
+Syntax parsing passed for 200 source files. Real hosted MFA remains a staging check.
+Final `npm run validate` passed: structure and widget boundaries (123 frontend files), all
+workspace typechecks, 81 Vitest tests, 27 kernel and 16 pure editor/localization checks.
+Production contracts/engine/Nest/Next build passed with 27 generated static pages.
+See [the implementation](ADMINISTRATION.md) and [detailed results](VALIDATION.md).
+
+## Model feedback and recipe discussion 2026 10 18
+
+The assessment slot, private feedback feature, discussion controller and pure comments widget
+passed `npm run validate`: architecture/structure, all workspace typechecks, 74 Vitest tests,
+27 kernel checks and 16 pure editor/locale checks. Syntax parsing passed for 170 files.
+All three new Playwright scenarios passed together after fixing explicit textarea labels;
+the existing 15 scenarios passed in the earlier full run. The new cases exercise two users,
+ownership, retained replies, version conflicts, retry without text loss, EN/UK and 375 px layout.
+Actual browser screenshots were inspected; these are not fixture-only renders. Thirteen local
+API/PostgreSQL integration cases passed, including repeated migration 0009 and access checks.
+The final production build passed for contracts, engine, Nest and Next (23 generated static pages).
+Hosted Supabase, production deployment and automatic model training are outside this pass.
+See [FEEDBACK.md](FEEDBACK.md) and [the detailed verification record](VALIDATION.md).
+
 ## Recipe preparation tabs 2026 10 18
 
 Stages 1–2 of [the recipe workspace plan](RECIPE_WORKSPACE_PLAN.md) are implemented

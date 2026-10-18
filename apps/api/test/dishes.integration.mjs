@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import postgres from 'postgres';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { resetTestDatabase } from './reset-database.mjs';
@@ -14,6 +16,7 @@ process.env.DATABASE_URL = databaseUrl;
 process.env.DATABASE_SSL = 'disable';
 process.env.NODE_ENV = 'test';
 process.env.AI_ENABLED = 'false';
+process.env.ADMIN_REQUIRE_MFA = 'false'; // Local opaque-token stub has no MFA sessions.
 process.env.SUPABASE_PUBLISHABLE_KEY = 'test-publishable-key';
 process.env.SWAGGER_ENABLED = 'false';
 process.env.CORS_ORIGINS = 'http://127.0.0.1:3000';
@@ -61,6 +64,143 @@ after(async () => {
     await app?.close();
     await stub?.close();
     await sql?.end();
+});
+
+describe('administration and support on PostgreSQL',()=>{
+    async function owner(label){const u=await signup(label);await sql`insert into public.admin_memberships(user_id) values(${u.id}::uuid)`;return u;}
+    it('bootstraps owners only through the explicit operator command and audits grants and revocation',async()=>{
+        const a=await signup('crm-bootstrap'),script=fileURLToPath(new URL('../../../scripts/admin-owner.mjs',import.meta.url));
+        const args=['grant',a.id,'Local test owner assignment'];
+        const dry=execFileSync(process.execPath,[script,...args],{env:{...process.env,DATABASE_URL:'postgres://private:do-not-print@invalid.invalid/private'},encoding:'utf8'});
+        assert.match(dry,/Dry run/);assert.ok(!dry.includes('do-not-print'));
+        assert.equal((await api('/admin/access',{token:a.token})).status,403);
+        execFileSync(process.execPath,[script,...args,'--apply'],{env:{...process.env,DATABASE_URL:databaseUrl},encoding:'utf8'});
+        assert.equal((await api('/admin/access',{token:a.token})).status,200);
+        execFileSync(process.execPath,[script,'revoke',a.id,'Local test access removal','--apply'],{env:{...process.env,DATABASE_URL:databaseUrl},encoding:'utf8'});
+        assert.equal((await api('/admin/access',{token:a.token})).status,403);
+        const events=await sql`select action,actor_id from public.admin_audit_events where target_id=${a.id} order by created_at,id`;
+        assert.deepEqual(events.map(e=>e.action),['owner.grant','owner.revoke']);assert.ok(events.every(e=>e.actor_id===null));
+    });
+    it('requires verified authentication, an active server assignment and MFA; revocation is immediate',async()=>{
+        const a=await owner('crm-owner'),b=await signup('crm-user');
+        for(const route of ['access','overview','users','recipes','feedback','catalogue','audit','service','support']){
+            assert.equal((await api(`/admin/${route}`)).status,401,route);
+            assert.equal((await api(`/admin/${route}`,{token:b.token})).status,403,route);
+        }
+        assert.equal((await api('/admin/overview',{token:'header.eyJhYWwiOiJhYWwyIn0.fake'})).status,401);
+        const config=app.get((await import('@nestjs/config')).ConfigService);
+        config.set('ADMIN_REQUIRE_MFA',true);
+        try{
+            assert.equal((await api('/admin/access',{token:a.token})).body.mfaVerified,false);
+            const denied=await api('/admin/overview',{token:a.token});assert.equal(denied.status,403);assert.equal(denied.body.code,'ADMIN_MFA_REQUIRED');
+        }finally{config.set('ADMIN_REQUIRE_MFA',false);}
+        const access=await api('/admin/access',{token:a.token});assert.equal(access.body.role,'owner');
+        assert.equal((await api('/admin/overview',{token:a.token})).status,200);
+        await sql`update public.admin_memberships set active=false where user_id=${a.id}::uuid`;
+        assert.equal((await api('/admin/overview',{token:a.token})).status,403);
+    });
+    it('provides bounded metadata, catalogue and honest service states without private contents or capabilities',async()=>{
+        const a=await owner('crm-reader'),b=await signup('crm-profile');
+        const secret=await api('/dishes',{method:'POST',token:b.token,body:{name:'PRIVATE RECIPE CONTENT',items}});
+        assert.equal(secret.status,201);
+        const user=await api(`/admin/users/${b.id}`,{token:a.token});assert.equal(user.status,200);
+        assert.equal(user.body.recipeCount,1);assert.equal(user.body.publicRecipes.length,0);
+        assert.ok(!JSON.stringify(user.body).includes('PRIVATE RECIPE CONTENT'));assert.ok(!JSON.stringify(user.body).includes(secret.body.shareToken));
+        assert.equal(user.body.profile.email,undefined);
+        const users=await api('/admin/users?limit=1',{token:a.token});assert.equal(users.body.items.length,1);assert.ok(users.body.total>=2);
+        assert.equal((await api('/admin/users?includePrivate=true',{token:a.token})).status,400);
+        assert.equal((await api('/admin/users?limit=500',{token:a.token})).status,400);
+        assert.equal((await api('/admin/users/not-a-uuid',{token:a.token})).status,400);
+        const catalogue=await api('/admin/catalogue?search=avocado',{token:a.token});assert.equal(catalogue.status,200);assert.equal(catalogue.body.items[0].id,'avocado');
+        assert.ok(catalogue.body.items[0].preparations.length>0);assert.equal(catalogue.body.items[0].reviewStatus,'unreviewed');
+        const health=await api('/admin/service',{token:a.token});assert.equal(health.body.database,'connected');assert.equal(health.body.billing,'not_connected');assert.equal(health.body.backups,'not_monitored');
+        const publicRows=await api('/admin/recipes',{token:a.token});assert.ok(!JSON.stringify(publicRows.body).includes('PRIVATE RECIPE CONTENT'));
+    });
+    it('restricts all public recipe paths without changing author privacy, content or ownership',async()=>{
+        const a=await owner('crm-moderator'),b=await signup('crm-publisher'),c=await signup('crm-remixer');
+        const dish=await api('/dishes',{method:'POST',token:b.token,body:{name:'Moderation probe',items,visibility:'public'}}),id=dish.body.id;
+        assert.equal((await api(`/admin/recipes/${id}/moderation`,{method:'PATCH',token:c.token,body:{hidden:true,expectedHidden:false,expectedRevision:0,reason:'Spam confirmed'}})).status,403);
+        assert.equal((await api(`/admin/recipes/${id}/moderation`,{method:'PATCH',token:a.token,body:{hidden:true,expectedHidden:false,expectedRevision:0,reason:''}})).status,400);
+        assert.equal((await api(`/admin/recipes/${id}/moderation`,{method:'PATCH',token:a.token,body:{hidden:true,expectedHidden:false,expectedRevision:0,reason:'Spam confirmed'}})).status,200);
+        assert.equal((await api(`/dishes/public/${id}`)).status,404);
+        assert.equal((await api(`/dishes/share/${dish.body.shareToken}`)).status,404);
+        assert.equal((await api(`/dishes/${id}/comments`)).status,404);
+        assert.equal((await api(`/dishes/${id}/comments`,{method:'POST',token:c.token,body:{text:'Bypass?',versionNumber:1}})).status,404);
+        assert.equal((await api(`/dishes/${id}/remix`,{method:'POST',token:c.token,body:{visibility:'private'}})).status,404);
+        assert.equal((await api('/dishes',{method:'POST',token:c.token,body:{name:'Parent bypass',items,parentDishId:id}})).status,400);
+        assert.equal((await api('/dishes/public?search=Moderation%20probe')).body.items.length,0);
+        const own=await api(`/dishes/me/${id}`,{token:b.token});assert.equal(own.status,200);assert.equal(own.body.visibility,'public');assert.equal(own.body.moderationHidden,true);
+        assert.deepEqual(own.body.items.map(({ingredientId,grams,preparationId})=>({ingredientId,grams,preparationId})),items);
+        assert.equal((await api(`/admin/recipes/${id}/moderation`,{method:'PATCH',token:a.token,body:{hidden:false,expectedHidden:false,expectedRevision:0,reason:'Stale operation'}})).status,409);
+        assert.equal((await api(`/admin/recipes/${id}/moderation`,{method:'PATCH',token:a.token,body:{hidden:false,expectedHidden:true,expectedRevision:1,reason:'Review accepted'}})).status,200);
+        assert.equal((await api(`/dishes/public/${id}`)).status,200);
+        await api(`/dishes/${id}`,{method:'PATCH',token:b.token,body:{visibility:'private'}});
+        assert.equal((await api(`/admin/recipes/${id}/moderation`,{method:'PATCH',token:a.token,body:{hidden:false,expectedHidden:false,expectedRevision:0,reason:'No publication'}})).status,404);
+        assert.equal((await api(`/dishes/public/${id}`)).status,404);
+    });
+    it('opens only explicitly shared feedback and protects immutable snapshots and review revisions',async()=>{
+        const a=await owner('crm-reviewer'),b=await signup('crm-feedback');
+        const input={recipe:{name:'Consent probe',description:'',servings:null,steps:[],goal:'fresh',items},modelVersion:MODEL_VERSION,catalogueVersion:CATALOGUE_VERSION,cooked:true,agreement:'partial',concerns:['balance'],note:'My experience'};
+        const privateFeedback=await api('/feedback',{method:'POST',token:b.token,body:input}),id=privateFeedback.body.id;
+        assert.equal((await api('/admin/feedback',{token:a.token})).body.items.some(f=>f.id===id),false);
+        const review={status:'reviewing',note:'Check acidity',expectedRevision:0,expectedUpdatedAt:privateFeedback.body.updatedAt};
+        assert.equal((await api(`/admin/feedback/${id}/review`,{method:'PATCH',token:a.token,body:review})).status,404);
+        const shared=await api('/feedback',{method:'POST',token:b.token,body:{...input,allowTeamReview:true}});assert.equal(shared.body.id,id);
+        const visible=(await api('/admin/feedback',{token:a.token})).body.items.find(f=>f.id===id);assert.equal(visible.review.revision,0);
+        const current={...review,expectedUpdatedAt:shared.body.updatedAt};
+        assert.equal((await api(`/admin/feedback/${id}/review`,{method:'PATCH',token:a.token,body:current})).status,200);
+        assert.equal((await api(`/admin/feedback/${id}/review`,{method:'PATCH',token:a.token,body:current})).status,409);
+        const after=await api(`/feedback/${id}`,{token:b.token});assert.deepEqual(after.body.analysis,shared.body.analysis);assert.equal(after.body.note,input.note);
+        assert.equal(after.body.review,undefined);
+        await api('/feedback',{method:'POST',token:b.token,body:{...input,allowTeamReview:true}});
+        const unchanged=(await api('/admin/feedback',{token:a.token})).body.items.find(f=>f.id===id);
+        assert.equal(unchanged.review.status,'reviewing');assert.equal(unchanged.review.revision,1);
+        await api('/feedback',{method:'POST',token:b.token,body:{...input,note:'Updated cooking experience',allowTeamReview:true}});
+        const reopened=(await api('/admin/feedback',{token:a.token})).body.items.find(f=>f.id===id);
+        assert.equal(reopened.review.status,'new');assert.equal(reopened.review.revision,2);
+        await api('/feedback',{method:'POST',token:b.token,body:{...input,allowTeamReview:false}});
+        assert.equal((await api('/admin/feedback',{token:a.token})).body.items.some(f=>f.id===id),false);
+        assert.equal((await api(`/admin/feedback/${id}/review`,{method:'PATCH',token:a.token,body:{...current,expectedRevision:1}})).status,404);
+        await api('/feedback',{method:'POST',token:b.token,body:{...input,allowTeamReview:true}});
+        assert.equal((await api('/feedback/mine',{token:b.token})).body.items.some(f=>f.id===id),true);
+        assert.equal((await api('/feedback/mine',{token:a.token})).body.items.some(f=>f.id===id),false);
+        assert.equal((await api(`/feedback/${id}/permission`,{method:'PATCH',token:a.token,body:{allowTeamReview:false}})).status,404);
+        assert.equal((await api(`/feedback/${id}/permission`,{method:'PATCH',token:b.token,body:{allowTeamReview:true}})).status,400);
+        assert.equal((await api(`/feedback/${id}/permission`,{method:'PATCH',token:b.token,body:{allowTeamReview:false}})).status,200);
+        assert.equal((await api('/admin/feedback',{token:a.token})).body.items.some(f=>f.id===id),false);
+    });
+    it('isolates support conversations, preserves idempotent retries and enforces revision and creation limits',async()=>{
+        const a=await owner('crm-support'),b=await signup('crm-ticket-owner'),c=await signup('crm-ticket-visitor');
+        const body={subject:'Help saving recipe',category:'recipe',text:'PRIVATE SUPPORT TEXT',requestId:crypto.randomUUID()};
+        const created=await api('/support',{method:'POST',token:b.token,body}),id=created.body.ticket.id;
+        assert.equal(created.status,201);assert.equal(created.body.messages[0].fromStaff,false);
+        assert.equal((await api('/support',{method:'POST',token:b.token,body})).body.ticket.id,id);
+        assert.equal((await api('/support',{method:'POST',token:b.token,body:{...body,text:'Different payload'}})).status,409);
+        assert.equal((await api('/support',{method:'POST',token:b.token,body:{...body,ownerId:a.id}})).status,400);
+        assert.equal((await api(`/support/${id}`,{token:c.token})).status,404);assert.equal((await api(`/support/${id}`)).status,401);
+        assert.equal((await api('/support',{token:c.token})).body.items.length,0);
+        const reply={text:'Please retry after refreshing.',requestId:crypto.randomUUID()};
+        const answered=await api(`/admin/support/${id}/messages`,{method:'POST',token:a.token,body:reply});assert.equal(answered.status,201);assert.equal(answered.body.messages.length,2);assert.equal(answered.body.messages[1].fromStaff,true);
+        assert.equal((await api(`/admin/support/${id}/messages`,{method:'POST',token:a.token,body:reply})).body.messages.length,2);
+        assert.equal((await api(`/support/${id}/messages`,{method:'POST',token:c.token,body:reply})).status,404);
+        const status={status:'resolved',priority:'high',assignedToSelf:true,reason:'User issue resolved',expectedRevision:answered.body.ticket.revision};
+        assert.equal((await api(`/admin/support/${id}`,{method:'PATCH',token:a.token,body:status})).status,200);
+        assert.equal((await api(`/admin/support/${id}`,{method:'PATCH',token:a.token,body:status})).status,409);
+        assert.equal((await api(`/support/${id}/messages`,{method:'POST',token:b.token,body:{text:'Another reply',requestId:crypto.randomUUID()}})).status,409);
+        assert.equal((await api(`/support/${id}`,{token:b.token})).body.messages.length,2);
+        const audit=await api('/admin/audit?search=support',{token:a.token});assert.ok(audit.body.items.some(e=>e.action==='support.reply'));assert.ok(!JSON.stringify(audit.body).includes('PRIVATE SUPPORT TEXT'));
+        for(let n=0;n<5;n++)assert.equal((await api('/support',{method:'POST',token:b.token,body:{...body,requestId:crypto.randomUUID(),subject:`Open ticket ${n}`}})).status,201);
+        assert.equal((await api('/support',{method:'POST',token:b.token,body:{...body,requestId:crypto.randomUUID()}})).status,429);
+    });
+    it('keeps migration 0010 repeatable and denies direct roles all administrative/support tables',async()=>{
+        const before=await sql`select (select count(*)::int from public.support_tickets) as tickets,(select count(*)::int from public.admin_memberships) as owners`;
+        const migration=readFileSync(new URL('../../../supabase/migrations/0010_administration.sql',import.meta.url),'utf8');
+        await sql.unsafe(migration);await sql.unsafe(migration);
+        assert.deepEqual(await sql`select (select count(*)::int from public.support_tickets) as tickets,(select count(*)::int from public.admin_memberships) as owners`,before);
+        for(const role of ['anon','authenticated'])for(const table of ['admin_memberships','admin_audit_events','feedback_reviews','support_tickets','support_messages']){
+            await assert.rejects(sql.begin(async tx=>{await tx.unsafe(`set local role ${role}`);await tx.unsafe(`select * from public.${table}`);}),/permission denied/);
+        }
+    });
 });
 
 describe('dish ownership on PostgreSQL', () => {

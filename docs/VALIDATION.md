@@ -1,5 +1,87 @@
 # Actual validation — widget-monorepo-r2
 
+## Composition-specific recommendations — 2026-10-18
+
+Model 0.3.1 changes recommendation selection/portions/explanations; the primary assessment
+coefficients and catalogue profiles are unchanged. Verified on native Node 22.23.3 / TS 5.9.2:
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed: structure/boundaries, 16 pure editor/locale checks, 27 kernel checks, all workspace typechecks, 86 Vitest tests |
+| `npm run check:syntax` | 202 source files, zero parser errors |
+| `npm run test:e2e -- tests/e2e/recommendations.spec.ts` | Both new browser cases passed; recalculation, exact preview/Apply, unchanged original, UK keyboard details and 375 px containment |
+| `npm run build` | Passed: contracts, engine, Nest, Next production output with 27 generated static pages |
+
+The five new engine tests cover all ten goals, exact displayed deltas/profile changes,
+working share limits, preparation/direction/proportion sensitivity, scalable doses without
+the old 180 g recommendation ceiling, duplicate role/texture suppression and empty/full
+compositions. Existing default-dish scores remain 74 overall / 61 balance at 313 g.
+The first build attempt exited during `tsc` without compiler diagnostics; the sequential retry
+completed successfully. Logs are ignored under `.local/recommendations-*`.
+The focused browser suite used disposable local PostgreSQL and the auth stub; the database
+was stopped afterward. The complete browser and API integration suites were not rerun for
+this change. No hosted migration, push or deployment was performed. These checks establish
+determinism and UI behavior, not sensory accuracy or an external AI inference capability.
+
+## Administration and support — 2026-10-18
+
+The first CRM implementation adds server-assigned owner access, MFA gating, eight operator
+sections, distribution moderation, consent-based feedback review and private support threads.
+Verification uses native Windows Node 22.23.3 / TypeScript 5.9.2:
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed: structure/widget boundaries (123 frontend files), 16 pure editor/locale checks, 27 kernel checks, all workspace typechecks and 81 Vitest tests |
+| `npm run check:syntax` | Passed: 200 source files, no parser errors |
+| `npm run test:integration` | Final run: 20 passed on disposable local PostgreSQL 18.6 with auth stub, including operator CLI bootstrap and repeatable migration 0010 |
+| `npm run test:e2e` | Final complete run: 21 passed in 1.5 minutes, including all three new CRM/support cases |
+| `npm run build` | Passed: contracts, engine, Nest and Next production build; 27 generated static pages including EN/UK admin and support |
+| Browser inspection | `.local/admin-overview-en.png`, `.local/admin-catalogue-uk-mobile.png`, `.local/support-conversation-en.png`; mobile containment checked at 375 px |
+
+The local auth stub uses opaque tokens and explicitly disables MFA. Tests separately exercise
+remote-verification failure, matched assurance claims, server MFA denial, production refusal
+to disable MFA and immediate owner revocation. A real Supabase TOTP enrollment/challenge and
+refresh still requires staging verification; these local results do not prove that integration.
+
+Browser startup first hit Windows EACCES on reserved auth port 55421; the run used the existing
+override with port 45421. A test-only MJS/CommonJS import and ambiguous avocado/alert selectors
+were corrected. Visual review found a percentage display scaled twice; it was corrected and
+the final browser run checks avocado's 8 / 18 / 34 percent shares. No model coefficient changed.
+Earlier focused CRM run: all three passed, followed by the final complete 21-case run.
+
+Integration covers closed-by-default old feedback, author withdrawal and ownership, stale
+review/moderation/support writes, distribution bypasses, support response-loss retries,
+creation limits, role denial and migration reapplication. No hosted migration, owner grant,
+push or deployment was performed. See [ADMINISTRATION.md](ADMINISTRATION.md) for actual scope.
+The temporary local test database was stopped after the runs.
+
+## Model feedback and public comments — 2026-10-18
+
+Implemented private, versioned prediction feedback and discussion on public cloud recipes.
+Executed locally on Windows with portable Node 22.23.3 and TypeScript 5.9.2:
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed: structure/widget boundaries, 16 pure editor/locale checks, 27 kernel checks, all workspace typechecks, 74 Vitest tests |
+| `npm run check:syntax` | Passed: 170 source files, no parser errors |
+| `npm run test:integration` | 13 passed against disposable local PostgreSQL 18.6 and auth stub; migration 0009 applied twice |
+| `npm run build` | Passed: contracts, engine, Nest and Next production build; 23 generated static pages |
+| Playwright | Existing 15 scenarios passed in the full run; after form-label/selector fixes, all 3 new feedback/discussion scenarios passed together in the final focused run |
+| Visual inspection | Actual browser screenshots `.local/model-feedback-en.png` and `.local/discussion-uk.png`; Ukrainian discussion at 375 px has no horizontal overflow |
+
+The initial E2E launch found the normal API port occupied. Tests now use dedicated ports and
+an ignored `.next-e2e` output directory, leaving the development server alone. The first full
+18-case run passed 17 cases; one new case exposed an ambiguous alert selector and then a
+textarea-label association issue. Both forms now use explicit label/control IDs; the final
+focused run passed all three new cases. This is not a claim of a final single 18/18 run.
+
+Integration covers private ownership, server recomputation, immutable source/version snapshots,
+before/after-cooking separation, comment permissions, visibility changes, preserved replies,
+cursor ties, revoked direct-role access and repeatable migration. Browser tests also cover
+failed submissions without losing text, stale-version refresh, escaped user text and EN/UK.
+These tests use a local auth stub, not hosted Supabase. No hosted migration, push or deployment
+was performed. Feedback does not automatically train or change scores. See [FEEDBACK.md](FEEDBACK.md).
+
 ## Catalogue and composition notes — 2026-10-18
 
 Final working-tree catalogue: 620 ingredients, including 500 new AI-authored hypotheses,

@@ -2,6 +2,28 @@
 
 Each slice has a public `index.ts`; the source props remain authoritative.
 
+## AdminWorkspace
+
+Path: `apps/web/src/widgets/admin-workspace`.
+
+Input: locale, section and the administration feature controller.
+
+States: loading, denied/error, search, pagination, user inspection, moderation/review dialogs.
+
+Rule: Displays server-authorized records; mutations are callbacks. No private recipe contents,
+share capabilities, networking, storage or independent permission decisions.
+
+## SupportDesk
+
+Path: `apps/web/src/widgets/support-desk`.
+
+Input: locale, current user ID, staff presentation flag and support-desk feature controller.
+
+States: new request, list/search/pagination, conversation, retry, reply and staff status form.
+
+Rule: The staff flag controls presentation only. Nest independently checks ownership/owner/MFA
+for every operation. No widget networking or storage; text remains escaped.
+
 ## AppShell
 
 Path: `apps/web/src/widgets/app-shell`.

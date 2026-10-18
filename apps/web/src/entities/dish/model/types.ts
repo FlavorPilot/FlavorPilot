@@ -13,6 +13,7 @@ export interface Recipe extends RecipeContent {
     shareToken?: string;
     ownerId?: string;
     versionNumber?: number;
+    moderationHidden?: boolean;
 }
 export interface Draft extends RecipeContent {
     name: string;

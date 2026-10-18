@@ -39,6 +39,14 @@ hypotheses. Repeated calculations and passing regressions cannot establish senso
 Heuristic confidence can be high even when data is unreviewed. Model scores are not food-safety,
 allergen, nutrition or cooking-temperature assurances. No medical guidance is provided by the UI.
 
+Recommendation model 0.3.1 simulates additions at catalogue minimum/ideal shares, ranks actual
+model improvement and groups duplicate culinary roles/textures. Positive changes are model
+outputs, not tasting evidence. The search checks two trial portions per food at its default
+supported preparation; it does not find a continuous optimum, replacements, ingredient removals
+or the best cooking method. It uses composition and goal, not recipe instructions, allergies,
+dietary exclusions, pantry, cost or intended dish style. Culinary profiles and ranges remain
+unreviewed; grouping is based on catalogue roles/textures rather than a learned dish taxonomy.
+
 ## Product and technical gaps
 
 - No real checkout, webhooks, Pro billing or user-selectable plan authority.

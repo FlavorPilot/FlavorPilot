@@ -8,7 +8,7 @@ const envSchema = z.object({
     CORS_ORIGINS: z.string().default('http://localhost:3000'), SWAGGER_ENABLED: bool(true),
     DATABASE_URL: optionalText, DATABASE_SSL: z.enum(['auto', 'require', 'disable']).default('auto'), DATABASE_POOL_SIZE: z.coerce.number().int().min(1).max(50).default(10),
     SUPABASE_URL: optionalText, SUPABASE_PUBLISHABLE_KEY: optionalText, OPENAI_API_KEY: optionalText, OPENAI_MODEL: z.string().default('gpt-5-mini'),
-    AI_ENABLED: bool(false)
+    AI_ENABLED: bool(false), ADMIN_REQUIRE_MFA: bool(true)
 });
 export function validateEnvironment(input: Record<string, unknown>) {
     const result = envSchema.safeParse(input);
@@ -18,5 +18,7 @@ export function validateEnvironment(input: Record<string, unknown>) {
         throw new Error('Wildcard CORS is not allowed in production');
     if (result.data.NODE_ENV === 'production' && result.data.AI_ENABLED)
         throw new Error('AI production access requires implemented and tested usage quotas; keep AI_ENABLED=false');
+    if (result.data.NODE_ENV === 'production' && !result.data.ADMIN_REQUIRE_MFA)
+        throw new Error('Administrative MFA cannot be disabled in production');
     return result.data;
 }

@@ -30,6 +30,13 @@ recommendation preview; Apply uses the exact candidate's identity, amount and me
 asks Nest to repeat analysis. Browser values are not trusted for access control or AI prompts.
 No separate Analysis store, Composition store or Recommendations store is allowed to drift.
 
+Recommendation cards consume only engine output: portion, exact preparation, conditional reason
+IDs and measured before/after changes. Text comes from EN/UK dictionaries. The editor takes the
+engine's preparation directly instead of inferring it again. The engine tries catalogue minimum
+and ideal shares for the current composition/goal, suppresses non-improving additions and repeated
+role/texture groups, and never fills six slots with a static list. See [API.md](API.md) for the
+0.3.1 response and coordinated rebuild instructions. This remains a deterministic hypothesis.
+
 The builder has Composition/Preparation tabs over that same reducer. The draft also owns
 description, optional servings, and ordered preparation steps with stable UUIDs. Consecutive
 text edits in one field are grouped in undo history; switching fields, blur, a one-second
@@ -66,6 +73,16 @@ RecipeScreen composes `recipe-comments` using the `recipe-discussion` feature co
 entity repositories. The widget owns focus and deletion-confirmation state only; all loading,
 pagination, authenticated mutations and retry state live in the feature. Cloud recipe version
 metadata survives editor transfer/save/undo without entering recipe JSON exports.
+
+## Administration and support
+
+AdminScreen gates the workspace through the administration feature's server access check and
+MFA flow. It composes the pure admin-workspace widget for records/inspection and the shared
+support-desk widget for operator conversations. SupportScreen composes that same presentation
+with an owner-scoped support controller. The administration/support entities own API adapters;
+widgets own only local form/dialog state. Async responses are scoped by account and request.
+AccountScreen exposes support, the conditional owner entry, and feedback-permission controls.
+No protected records are rendered into static route HTML. See [ADMINISTRATION.md](ADMINISTRATION.md).
 
 ## Adding a widget
 
