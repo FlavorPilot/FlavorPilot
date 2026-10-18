@@ -1,5 +1,37 @@
 # Actual validation — widget-monorepo-r2
 
+## Hosted database and owner bootstrap — 2026-10-18
+
+With explicit operator authorization, initialized the empty active Supabase project's public
+schema and all four catalogue seeds. Verified 620 ingredients, 12 preparations and 619 identity
+and nutrient records, with RLS enabled on all 18 public tables. Provisioned the requested team
+Auth account and an audited active owner membership. Initialized missing profiles and default
+free subscriptions for two pre-existing Auth users; existing profile records were preserved.
+
+Applied `20261018122502_harden_trigger_function_permissions.sql`: fixed helper search paths
+and revoked direct execution of internal trigger functions. Advisor function warnings were
+resolved; seven intentional deny-all RLS tables have no direct-client policies. Auth leaked
+password protection remains a separate operator setting, unchanged by this bootstrap.
+
+Reset the database password to the operator's requested value through the Management API,
+verified a native PostgreSQL connection, then switched the Railway API and ignored local API
+environment to the verified TLS session pooler. Passwords and API keys are absent from source.
+Railway deployment `5ffa6b22-5e9f-4527-b17c-e7f7bdbcb940` reached SUCCESS.
+
+| Check | Result |
+|---|---|
+| `npm run test:integration` | 21 passed, including repeatable trigger hardening, denied direct execution and working signup; disposable test database stopped afterward |
+| Hosted `/v1/health` | 200, database connected |
+| Requested account password sign-in | Passed against Supabase |
+| Hosted `/v1/admin/access` | 200, owner, MFA required and not yet verified |
+| Hosted `/v1/admin/overview` before MFA | 403 `ADMIN_MFA_REQUIRED` |
+| Hosted `/v1/dishes/me` | 200, empty own library |
+| Anonymous `/v1/admin/access` | 401 |
+
+The owner must enroll/challenge their own authenticator in the CRM. Hosted MFA completion,
+email delivery and the entire browser suite were not tested in this bootstrap. No frontend
+deployment or Git push was performed.
+
 ## Auth error diagnosis and localization — 2026-10-18
 
 Hosted Auth logs distinguish `invalid_credentials` on password sign-in from

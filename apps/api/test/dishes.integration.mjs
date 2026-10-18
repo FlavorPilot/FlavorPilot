@@ -66,6 +66,27 @@ after(async () => {
     await sql?.end();
 });
 
+it('hardens internal trigger RPC permissions while preserving signup and repeatable migration', async () => {
+    const migration = readFileSync(fileURLToPath(new URL('../../../supabase/migrations/20261018122502_harden_trigger_function_permissions.sql', import.meta.url)), 'utf8');
+    await sql.unsafe(migration);
+    await sql.unsafe(migration);
+    const functions = ['enforce_private_dish_limit', 'handle_new_user', 'preserve_dish_parent_lineage', 'validate_dish_item_catalog', 'validate_dish_parent'];
+    for (const role of ['anon', 'authenticated']) {
+        for (const name of functions) {
+            const [row] = await sql`select has_function_privilege(${role}, ${`public.${name}()`}, 'execute') as allowed`;
+            assert.equal(row.allowed, false, `${role} must not call ${name}`);
+        }
+    }
+    const pinned = await sql`select p.proname, p.proconfig from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname in ('set_updated_at','normalize_dish_publication')`;
+    assert.equal(pinned.length, 2);
+    for (const row of pinned) assert.ok(row.proconfig.includes('search_path=public'));
+    const user = await signup('hardened-trigger');
+    const [profile] = await sql`select id from public.profiles where id=${user.id}::uuid`;
+    const [subscription] = await sql`select user_id from public.subscriptions where user_id=${user.id}::uuid`;
+    assert.equal(profile.id, user.id);
+    assert.equal(subscription.user_id, user.id);
+});
+
 describe('administration and support on PostgreSQL',()=>{
     async function owner(label){const u=await signup(label);await sql`insert into public.admin_memberships(user_id) values(${u.id}::uuid)`;return u;}
     it('bootstraps owners only through the explicit operator command and audits grants and revocation',async()=>{

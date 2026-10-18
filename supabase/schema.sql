@@ -305,4 +305,12 @@ alter table public.support_tickets enable row level security;
 alter table public.support_messages enable row level security;
 revoke all on public.admin_memberships,public.admin_audit_events,public.feedback_reviews,public.support_tickets,public.support_messages from public,anon,authenticated;
 
+-- Internal trigger functions have no public RPC entry point.
+alter function public.set_updated_at() set search_path = public;
+alter function public.normalize_dish_publication() set search_path = public;
+revoke execute on function public.enforce_private_dish_limit(),
+  public.handle_new_user(), public.preserve_dish_parent_lineage(),
+  public.validate_dish_item_catalog(), public.validate_dish_parent()
+  from public, anon, authenticated;
+
 commit;

@@ -80,6 +80,13 @@ No service-role key or database password belongs in frontend variables.
 
 ## Verification after migration
 
+Apply `supabase/migrations/20261018122502_harden_trigger_function_permissions.sql` after 0010
+on existing installations. Fresh `schema.sql` includes it. The migration pins the search path
+of two helpers and revokes direct PUBLIC/anon/authenticated execution of five internal trigger
+functions. PostgreSQL still invokes the triggers; signup continues to create a profile and
+subscription. It changes no account credentials, memberships, recipe contents or visibility.
+Integration tests check repeat application, denied direct calls and successful signup.
+
 Create two test users. As A save a private recipe; B and anonymous clients must not read or edit
 it by ID. Public recipes can be read but only A can edit. A valid unlisted token can read its
 recipe; a guessed UUID cannot. Making a recipe private disables token access. Verify the owner
