@@ -57,9 +57,11 @@ A tooltip must never be the only explanation of a destructive action or model li
 
 ## Development discipline
 
-Use the existing native Node 22 environment and npm workspaces. Do not diagnose a browser
-WebContainer as Alpine merely because it does not report glibc. Do not install arbitrary SWC
-binaries, force dependency resolution or change framework versions without reproducing the issue.
+Use the existing native Node 22 environment and npm workspaces.
+On Windows, run npm commands through `.\scripts\npm.ps1` to select the project-local Node 22.
+Do not diagnose a browser WebContainer as Alpine merely because it does not report glibc.
+Do not install arbitrary SWC binaries, force dependency resolution or change framework versions
+without reproducing the issue.
 Retain or generate a real lockfile after an actual successful install. Commit it after review.
 Do not invent package versions, fake integrity hashes, successful build output or test results.
 Edit src, not dist/.next. Keep scope narrow and document any API, storage or SQL migration change.
