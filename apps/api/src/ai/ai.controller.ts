@@ -28,7 +28,7 @@ export class AiController {
     body: unknown,@Req() request:AiRequest) {
         const input = parseInput(aiExplainRequestSchema, body);
         const analysis = this.flavor.analyze({ items: input.items, goal: input.goal, includeRecommendations: true });
-        return this.ai.explain(request.aiActor,input.requestId??randomUUID(),{ locale: input.locale, dishName: input.dishName, analysis,items:input.items });
+        return this.ai.explain(request.aiActor,input.requestId??randomUUID(),{...input,analysis});
     }
     @Post('review-recipe') @Header('Cache-Control','no-store')
     async review(@Body() body:unknown,@Req() request:AiRequest){

@@ -1,8 +1,16 @@
 import {describe,it,expect} from 'vitest';
 import {aiReviewRequestSchema,aiReviewResultSchema,aiGenerateRequestSchema,aiGenerateResultSchema,aiDishOutcomeSchema} from './ai';
+import {aiExplainRequestSchema,aiCompositionDraftSchema} from './flavor';
 const step='a1111111-1111-4111-8111-111111111111';
 const request={requestId:'b1111111-1111-4111-8111-111111111111',locale:'uk',scope:'step',activeStepId:step,recipe:{name:'Recipe',goal:'balanced',items:[{ingredientId:'salmon',grams:100,preparationId:'raw'}],steps:[{id:step,text:'Prepare fish.'}]}};
 describe('AI snapshot boundaries',()=>{
+ it('retains legacy explanation input and accepts optional recipe-aware composition review',()=>{
+  const legacy={locale:'en',dishName:'Test',items:request.recipe.items};
+  expect(aiExplainRequestSchema.parse(legacy).steps).toEqual([]);
+  expect(aiExplainRequestSchema.safeParse({...legacy,includeCompositionReview:true,items:[]}).success).toBe(false);
+  expect(aiCompositionDraftSchema.safeParse({summary:'A coherent composition.',strengths:[],risks:[],actions:[],missingContext:[]}).success).toBe(true);
+  expect(aiCompositionDraftSchema.safeParse({summary:'A coherent composition.',strengths:[],risks:[],actions:[],missingContext:[],score:100}).success).toBe(false);
+ });
  it('requires a nonempty, existing active step and stable UUID request',()=>{
   expect(aiReviewRequestSchema.safeParse(request).success).toBe(true);
   expect(aiReviewRequestSchema.safeParse({...request,activeStepId:'c1111111-1111-4111-8111-111111111111'}).success).toBe(false);

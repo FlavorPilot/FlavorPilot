@@ -120,3 +120,32 @@ test('Free test allowance displays 100 units without paid monthly reset copy',as
  const panel=page.getByRole('region',{name:'Recipe assistant',exact:true});await expect(panel).toContainText('Free account testing allowance: 100 AI units.');await expect(panel).toContainText('Test units remaining: 100');
  await expect(panel).not.toContainText('Checks left this month');
 });
+
+
+test('composition review explains interactions and priorities in both locales without repeating legacy scores',async({page})=>{
+ let calls=0;
+ await page.route('**/v1/ai/explain',route=>{
+  calls++;const data=route.request().postDataJSON();expect(data.includeCompositionReview).toBe(true);expect(data.description).toBe('A warm salad.');expect(data.steps[0].text).toBe('Prepare salmon.');
+  const uk=data.locale==='uk';
+  const composition={summary:uk?'Лосось може дати соковиту основу з виразною скоринкою.':'Salmon can provide a moist centre and a browned surface.',strengths:[{ingredientIds:['salmon'],observation:uk?'Обсмажування додає виразного аромату.':'Searing adds a distinct aroma.',reason:uk?'Скоринка створює контраст із ніжною серединою.':'The surface contrasts with the tender centre.'}],risks:[{ingredientIds:['salmon'],observation:uk?'Тривале обсмажування може висушити рибу.':'Prolonged searing could dry the fish.',reason:uk?'Середина продовжує нагріватися після утворення скоринки.':'The centre keeps heating after a crust forms.'}],actions:[{kind:'technique',ingredientIds:['salmon'],candidateId:null,riskIndex:0,title:uk?'Контролюйте нагрівання':'Control the heat',instruction:uk?'Після утворення скоринки зменште нагрівання.':'Reduce the heat once the surface is browned.',reason:uk?'Це стримує втрату вологи.':'This limits moisture loss.',expectedEffect:uk?'Ніжніша середина зі збереженою скоринкою.':'A tender centre with the browned surface retained.',addition:null}],missingContext:[]};
+  return route.fulfill({json:{summary:'Legacy score narration must not render.',main_problem:'Compatibility is 60.',actions:[],composition}});
+ });
+ await setup(page);await page.getByRole('textbox',{name:'About this dish',exact:true}).fill('A warm salad.');await page.getByRole('tab',{name:'1. Composition & balance',exact:true}).click();
+ const panel=page.getByRole('region',{name:'Composition review',exact:true});await panel.getByRole('checkbox',{name:/Send this composition/}).check();await panel.getByRole('button',{name:'Review composition · 2',exact:true}).click();
+ await expect(panel.getByRole('heading',{name:'Overall impression',exact:true})).toBeVisible();await expect(panel.getByRole('heading',{name:'What could go wrong',exact:true})).toBeVisible();await expect(panel.getByRole('heading',{name:'What to change first',exact:true})).toBeVisible();await expect(panel).toContainText('Expected effect');await expect(panel).not.toContainText('Compatibility is 60');await expect(panel).not.toContainText('Legacy score narration');
+ await panel.screenshot({path:'.local/composition-review-en.png'});
+ await page.setViewportSize({width:375,height:812});await page.getByRole('link',{name:'Switch language',exact:true}).click();
+ const translated=page.getByRole('region',{name:'Розбір складу',exact:true});await translated.getByRole('checkbox',{name:/Надсилати цей склад/}).check();await translated.getByRole('button',{name:'Розібрати склад · 2',exact:true}).click();
+ await expect(translated.getByRole('heading',{name:'Що змінити насамперед',exact:true})).toBeVisible();await expect(translated).toContainText('Ніжніша середина');
+ const result=translated.getByRole('region',{name:'Результат розбору складу',exact:true});await result.evaluate(element=>element.scrollIntoView({block:'center',behavior:'instant'}));await result.screenshot({path:'.local/composition-review-uk-mobile.png'});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);expect(calls).toBe(2);
+});
+
+test('composition review allows no changes and renders exact addition amounts only from metadata',async({page})=>{
+ let add=false;
+ await page.route('**/v1/ai/explain',route=>route.fulfill({json:{summary:'Legacy.',main_problem:'',actions:[],composition:{summary:'The composition has a clear direction.',strengths:[],risks:add?[{ingredientIds:['salmon'],observation:'The finish may feel heavy.',reason:'The fish supplies richness.'}]:[],actions:add?[{kind:'add',ingredientIds:['lime','salmon'],candidateId:'addition:0',riskIndex:0,title:'Try a fresh finish',instruction:'Try the proposed lime addition before making further changes.',reason:'Acidity can counter the rich finish.',expectedEffect:'A brighter finish.',addition:{ingredientId:'lime',preparationId:'raw',grams:12}}]:[],missingContext:[]}}}));
+ await setup(page,false);await page.getByRole('tab',{name:'1. Composition & balance',exact:true}).click();const grams=await page.getByRole('textbox',{name:/Salmon —/}).inputValue();const panel=page.getByRole('region',{name:'Composition review',exact:true});await panel.getByRole('checkbox',{name:/Send this composition/}).check();await panel.getByRole('button',{name:'Review composition · 2',exact:true}).click();
+ await expect(panel).toContainText('No changes are recommended for this composition.');
+ add=true;await page.getByRole('textbox',{name:'Recipe name',exact:true}).fill('New snapshot');await panel.getByRole('button',{name:'Review composition · 2',exact:true}).click();await expect(panel).toContainText('Engine-calculated addition trial: Lime · 12 g');
+ await expect(page.getByRole('textbox',{name:/Salmon —/})).toHaveValue(grams);await expect(page.getByRole('textbox',{name:/Lime —/})).toHaveCount(0);
+});

@@ -196,6 +196,50 @@ it('assesses dish outcomes and generates bounded recipes with shared accounting 
  }finally{globalThis.fetch=originalFetch;config.set('AI_ENABLED',false);config.set('AI_PILOT_USER_IDS','');}
 });
 
+it('reviews ingredient interactions with recipe context, optional additions and authoritative candidate doses',async()=>{
+ const owner=await signup('composition-review'),config=app.get(ConfigService),originalFetch=globalThis.fetch;
+ config.set('AI_ENABLED',true);config.set('OPENAI_API_KEY','fake-local-key');config.set('AI_PILOT_USER_IDS',owner.id);
+ let mode='review',generations=0;
+ const body={requestId:randomUUID(),locale:'en',dishName:'Composition',includeCompositionReview:true,goal:'fresh',items,description:'A warm salad.',servings:2,steps:[{id:randomUUID(),text:'Finish with lime.'}]};
+ const draft={summary:'A rich base with a bright finish.',strengths:[{ingredientIds:['salmon','lime'],observation:'Lime contrasts the rich fish.',reason:'Its acidity sharpens the finish.'}],risks:[],actions:[],missingContext:[]};
+ globalThis.fetch=async(url,options)=>{
+  if(!String(url).startsWith('https://api.openai.com/v1/'))return originalFetch(url,options);
+  const sent=JSON.parse(options.body),context=JSON.parse(sent.input.at(-1).content[0].text);
+  if(String(url).endsWith('input_tokens'))return Response.json({input_tokens:mode==='large'?8001:2500});
+  generations++;assert.equal(sent.max_output_tokens,2000);
+  if(mode==='legacy')return Response.json({status:'completed',usage:{input_tokens:1000,output_tokens:100},output:[{content:[{type:'output_text',text:JSON.stringify({summary:'A rich base with a bright finish.',main_problem:'',actions:[]})}]}]});
+  assert.equal(context.goal,'fresh');assert.equal(context.recipe.description,'A warm salad.');assert.equal(context.recipe.steps[0].text,'Finish with lime.');
+  assert.equal(context.items[0].name,'Salmon');assert.ok(context.items[0].preparedModelProfile);assert.equal(context.evidence.pairs.lowest.length,1);
+  assert.ok(context.optionalAdditionTrials.length>0);assert.match(sent.input[0].content[0].text,/Do not narrate scores/);
+  let result=draft;
+  if(mode==='numbers')result={...draft,summary:'Score 83 and balance 95.'};
+  if(mode==='unknown')result={...draft,strengths:[{...draft.strengths[0],ingredientIds:['unknown']}]};
+  if(mode==='addition'){
+   const candidate=context.optionalAdditionTrials[0];
+   result={...draft,risks:[{ingredientIds:['salmon'],observation:'The texture may feel uniform.',reason:'The selected method emphasises tenderness.'}],actions:[{kind:'add',ingredientIds:[candidate.ingredientId],candidateId:candidate.id,riskIndex:0,title:'Try a contrasting component',instruction:'Use the proposed addition only if the contrast suits the dish.',reason:'It offers a distinct counterpoint.',expectedEffect:'A more varied bite.'}]};
+  }
+  return Response.json({status:'completed',usage:{input_tokens:2500,output_tokens:400},output:[{content:[{type:'output_text',text:JSON.stringify(result)}]}]});
+ };
+ try{
+  const first=await api('/ai/explain',{method:'POST',token:owner.token,body});assert.equal(first.status,201,JSON.stringify(first.body));assert.deepEqual(first.body.composition.actions,[]);assert.equal(first.body.main_problem,'');
+  assert.equal((await api('/account/capabilities',{token:owner.token})).body.remaining,298);
+  const cached=await api('/ai/explain',{method:'POST',token:owner.token,body:{...body,requestId:randomUUID()}});assert.deepEqual(cached.body,first.body);assert.equal(generations,1);
+  for(const next of ['numbers','unknown','large','addition','legacy']){
+   mode=next;await sql`update public.ai_requests set created_at=now()-interval '2 minutes' where user_id=${owner.id}`;
+   const attempt={...body,requestId:randomUUID(),dishName:next,...(next==='legacy'?{includeCompositionReview:false}:{})};
+   const response=await api('/ai/explain',{method:'POST',token:owner.token,body:attempt});
+   if(['numbers','unknown','large'].includes(next)){
+    assert.equal(response.status,next==='large'?400:502);
+    const [row]=await sql`select units,status,charged_microusd from public.ai_requests where user_id=${owner.id} and request_id=${attempt.requestId}`;assert.equal(row.units,0);assert.equal(row.status,'failed');
+   }else if(next==='addition'){
+    assert.equal(response.status,201,JSON.stringify(response.body));const addition=response.body.composition.actions[0].addition;
+    const expected=analyzeDish(items,'fresh',true).recommendations[0];assert.equal(addition.ingredientId,expected.ingredientId);assert.equal(addition.grams,expected.recommendedGrams);assert.equal(addition.preparationId,expected.preparationId);
+   }else{assert.equal(response.status,201);assert.equal(response.body.composition,undefined);}
+  }
+  const [charged]=await sql`select units,reserved_microusd from public.ai_requests where user_id=${owner.id} and request_id=${body.requestId}`;assert.equal(charged.units,2);assert.equal(charged.reserved_microusd,1800);
+ }finally{globalThis.fetch=originalFetch;config.set('AI_ENABLED',false);config.set('AI_PILOT_USER_IDS','');}
+});
+
 it('gives Free 100 non-renewing test units and preserves paid/pilot access and refunds',async()=>{
  const free=await signup('test-allowance'),config=app.get(ConfigService);
  const {AiUsageService}=await import('../dist/ai/ai-usage.service.js'),usage=app.get(AiUsageService);

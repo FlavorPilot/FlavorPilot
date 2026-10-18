@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import {CompositionReview} from './composition-review';
 import type { AiCapabilities,AiComment,AiExplainResponse,AiDishOutcome,AiGeneratedRecipe,RecipeStep } from '@flavorpilot/contracts';
 import { formatNumber,getDictionary,type Locale,type MessageKey } from '@/shared/i18n';
 import { Badge,Button,Dialog,Notice,WidgetFrame } from '@/shared/ui';
@@ -64,7 +65,7 @@ export function CulinaryAssistant({locale,state:s,view,steps,hasItems}:{locale:L
   </section>}
   {visible&&<div className="stack" aria-live="polite">
    {s.stale&&<Notice tone="warning">{t.aiStale}</Notice>}
-   {explain&&s.result?.explanation&&<><p className="recipe-reading">{s.result.explanation.summary}</p><p className="recipe-reading">{s.result.explanation.main_problem}</p>{s.result.explanation.actions.map((a,i)=><div key={i}><strong>{a.title}</strong><p className="recipe-reading">{a.explanation}</p></div>)}</>}
+   {explain&&s.result?.explanation&&<CompositionReview value={s.result.explanation} locale={locale}/>}
    {!explain&&<h3>{t.aiStepComments}</h3>}
    {!explain&&(s.comments.length?s.comments.map(c=><article className="notice ai-comment" key={c.id}>
     <strong>{t[keys[c.kind]]}{c.stepId?` · ${t.recipeStep} ${formatNumber(steps.findIndex(step=>step.id===c.stepId)+1,locale,0)}`:''}</strong>

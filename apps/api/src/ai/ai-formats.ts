@@ -1,6 +1,9 @@
 const text=(maxLength=1200)=>({type:'string',minLength:1,maxLength});
 const list=(items:unknown,maxItems:number,minItems=0)=>({type:'array',items,maxItems,minItems});
 const object=(properties:Record<string,unknown>)=>({type:'object',properties,required:Object.keys(properties),additionalProperties:false});
+const references=list(text(120),6,1);
+const observation=object({ingredientIds:references,observation:text(500),reason:text(500)});
+export const compositionFormat=object({summary:text(600),strengths:list(observation,2),risks:list(observation,3),actions:list(object({kind:{type:'string',enum:['keep','reduce','remove','technique','add']},ingredientIds:references,candidateId:{type:['string','null'],maxLength:40},riskIndex:{type:['integer','null'],minimum:0,maximum:2},title:text(140),instruction:text(500),reason:text(500),expectedEffect:text(500)}),3),missingContext:list(text(240),2)});
 export const commentFormat=object({id:{type:'string'},kind:{type:'string',enum:['clarity','consistency','ingredientUsage','technique']},stepId:{type:['string','null']},message:text(),suggestedText:{type:['string','null'],maxLength:4000}});
 export const reviewFormat=object({comments:list(commentFormat,6)});
 export const outcomeFormat=object({verdict:{type:'string',enum:['promising','mixed','needsWork','insufficientContext']},summary:text(),taste:text(),texture:text(),strengths:list(text(),4),risks:list(text(),4),cookingAdvice:list(object({title:text(160),instruction:text(),reason:text()}),4,1),assumptions:list(text(),4)});

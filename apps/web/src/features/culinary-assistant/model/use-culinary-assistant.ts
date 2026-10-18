@@ -31,7 +31,7 @@ export function useCulinaryAssistant(input:{recipe:AiRecipe;locale:Locale;token?
   controller.current?.abort();const c=new AbortController();controller.current=c;setBusy(true);setError('');lastAuto.current=Date.now();
   try{
    if(kind==='explain'){
-    const explanation=await aiRepository.explain({requestId,locale,dishName:recipe.name,items:recipe.items,goal:recipe.goal,includeRecommendations:true},token,c.signal);
+    const explanation=await aiRepository.explain({requestId,locale,dishName:recipe.name,items:recipe.items,goal:recipe.goal,includeRecommendations:true,includeCompositionReview:true,description:recipe.description,servings:recipe.servings,steps:recipe.steps},token,c.signal);
     if(mounted.current&&latest.current===key&&!c.signal.aborted){setResult({snapshot:key,kind,comments:[],explanation});setDismissed([]);}
    }else if(kind==='generate'){
     const value=await aiRepository.generate({requestId,locale,...(token&&dishId?{dishId}:{}),recipe,brief:generationBrief},token,c.signal);

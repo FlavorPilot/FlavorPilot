@@ -27,8 +27,15 @@ export type NormalizedAnalyzeDishRequest = z.output<typeof analyzeDishRequestSch
 export const dishVisibilitySchema = z.enum(dishVisibilities);
 export const savedDishSchema = z.object({ id: z.string().trim().min(1).max(160), name: z.string().trim().min(1).max(160), items: z.array(dishItemSchema).min(1).max(24), goal: dishGoalSchema, visibility: dishVisibilitySchema, createdAt: z.string().datetime(), parentDishId: z.string().trim().min(1).max(160).optional(), ...recipeContentSchema.shape });
 // Rebuild r2: the API recalculates analysis; browser-supplied scores are never trusted.
-export const aiExplainRequestSchema = analyzeDishRequestSchema.extend({ requestId: z.string().uuid().optional(), locale: localeSchema, dishName: z.string().trim().max(160) });
+export const aiExplainRequestSchema = analyzeDishRequestSchema.extend({ requestId: z.string().uuid().optional(), locale: localeSchema, dishName: z.string().trim().max(160), includeCompositionReview:z.boolean().optional(), ...recipeContentSchema.shape }).refine(v=>!v.includeCompositionReview||v.items.length>0,{message:'Composition review requires ingredients'});
 export type AiExplainRequest = z.infer<typeof aiExplainRequestSchema>;
 export const aiExplainActionSchema = z.object({ title: z.string().max(200), explanation: z.string().max(1800) });
-export const aiExplainResponseSchema = z.object({ summary: z.string().max(1800), main_problem: z.string().max(1800), actions: z.array(aiExplainActionSchema).max(3) });
+const compositionText=z.string().trim().min(1).max(500);
+const ingredientReferences=z.array(z.string().min(1).max(120)).min(1).max(6);
+export const aiCompositionObservationSchema=z.object({ingredientIds:ingredientReferences,observation:compositionText,reason:compositionText}).strict();
+export const aiCompositionActionDraftSchema=z.object({kind:z.enum(['keep','reduce','remove','technique','add']),ingredientIds:ingredientReferences,candidateId:z.string().max(40).nullable(),riskIndex:z.number().int().min(0).max(2).nullable(),title:z.string().trim().min(1).max(140),instruction:compositionText,reason:compositionText,expectedEffect:compositionText}).strict();
+export const aiCompositionDraftSchema=z.object({summary:z.string().trim().min(1).max(600),strengths:z.array(aiCompositionObservationSchema).max(2),risks:z.array(aiCompositionObservationSchema).max(3),actions:z.array(aiCompositionActionDraftSchema).max(3),missingContext:z.array(z.string().trim().min(1).max(240)).max(2)}).strict();
+export const aiCompositionReviewSchema=aiCompositionDraftSchema.extend({actions:z.array(aiCompositionActionDraftSchema.extend({addition:z.object({ingredientId:z.string(),preparationId:z.string(),grams:z.number().finite().positive().max(5000)}).strict().nullable()}).strict()).max(3)});
+export type AiCompositionDraft=z.infer<typeof aiCompositionDraftSchema>;
+export const aiExplainResponseSchema = z.object({ summary: z.string().max(1800), main_problem: z.string().max(1800), actions: z.array(aiExplainActionSchema).max(3), composition:aiCompositionReviewSchema.optional() });
 export type AiExplainResponse = z.infer<typeof aiExplainResponseSchema>;

@@ -73,6 +73,14 @@ old suggestions. A confirmation applies the generated text as one reducer operat
 without changing selected ingredients, grams, preparation methods, goal or saved identity.
 Nothing is saved to the account or published by generation or preview application.
 
+The composition assistant requests a structured culinary review with the same recipe snapshot,
+including existing written preparation. Its presentation separates verdict, strengths, risks,
+priority actions (instruction/reason/effect) and missing context; legacy score explanations have
+a rollout fallback. Optional addition grams/preparation are server-owned engine metadata. Advice
+is read-only and never changes the composition or forces additional ingredients. EN/UK dictionaries
+own all section labels. Consent, quotas, snapshot invalidation and the 2-unit charge stay shared
+with the existing assistant feature.
+
 ## Feedback and public discussion
 
 The assessment widget exposes an optional feedback slot, composed by the builder/recipe

@@ -91,6 +91,32 @@ quota and budget reservation. `requestId` is optional for legacy explain clients
 always send a UUID and retain it for retries. Response keeps `summary`, `main_problem`,
 `actions` (at most three). Text does not become a trusted recipe or score.
 
+New composition-review clients send `includeCompositionReview:true` and optional recipe
+description/servings/steps to the same `/ai/explain` endpoint. Nest supplies the selected goal,
+localized ingredient identities and intended preparations, roles/aromas/textures, per-item
+prepared heuristic profiles, dish scores/issues, up to three weakest/strongest model pairs,
+and at most six optional engine-calculated additions. These are unreviewed model hints, not
+measured taste or proof that low-scoring pairs clash. A preserved food remains preserved when
+the selected preparation means no additional processing. No user-supplied scores are accepted.
+
+The opt-in response adds `composition`: a short verdict, up to two grounded strengths, three
+risks, three priority actions and two missing-context notes. Observations reference selected
+ingredient IDs. Actions can keep/reduce/remove existing ingredients, change technique, or add
+an engine candidate. Empty risks/actions are allowed; additions are never required. Each action
+has an instruction, reason and expected sensory effect. An addition must reference an existing
+risk and a unique supplied candidate; Nest attaches its exact ingredient/preparation/grams.
+Unknown IDs/candidates, invented metadata and numerical prose are rejected with refunded units;
+numbers are displayed from server-owned data. Reductions are requested as qualitative trials; the schema supplies no exact new reduction
+dose or predicted score change. The UI does not mutate/apply any advice.
+Legacy callers retain summary/main_problem/actions without composition; old deployed clients
+can read the derived legacy fields while the matching UI rolls out. `culinary-review-5` separates
+the new context/prompt from cached older score recitations. Recipe edits affect the content hash.
+The richer context uses an 8000-input-token cap; output stays 2000 tokens and cost stays 2 units,
+with a worst-case monetary reservation of $0.0018. Token counting uses the complete JSON schema
+and messages; oversized context fails before generation. Structure validation cannot prove the
+truth/usefulness of sensory prose; real-response inspection and culinary evaluation still matter.
+Provider formatting follows [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses).
+
 `GET /v1/account/capabilities` returns availability, paid/pilot access, monthly/daily remaining
 check units and UTC reset times. `POST /v1/ai/review-recipe` accepts a UUID requestId, EN/UK
 locale, scope `step` or `full`, optional activeStepId/dishId, and a recipe snapshot with name,
@@ -118,7 +144,7 @@ still require exact membership checks. Cached IDs remain stable. Locale instruct
 explicit; a narrow Ukrainian guard rejects Russian-only letters outside exact quoted source
 phrases. It is not a general language classifier and never triggers a paid automatic retry.
 
-Limits: explain 3000 input/2000 output/2 units; step 5000/1600/1; full 12000/4000/4;
+Limits: explain 8000 input/2000 output/2 units; step 5000/1600/1; full 12000/4000/4;
 generate 8000/5000/4 (at most $0.0033 reserved). All share the same quotas and money budgets.
 Input counting uses OpenAI's `/responses/input_tokens` with the complete formatted input.
 Output includes invisible tokens. Maximum one active generation/account, four fresh attempts

@@ -1,5 +1,31 @@
 # Actual validation — widget-monorepo-r2
 
+## Grounded composition review — 2026-10-18
+
+The composition assistant now requests an ingredient/recipe-aware review with a verdict,
+strengths, risks and priority actions containing instruction/reason/expected effect. Optional
+additions must address a referenced risk and select a unique engine candidate; Nest attaches
+the exact dose/preparation. Existing-ingredient advice and empty risk/action lists are valid.
+Numerical prose, unknown references and provider-invented dose metadata are rejected. This
+replaces score recitation for the opt-in UI, with legacy response compatibility. All labels
+are EN/UK. Recipe text joins the existing consent/snapshot/hash path; advice stays read-only.
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed structure/boundaries, editor/kernel checks, workspace typechecks and 120 Vitest tests |
+| Compiled API integration suite | 27 passed on isolated local PostgreSQL/Auth/provider stubs; includes recipe context, prepared profiles/pair evidence, no-change response, exact candidate doses, rejected numerical/unknown output, input-token rejection, refunds, cache and legacy responses |
+| Assistant browser suite | 9 passed, including both composition locales, mobile width, no forced additions, metadata-only doses and unchanged editor composition |
+| `npm run build` | Passed shared packages, Nest and Next production output, 27 generated pages |
+
+Windows excluded the usual localhost:54329 test port. Checks used FLAVORPILOT_TEST_DATABASE_URL
+on loopback 45429 with a temporary WSL stdio bridge to the same isolated flavorpilot_test
+cluster; no PostgreSQL configuration, production database or machine port-proxy rule changed.
+The existing supported Auth port override stayed 45421. No schema migration or new dependency.
+Explanation input cap is 8000 tokens, output 2000 and charge 2 units; the same $5/day/$50/month
+shared budget remains authoritative. The new prompt/cache version is culinary-review-5.
+These local checks establish behavior and accounting, not culinary accuracy; hosted output
+inspection is recorded separately after rollout.
+
 ## Temporary Free/guest AI access — 2026-10-18
 
 Free accounts receive 100 test units; guests receive 50 with a server-issued AI-only browser
