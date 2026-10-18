@@ -26,6 +26,22 @@ shared budget remains authoritative. The new prompt/cache version is culinary-re
 These local checks establish behavior and accounting, not culinary accuracy; hosted output
 inspection is recorded separately after rollout.
 
+Hosted implementation f80b365 reached Railway SUCCESS
+(`85e282bd-6522-4b4d-b4a5-f1c399cc0c50`) and Vercel READY
+(`dpl_HdRPrxyAUW3Y7ibSTrNUT7Y8W7f9`). Real English and Ukrainian requests used the reported
+chicken/corn/lime/cherry/dill-pickle composition and returned 201, two strengths, two concrete
+risks and one/two existing-ingredient actions, with no forced additions or score recitation.
+English proposed reducing the pickle's role; Ukrainian proposed reducing lime and separating
+the cherry accent. Both kept missing-recipe details in the dedicated context section. Exact
+replays returned identical cached results without further units; each fresh review used two.
+An initial live inspection found an unsupported fermentation assumption; final prompt wording
+distinguishes hypothesized aroma tags from known processing, and both final samples avoided it.
+The final API build/35 unit tests/27 integrations passed after that clarification. Both new
+browser cases also passed a focused rerun; inspected desktop and mobile result captures are
+`.local/composition-review-en.png` and `.local/composition-review-uk-mobile.png`. The web
+production build passed again after the browser run. Human interpretation of this small sample
+is not a calibrated tasting study or proof that every future recommendation is appropriate.
+
 ## Temporary Free/guest AI access — 2026-10-18
 
 Free accounts receive 100 test units; guests receive 50 with a server-issued AI-only browser
