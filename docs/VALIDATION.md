@@ -36,6 +36,17 @@ and the pre-existing
 The CLI-created migration file was aligned to the actual hosted migration-history version.
 Reference weights remain estimates, not measured weights for a user's individual products.
 
+Hosted commit 7ce4f8b reached Railway SUCCESS (`ca34495d-790e-4de4-881c-8e6bc322c9b9`)
+and Vercel production READY (`dpl_CGchrHyB72SmHc2xQMHdRyENfEir`). Real public API requests
+with corrected eggs (3 pieces, 162 g) and milk (100 ml, 103.133 g) matched gram-only analysis
+and the serialized local engine exactly. Contradictory grams and unsupported ingredient units
+both returned 400. A production Chromium session imported those quantities, changed eggs to
+4 pieces/216 g with the corrected factor retained, and verified the server received 216 g
+and 103.133 g. Nutrient contributions retain those exact masses; the existing totalWeight
+response intentionally rounds to one decimal (319.1 g). Reload retained the original count,
+and Ukrainian at 375px retained both units without overflow. No GPT call or production cloud
+recipe write was made. The temporary local bridge and test cluster were stopped afterward.
+
 ## Mass-weighted texture and composition index — 2026-10-20
 
 Model 0.4.0-hypothesis replaces count/tag bonuses with mass-weighted structural contrast.
