@@ -1,5 +1,12 @@
 # API contract — widget rebuild r2
 
+Current scoring semantics are [0.4.0-hypothesis](SCORING_MODEL.md): mass-weighted descriptive
+texture potential, preparation-aware tag replacement for purée, and a weighted harmonic
+composition index over compatibility/balance/proportions. Texture is excluded from that index.
+Response field names/ranges are unchanged. Rebuild engine/API/web together; preserve old
+versioned feedback snapshots. No SQL migration. The recommendation section below records
+the 0.3.1 search/portion contract; its search remains, with the current index used for trials.
+
 Default prefix `/v1`; protected routes require a Supabase `Authorization: Bearer <access-token>`.
 The browser never sends a trusted user ID, plan or score. The API verifies bearer tokens via
 Supabase's user endpoint with a timeout. A decode-only JWT implementation is not acceptable.
@@ -38,7 +45,9 @@ the smaller dose. Rank by actual overall improvement, then the existing usefulne
 then stable ingredient ID. Keep the existing compatibility/balance eligibility gate and require
 a positive displayed overall delta. Show at most eight distinct role/prepared-texture groups
 (six cards in the web UI); no filler when fewer qualify. Empty and 24-item dishes return none.
-Existing preparations, all primary score coefficients, and manual-add default amounts are unchanged.
+The 0.3.1 search release retained the then-current assessment coefficients and manual-add
+defaults. Assessment 0.4.0 supersedes its texture/aggregation policy as described above;
+the portion-search rules and manual-add defaults are retained.
 Reasons use the prepared candidate and actual simulated profile/texture changes, not its name.
 
 Migration: rebuild shared contracts/engine, API and web together. No SQL migration or rewriting

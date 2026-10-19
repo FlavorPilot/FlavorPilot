@@ -1,5 +1,16 @@
 # Known limitations — do not treat these as completed work
 
+## Composition scoring 0.4.0
+
+Count-dependent texture saturation is replaced by mass-weighted structural contrast, with
+explicit purée replacing original texture tags. Contrast does not grade dish quality or enter
+the composition index. The latter uses a harmonic mean of the existing compatibility/balance/
+proportion hypotheses. See [SCORING_MODEL.md](SCORING_MODEL.md) for derivation and upgrade.
+This does not validate those catalogue hypotheses, identify every incoherent dish, infer a
+whole-dish blending step, or simulate milk/protein/acid chemistry. Professional tasting data
+and recipe-format calibration are still missing. No empirically correct replacement score
+for the incomplete sixteen-ingredient screenshot is claimed.
+
 ## Temporary AI test allowances
 
 With AI_TEST_ACCESS_ENABLED, Free receives 100 units and guests 50. A guest is identified by
@@ -48,7 +59,7 @@ hypotheses. Repeated calculations and passing regressions cannot establish senso
 Heuristic confidence can be high even when data is unreviewed. Model scores are not food-safety,
 allergen, nutrition or cooking-temperature assurances. No medical guidance is provided by the UI.
 
-Recommendation model 0.3.1 simulates additions at catalogue minimum/ideal shares, ranks actual
+The recommendation search introduced in 0.3.1 simulates additions at catalogue minimum/ideal shares, ranks actual
 model improvement and groups duplicate culinary roles/textures. Positive changes are model
 outputs, not tasting evidence. The search checks two trial portions per food at its default
 supported preparation; it does not find a continuous optimum, replacements, ingredient removals

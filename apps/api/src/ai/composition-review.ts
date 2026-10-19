@@ -1,11 +1,11 @@
 import { aiCompositionDraftSchema, aiExplainResponseSchema, type AiExplainRequest, type DishAnalysis } from '@flavorpilot/contracts';
-import { analyzeDish, ingredientById, preparationById } from '@flavorpilot/flavor-engine';
+import { analyzeDish, ingredientById, preparationById,preparedTextureTags } from '@flavorpilot/flavor-engine';
 
 export function compositionContext(input:AiExplainRequest,analysis:DishAnalysis){
  const items=input.items.map(item=>{
   const ingredient=ingredientById.get(item.ingredientId)!,preparation=preparationById.get(item.preparationId)!;
   return {...item,name:ingredient.name[input.locale],preparation:preparation.name[input.locale],roles:ingredient.roles,
-   textures:[...new Set([...ingredient.textures,...(preparation.addTextures??[])])],
+   textures:preparedTextureTags(ingredient.textures,preparation.addTextures,item.preparationId),
    aromas:[...new Set([...ingredient.aromas,...(preparation.addAromas??[])])].slice(0,4),
    preparedModelProfile:analyzeDish([item],input.goal,false).profile};
  });

@@ -74,13 +74,13 @@ test('published composition sums USDA amounts and leaves missing nutrients out',
  assert.equal(sodium(withSalt).coveredItems,2);
  assert.ok(sodium(withSalt).amount>sodium(only).amount);
 });
-test('USDA foods that are not in the transcribed 38 change the dish score',()=>{
+test('USDA foods outside the transcribed 38 participate in scoring, including rounded overall ties',()=>{
  assert.equal(scoring.hypothesisIngredients.length,582);
  assert.equal(scoring.catalogueIngredients.length,620);
  const plain=analyzeDish([{ingredientId:'salmon',grams:180,preparationId:'raw'}],'balanced',false);
  const salted=analyzeDish([{ingredientId:'salmon',grams:180,preparationId:'raw'},{ingredientId:'salt',grams:4,preparationId:'raw'}],'balanced',false);
  assert.ok(salted.profile.saltiness>plain.profile.saltiness);
- assert.notEqual(salted.overallScore,plain.overallScore);
+ assert.notDeepEqual([salted.compatibilityScore,salted.balanceScore,salted.quantityScore],[plain.compatibilityScore,plain.balanceScore,plain.quantityScore]);
  const beef=scoring.hypothesisIngredients.find(item=>item.id==='beef');
  const onion=scoring.hypothesisIngredients.find(item=>item.id==='onion');
  assert.ok(beef.profile.umami>5&&beef.profile.fat>2);
@@ -110,7 +110,7 @@ test('legacy qualitative pairing regression',()=>{assert.ok(calculatePair(prepar
 test('empty composition produces the explicit empty state',()=>{const a=analyzeDish([], 'balanced');assert.equal(a.overallScore,0);assert.equal(a.totalWeight,0);assert.equal(a.recommendations.length,0);assert.ok(a.issues.some(x=>x.code==='emptyDish'));});
 test('one ingredient produces the single-ingredient marker',()=>{assert.ok(analyzeDish([base[0]],'balanced').issues.some(x=>x.code==='singleIngredient'));});
 test('analysis is deterministic and does not mutate its input',()=>{const items=JSON.parse(JSON.stringify(defaultDish)),copy=JSON.stringify(items);assert.deepEqual(analyzeDish(items,'fresh'),analyzeDish(items,'fresh'));assert.equal(JSON.stringify(items),copy);});
-test('default-dish source output regression is unchanged',()=>{const a=analyzeDish(defaultDish,'fresh');assert.deepEqual([a.overallScore,a.compatibilityScore,a.balanceScore,a.quantityScore,a.textureScore,a.totalWeight],[74,76,61,97,71,313]);assert.equal(a.pairResults.length,6);assert.equal(a.issues.some(issue=>issue.code==='outsideRecommendedRange'),false);});
+test('0.4 default index keeps the source data while separating descriptive contrast',()=>{const a=analyzeDish(defaultDish,'fresh');assert.deepEqual([a.overallScore,a.compatibilityScore,a.balanceScore,a.quantityScore,a.textureScore,a.totalWeight],[72,76,61,97,0,313]);assert.equal(a.pairResults.length,6);assert.equal(a.issues.some(issue=>issue.code==='outsideRecommendedRange'),false);});
 test('fatty sample flags acidity and adding the test quantity of lime improves model balance',()=>{
  const a=analyzeDish(base,'balanced'),b=analyzeDish([...base,{ingredientId:'lime',grams:14,preparationId:'raw'}],'balanced');
  assert.ok(a.issues.some(x=>x.code==='fatNeedsAcid'));assert.ok(b.balanceScore>a.balanceScore);

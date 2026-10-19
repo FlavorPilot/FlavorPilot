@@ -117,7 +117,7 @@ test('shows a published dish to a second user and keeps a remix private', async 
     await card.getByRole('button', { name: 'Open', exact: true }).click();
     await expect(other.getByRole('heading', { name: 'Public salmon' })).toBeVisible();
     await other.getByRole('button', { name: 'Use as a starting point' }).click();
-    await expect(other.getByText('Based on')).toBeVisible();
+    await expect(other.getByText(/^Based on:/)).toBeVisible();
     await other.getByRole('textbox', { name: 'Recipe name' }).fill('Public salmon remix');
     const posted = other.waitForRequest(req => req.url().endsWith('/v1/dishes') && req.method() === 'POST');
     await saveToAccount(other, 'Only me');

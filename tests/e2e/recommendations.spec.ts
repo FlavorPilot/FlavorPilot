@@ -15,7 +15,7 @@ test('recalculates portions and applies the exact recommendation without changin
     const name = await card.locator('h3').innerText();
     const badge = await card.locator('header').innerText();
     const grams = Number(badge.match(/([\d,.]+)\s*g/)![1].replaceAll(',', ''));
-    const deltaText = await card.locator('p').filter({ hasText: 'Overall model score change' }).innerText();
+    const deltaText = await card.locator('p').filter({ hasText: 'Composition index change' }).innerText();
     const delta = Number(deltaText.match(/\+(\d+)/)![1]);
     const before = Number(await page.locator('.score-ring strong').innerText());
     await card.locator('summary').click();
@@ -25,7 +25,7 @@ test('recalculates portions and applies the exact recommendation without changin
     const preview = page.getByTestId('change-preview');
     await expect(preview).toContainText(name);
     await expect(preview).toContainText(preparation);
-    await expect(preview).toContainText(`Overall model score change: +${delta}`);
+    await expect(preview).toContainText(`Composition index change: +${delta}`);
     await expect(page.getByTestId('ingredient-row')).toHaveCount(initialRows);
     await expect(page.locator('.score-ring strong')).toHaveText(String(before));
     await preview.getByRole('button', { name: 'Keep this change' }).click();
@@ -41,7 +41,7 @@ test('shows localized evidence in keyboard-accessible details at mobile width', 
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/uk/builder?example');
     const card = page.locator('.recommendation-card').first();
-    await expect(card).toContainText('Зміна загальної оцінки моделі');
+    await expect(card).toContainText('Зміна індексу композиції');
     const summary = card.locator('summary');
     await summary.focus();
     await summary.press('Enter');
@@ -49,6 +49,6 @@ test('shows localized evidence in keyboard-accessible details at mobile width', 
     await expect(card.locator('details')).toHaveAttribute('open', '');
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     await page.getByRole('button', { name: 'Переглянути', exact: true }).first().click();
-    await expect(page.getByTestId('change-preview')).toContainText('Зміна загальної оцінки моделі');
+    await expect(page.getByTestId('change-preview')).toContainText('Зміна індексу композиції');
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });

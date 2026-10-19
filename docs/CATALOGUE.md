@@ -19,10 +19,13 @@ existing deterministic engine; no external AI provider is called during editing.
 
 New provenance stays `unreviewed`, confidence 0, reviewer/time null. AI provenance is available
 through `aiIngredientKnowledge`, separately from historic demo attribution and USDA identity
-citations. Reviewed-coverage targets are not met by generating hypotheses. Model coefficients,
-the original 120 profiles and the 64 pair adjustments are unchanged. Recommendations now
-consider all 620 ingredients, so suggestion ordering can change. The inherited default score
-remains 74 (balance 61; weight 313 g).
+citations. Reviewed-coverage targets are not met by generating hypotheses. The catalogue
+expansion did not alter the original 120 profiles or 64 pair adjustments. Recommendations
+consider all 620 ingredients, so suggestion ordering can change. The subsequent
+[0.4.0 assessment policy](SCORING_MODEL.md) replaces count-dependent contrast and arithmetic
+aggregation while retaining those source profiles. Its default composition index is 72
+(balance 61; weight 313 g), compared with 74 under the inherited policy. Neither is a tasting
+grade; the data remain unreviewed.
 
 The editor's initial amount now uses the existing kernel recommendation helper, including
 fractional grams for concentrated spices. Selecting saffron no longer forces a 1 g minimum;

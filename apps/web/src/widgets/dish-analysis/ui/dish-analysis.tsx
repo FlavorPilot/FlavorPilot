@@ -37,6 +37,7 @@ export function DishAnalysis({ analysis, locale, itemCount, feedback }: {
         <div><Badge tone="green">{t.knowledge}</Badge><h3>{t.overall}</h3><p className="muted small">{t.modelEstimate}</p></div>
       </div>
       <dl className="metric-grid">{([['compatibility', analysis.compatibilityScore], ['balance', analysis.balanceScore], ['quantity', analysis.quantityScore], ['texture', analysis.textureScore]] as const).map(([key, value]) => <div key={key}><dt>{t[key]}</dt><dd>{value}<span>/100</span></dd></div>)}</dl>
+      <p className="small muted">{t.textureModelNote}</p>
       <div className={`primary-issue ${issue ? 'primary-issue--warning' : ''}`}><Icon name={issue ? 'warning' : 'check'} size={18}/><div><strong>{issue ? t.attention : t.noIssues}</strong><p>{issue ? d.issues[issue.code] : t.noIssuesNote}</p>{issue?.ingredientId && <small>{ingredientById.get(issue.ingredientId)?.name[locale]}</small>}</div></div>
       <details className="disclosure"><summary>{t.details}</summary><p>{t.scoreExplanation}</p><p><strong>{t.confidence}: {formatNumber(analysis.confidence, locale, 0)}</strong> / 100. {t.confidenceNote}</p><p>{t.knowledgeNote}</p></details>
     </>}

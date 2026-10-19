@@ -68,6 +68,16 @@ after(async () => {
     await sql?.end();
 });
 
+it('serves mass-weighted contrast without treating a smooth preparation as a bad dish',async()=>{
+ const raw=[{ingredientId:'milk',grams:150,preparationId:'raw'},{ingredientId:'cucumber',grams:100,preparationId:'raw'}];
+ const first=await api('/flavor/analyze',{method:'POST',body:{items:raw,goal:'balanced',includeRecommendations:false}});
+ assert.equal(first.status,201);assert.equal(first.body.textureScore,35);
+ const blended=await api('/flavor/analyze',{method:'POST',body:{items:[raw[0],{...raw[1],preparationId:'pureed'}],goal:'balanced',includeRecommendations:false}});
+ assert.equal(blended.status,201);assert.equal(blended.body.textureScore,0);assert.ok(blended.body.overallScore>0);
+ assert.equal(blended.body.issues.some(i=>i.code==='flatTexture'),false);
+ assert.deepEqual(blended.body,analyzeDish([raw[0],{...raw[1],preparationId:'pureed'}],'balanced',false));
+});
+
 it('round-trips recipe steps, protects stale edits and preserves remix/snapshot contents',async()=>{
  const a=await signup('recipe-cloud'),b=await signup('recipe-other');
  const steps=[{id:randomUUID(),text:'Sear salmon, then add lime.'}];

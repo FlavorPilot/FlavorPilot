@@ -1,5 +1,35 @@
 # Actual validation — widget-monorepo-r2
 
+## Mass-weighted texture and composition index — 2026-10-20
+
+Model 0.4.0-hypothesis replaces count/tag bonuses with mass-weighted structural contrast.
+Explicit purée removes original crisp/fibrous structure. Contrast is descriptive and no longer
+boosts pair compatibility, the overall index or recommendation utility. The index uses a
+weighted harmonic mean of compatibility/balance/proportions; adding ingredients alone no
+longer boosts heuristic confidence. Source profiles, pair adjustments and proportion ranges
+are unchanged. Derivation, limitations and coordinated rebuild instructions are in
+[SCORING_MODEL.md](SCORING_MODEL.md). No SQL migration or historical snapshot rewrite.
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed structure/layer checks, 16 pure editor/locale checks, 27 kernel checks, all workspace typechecks and 130 Vitest tests |
+| `npm run check:syntax` | Passed, 230 source files; syntax only, in addition to the checks above |
+| Compiled API integration suite | 28 passed on isolated local PostgreSQL/Auth/provider stubs; includes preparation-dependent contrast and exact API/engine agreement |
+| Focused browser suites | 15 passed: critical flows, exact recommendation preview/apply, EN/UK contrast labels, server agreement, purée and mobile width |
+| `npm run build` | Passed shared packages, Nest and Next production output, 27 generated pages; run after browser checks |
+
+The nine visible rows from the user's screenshot give contrast 36 rather than the old 100,
+and index 69 rather than the old 78. The screenshot has sixteen rows, so this is not an exact
+reproduction or a proposed correct replacement for its 81. Synthetic tests cover trace amounts,
+row splitting, ordering, uniform scaling, identical mixed textures, intensity, weak-criterion
+compensation and the absence of indirect texture bonuses. The Ukrainian 375px metric capture
+was inspected; labels wrap without overlap and the browser test found no document overflow.
+These tests establish deterministic behavior, not professional tasting accuracy or reliable
+recognition of every questionable dish. Written recipe steps do not enter this texture formula.
+
+Windows checks used the same temporary loopback 45429/WSL stdio test-database bridge and Auth
+port 45421 described below. No production database, SMTP, AI model, quota or budget was changed.
+
 ## Grounded composition review — 2026-10-18
 
 The composition assistant now requests an ingredient/recipe-aware review with a verdict,

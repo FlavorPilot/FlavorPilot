@@ -1,4 +1,5 @@
 import { dishComposition } from './composition';
+import { compositionIndex,preparedTextureTags,textureContrastPotential } from './scoring-policy';
 import { getPairAdjustment, goalDefinitions, preparationById } from './ingredients';
 import { catalogueById, catalogueIngredients as ingredients } from './scoring-catalogue';
 import { sensoryDimensions, type DishAnalysis, type DishGoal, type DishIssue, type DishItem, type Ingredient, type IngredientRecommendation, type PairResult, type RecommendationReason, type SensoryProfile, type TextureTag } from '@flavorpilot/contracts/domain';
@@ -17,7 +18,6 @@ const zeroProfile = (): SensoryProfile => ({ sweetness: 0, acidity: 0, saltiness
 const clamp = (value: number, min = 0, max = 100) => Math.min(max, Math.max(min, value));
 const round = (value: number, digits = 0) => { const factor = 10 ** digits; return Math.round(value * factor) / factor; };
 const unique = <T>(items: T[]) => Array.from(new Set(items));
-const intersects = <T>(left: T[], right: T[]) => left.some(value => right.includes(value));
 const jaccard = (left: string[], right: string[]) => {
     const a = new Set(left), b = new Set(right);
     const intersection = [...a].filter(value => b.has(value)).length;
@@ -31,7 +31,7 @@ const getPreparedIngredient = (ingredient: Ingredient, preparationId: string): P
         const multiplier = preparation?.profileMultiplier[dimension] ?? 1;
         preparedProfile[dimension] = clamp(ingredient.profile[dimension] * multiplier, 0, 10);
     }
-    return { ingredient, profile: preparedProfile, intensity: clamp(ingredient.intensity * (preparation?.intensityMultiplier ?? 1), 0, 10), aromas: unique([...ingredient.aromas, ...(preparation?.addAromas ?? [])]), textures: unique([...ingredient.textures, ...(preparation?.addTextures ?? [])]) };
+    return { ingredient, profile: preparedProfile, intensity: clamp(ingredient.intensity * (preparation?.intensityMultiplier ?? 1), 0, 10), aromas: unique([...ingredient.aromas, ...(preparation?.addAromas ?? [])]), textures: preparedTextureTags(ingredient.textures,preparation?.addTextures,preparation?.id) };
 };
 const toWeightedItems = (items: DishItem[]): WeightedItem[] => items.filter(item => Number.isFinite(item.grams) && item.grams > 0).map(item => {
     const ingredient = catalogueById.get(item.ingredientId);
@@ -55,11 +55,6 @@ const dishProfile = (items: WeightedItem[]) => {
     }
     return { profile, observed };
 };
-const textureContrast = (a: TextureTag[], b: TextureTag[]) => {
-    const hard: TextureTag[] = ['crisp', 'crunchy', 'firm', 'fibrous'];
-    const soft: TextureTag[] = ['tender', 'creamy', 'silky', 'juicy', 'flaky', 'sticky'];
-    return (intersects(a, hard) && intersects(b, soft)) || (intersects(b, hard) && intersects(a, soft)) ? 1 : 0;
-};
 export const calculatePair = (left: PreparedIngredient, right: PreparedIngredient): PairResult => {
     const aromaOverlap = jaccard(left.aromas, right.aromas);
     const acidFat = Math.max(left.profile.acidity * right.profile.fat, right.profile.acidity * left.profile.fat);
@@ -67,7 +62,7 @@ export const calculatePair = (left: PreparedIngredient, right: PreparedIngredien
     const sweetBitter = Math.max(left.profile.sweetness * right.profile.bitterness, right.profile.sweetness * left.profile.bitterness);
     const sweetPungent = Math.max(left.profile.sweetness * right.profile.pungency, right.profile.sweetness * left.profile.pungency);
     const acidUmami = Math.max(left.profile.acidity * right.profile.umami, right.profile.acidity * left.profile.umami);
-    const complementScore = (acidFat / 100) * 16 + (freshFat / 100) * 8 + (sweetBitter / 100) * 5 + (sweetPungent / 100) * 7 + (acidUmami / 100) * 5 + textureContrast(left.textures, right.textures) * 7;
+    const complementScore = (acidFat / 100) * 16 + (freshFat / 100) * 8 + (sweetBitter / 100) * 5 + (sweetPungent / 100) * 7 + (acidUmami / 100) * 5;
     const intensityPenalty = Math.max(0, Math.abs(left.intensity - right.intensity) - 4) * 1.7;
     const explicitAdjustment = getPairAdjustment(left.ingredient.id, right.ingredient.id);
     const score = clamp(48 + aromaOverlap * 28 + complementScore + explicitAdjustment - intensityPenalty);
@@ -138,16 +133,7 @@ const calculateQuantityScore = (items: WeightedItem[], totalWeight: number) => {
     return sumWeight === 0 ? 0 : weightedScore / sumWeight;
 };
 const calculateTextureScore = (items: WeightedItem[]) => {
-    if (items.length === 0)
-        return 0;
-    if (items.length === 1)
-        return 44;
-    const tags = unique(items.flatMap(item => item.textures));
-    let contrasts = 0;
-    for (let l = 0; l < items.length; l++)
-        for (let r = l + 1; r < items.length; r++)
-            contrasts += textureContrast(items[l].textures, items[r].textures);
-    return clamp(45 + tags.length * 6.5 + Math.min(contrasts, 4) * 7);
+    return textureContrastPotential(items.map(item=>({grams:item.item.grams,textures:item.textures,textureIntensity:item.ingredient.textureIntensity})));
 };
 const findDominantIngredient = (items: WeightedItem[]) => {
     const totalImpact = items.reduce((sum, item) => sum + item.impact, 0);
@@ -158,7 +144,7 @@ const findDominantIngredient = (items: WeightedItem[]) => {
     const isBase = top.ingredient.roles.includes('base'), threshold = isBase ? .84 : .56;
     return impactShare > threshold || (!isBase && gramShare > .5) ? { ingredientId: top.ingredient.id, share: impactShare } : undefined;
 };
-const buildIssues = (items: WeightedItem[], profile: SensoryProfile, textureScore: number, observed: ReadonlySet<(typeof sensoryDimensions)[number]>, dominant?: {
+const buildIssues = (items: WeightedItem[], profile: SensoryProfile, observed: ReadonlySet<(typeof sensoryDimensions)[number]>, dominant?: {
     ingredientId: string;
     share: number;
 }): DishIssue[] => {
@@ -194,8 +180,6 @@ const buildIssues = (items: WeightedItem[], profile: SensoryProfile, textureScor
         issues.push({ code: 'lowUmami', severity: 'info' });
     if (dominant)
         issues.push({ code: 'dominantIngredient', severity: 'warning', ingredientId: dominant.ingredientId, value: round(dominant.share * 100) });
-    if (textureScore < 60 && items.length >= 3)
-        issues.push({ code: 'flatTexture', severity: 'info' });
     return issues;
 };
 const analyzeWeightedItems = (weightedItems: WeightedItem[], goal: DishGoal, pairs = pairResults(weightedItems)) => {
@@ -204,9 +188,9 @@ const analyzeWeightedItems = (weightedItems: WeightedItem[], goal: DishGoal, pai
     const balanceScore = calculateBalance(profile, goal, observed), quantityScore = calculateQuantityScore(weightedItems, totalWeight), textureScore = calculateTextureScore(weightedItems);
     const dominant = findDominantIngredient(weightedItems);
     const explicitCoverage = pairs.length === 0 ? 0 : pairs.filter(pair => pair.explicitAdjustment !== 0).length / pairs.length;
-    const confidence = clamp(55 + explicitCoverage * 28 + Math.min(14, weightedItems.length * 3.5), 0, 96);
-    const overallScore = weightedItems.length === 0 ? 0 : clamp(compatibilityScore * .38 + balanceScore * .32 + quantityScore * .16 + textureScore * .14);
-    return { weightedItems, totalWeight, profile, pairs, compatibilityScore, balanceScore, quantityScore, textureScore, dominant, confidence, overallScore, issues: buildIssues(weightedItems, profile, textureScore, observed, dominant) };
+    const confidence = clamp(55 + explicitCoverage * 28, 0, 96);
+    const overallScore = weightedItems.length === 0 ? 0 : compositionIndex(compatibilityScore,balanceScore,quantityScore);
+    return { weightedItems, totalWeight, profile, pairs, compatibilityScore, balanceScore, quantityScore, textureScore, dominant, confidence, overallScore, issues: buildIssues(weightedItems, profile, observed, dominant) };
 };
 const coreAnalysis = (items: DishItem[], goal: DishGoal) => analyzeWeightedItems(toWeightedItems(items), goal);
 export const recommendedIngredientGrams = (ingredient: Ingredient, totalWeight: number) => {
@@ -289,7 +273,7 @@ const generateRecommendations = (items: DishItem[], goal: DishGoal, current: Ret
             continue;
         const goalMatch = goalDefinitions[goal].preferredRoles.some(role => candidate.roles.includes(role));
         const balanceContribution = clamp(50 + balanceDelta * 6.5);
-        const utility = clamp(compatibility * .5 + balanceContribution * .34 + (goalMatch ? 10 : 2) + (simulated.textureScore - current.textureScore > 4 ? 4 : 0));
+        const utility = clamp(compatibility * .5 + balanceContribution * .34 + (goalMatch ? 10 : 2));
         const reasons = recommendationReasons(preparedCandidate, current, simulated, compatibility, goal);
         const profileChanges = sensoryDimensions.filter(dimension => simulated.profile[dimension] !== current.profile[dimension])
             .map(dimension => ({ dimension, before: current.profile[dimension], after: simulated.profile[dimension] }))

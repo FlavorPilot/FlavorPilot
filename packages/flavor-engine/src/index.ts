@@ -1,4 +1,5 @@
 export * from './engine';
+export {compositionIndex,preparedTextureTags,textureContrastPotential,textureSeparation} from './scoring-policy';
 export { dishComposition } from './composition';
 export { preparationMethods, preparationById, explicitPairAdjustments, getPairAdjustment, goalDefinitions, defaultDish, publicDishSeeds, allPreparationIds, ingredients as transcribedIngredients, ingredientById as transcribedIngredientById, } from './ingredients';
 export type { GoalDefinition } from './ingredients';
