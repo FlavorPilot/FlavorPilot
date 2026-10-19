@@ -47,7 +47,8 @@ create table public.dishes (
 );
 create table public.dish_items (
  id uuid primary key default gen_random_uuid(),dish_id uuid not null references public.dishes(id) on delete cascade,ingredient_id text not null references public.ingredients(id),
- grams numeric(10,3) not null check (grams>0 and grams<=5000),preparation_id text not null references public.preparation_methods(id),position smallint not null default 0 check (position>=0),note text check (note is null or char_length(note)<=2000),created_at timestamptz not null default now()
+ grams numeric(10,3) not null check (grams>0 and grams<=5000),input_unit text,input_quantity numeric,input_grams_per_unit numeric,preparation_id text not null references public.preparation_methods(id),position smallint not null default 0 check (position>=0),note text check (note is null or char_length(note)<=2000),created_at timestamptz not null default now(),
+ constraint dish_items_input_amount_check check ((input_unit is null and input_quantity is null and input_grams_per_unit is null) or (input_unit is not null and input_quantity is not null and input_grams_per_unit is not null and input_unit in ('piece','ml') and input_quantity>0 and input_quantity<=1000000 and input_grams_per_unit>0 and input_grams_per_unit<=1000000000 and abs(grams-round(input_quantity*input_grams_per_unit,3))<=0.001))
 );
 create table public.dish_versions (
  id uuid primary key default gen_random_uuid(),dish_id uuid not null references public.dishes(id) on delete cascade,version_number integer not null check (version_number>0),snapshot jsonb not null,created_by uuid not null references public.profiles(id),created_at timestamptz not null default now(),unique(dish_id,version_number)

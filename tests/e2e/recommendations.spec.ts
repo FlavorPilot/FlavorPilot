@@ -32,7 +32,7 @@ test('recalculates portions and applies the exact recommendation without changin
     await expect(preview).toHaveCount(0);
     const added = page.getByTestId('ingredient-row').filter({ has: page.getByText(name, { exact: true }) });
     await expect(added.locator('input')).toHaveValue(String(grams));
-    await expect(added.locator('select option:checked')).toHaveText(preparation);
+    await expect(added.locator('.ingredient-row__prep select option:checked')).toHaveText(preparation);
     await expect(page.locator('.score-ring strong')).toHaveText(String(before + delta));
     await expect(page.getByTestId('ingredient-row')).toHaveCount(initialRows + 1);
 });

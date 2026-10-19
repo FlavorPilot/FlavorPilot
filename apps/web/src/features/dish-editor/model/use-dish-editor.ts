@@ -137,7 +137,7 @@ export function useDishEditor(locale: Locale, scope = 'guest') {
         replace({ ...state.present, items: [...state.present.items, { ingredientId, preparationId: prep, grams: Math.min(5000, amount) }] });
     }
     function update(index: number, patch: Partial<DishItem>) {
-        const items = state.present.items.map((item, i) => i === index ? { ...item, ...patch } : item);
+        const items = state.present.items.map((item, i) => i === index ? { ...item, ...patch, ...(item.amount && patch.grams!==undefined && !('amount' in patch)?{amount:{...item.amount,gramsPerUnit:patch.grams/item.amount.quantity}}:{}) } : item);
         const keys = items.map(item => `${item.ingredientId}::${item.preparationId}`);
         if (new Set(keys).size !== keys.length) {
             setError('duplicate');

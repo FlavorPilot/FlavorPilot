@@ -108,6 +108,8 @@ export interface DishItem {
     ingredientId: string;
     grams: number;
     preparationId: string;
+    /** Original input for display. Grams remain the canonical edible mass, including manual corrections. */
+    amount?: { unit: 'piece' | 'ml'; quantity: number; gramsPerUnit: number };
 }
 export const issueCodes = ['emptyDish', 'singleIngredient', 'fatNeedsAcid', 'tooSweet', 'tooIntense', 'lowFreshness', 'dominantIngredient', 'outsideRecommendedRange', 'flatTexture', 'highSalt', 'lowUmami'] as const;
 export type IssueCode = typeof issueCodes[number];

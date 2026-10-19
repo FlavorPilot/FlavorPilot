@@ -1,0 +1,44 @@
+import {expect,test} from '@playwright/test';
+import {readFile} from 'node:fs/promises';
+const egg={ingredientId:'egg',grams:150,preparationId:'raw'};
+test('pieces preserve grams, Undo, measured weight, reload and exported quantities',async({page})=>{
+ await page.goto('/en/library');
+ await page.locator('input[type=file]').setInputFiles({name:'eggs.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({format:'flavorpilot.recipe',version:2,name:'Three eggs',goal:'balanced',items:[egg,{ingredientId:'milk',grams:100,preparationId:'raw'}]}))});
+ const row=page.getByTestId('ingredient-row').first(),quantity=row.getByLabel('Egg — Amount',{exact:true});
+ const score=page.locator('.score-ring strong'),before=await score.innerText();
+ await row.getByLabel('Egg — Input unit').selectOption('piece');
+ await expect(quantity).toHaveValue('3');await expect(row).toContainText('≈ 150 g');await expect(score).toHaveText(before);
+ await quantity.fill('4');await expect(row).toContainText('≈ 200 g');
+ await page.getByRole('button',{name:/^Undo/}).click();await expect(quantity).toHaveValue('3');await expect(row).toContainText('≈ 150 g');
+ await quantity.fill('3,5');await expect(row).toContainText('≈ 175 g');
+ await row.getByText('Adjust edible weight',{exact:true}).click();
+ await row.getByLabel('Egg — Edible weight, g',{exact:true}).fill('182');await expect(row).toContainText('≈ 182 g');
+ await page.waitForTimeout(500);await page.reload();await expect(quantity).toHaveValue('3.5');await expect(row).toContainText('≈ 182 g');
+ await quantity.fill('4');await expect(row).toContainText('≈ 208 g');
+ const response=page.waitForResponse(r=>r.url().includes('/v1/flavor/analyze')&&r.request().method()==='POST');
+ await page.getByRole('button',{name:'Verify with server',exact:true}).click();
+ expect((await (await response).json()).totalWeight).toBe(308);
+ const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:/Export JSON/}).click();const download=await downloadPromise;
+ const exported=JSON.parse(await readFile((await download.path())!,'utf8'));
+ expect(exported.items[0]).toMatchObject({grams:208,amount:{unit:'piece',quantity:4,gramsPerUnit:52}});
+ await row.getByLabel('Egg — Input unit').selectOption('g');await expect(quantity).toHaveValue('208');
+ await row.getByLabel('Egg — Input unit').selectOption('piece');await expect(row).toContainText('≈ 208 g');
+ await quantity.fill('0');await quantity.blur();await expect(row.getByRole('alert')).toBeVisible();await expect(row).toContainText('≈ 208 g');
+});
+
+test('ml uses ingredient-specific density, keeps precision and works on Ukrainian mobile',async({page})=>{
+ await page.goto('/en/library');
+ await page.locator('input[type=file]').setInputFiles({name:'milk.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({name:'Milk',goal:'balanced',items:[{ingredientId:'milk',grams:100,preparationId:'raw'}]}))});
+ const row=page.getByTestId('ingredient-row').first();
+ await row.getByLabel('Milk — Input unit').selectOption('ml');
+ const quantity=row.getByLabel('Milk — Amount',{exact:true});
+ for(const value of ['0.1','1','10','100'])await quantity.fill(value);
+ await expect(row).toContainText('≈ 103.133 g');
+ await page.setViewportSize({width:375,height:812});await page.getByRole('link',{name:'Switch language',exact:true}).click();
+ await expect(row.getByLabel('Молоко — Одиниця введення')).toHaveValue('ml');
+ await expect(row).toContainText('≈ 103,133 г');
+ await row.getByText('Уточнити їстівну вагу',{exact:true}).click();
+ await expect(row.getByLabel('Молоко — Їстівна вага, г',{exact:true})).toHaveValue('103.133');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+ await row.scrollIntoViewIfNeeded();await row.screenshot({path:'.local/amount-units-uk-mobile.png'});
+});

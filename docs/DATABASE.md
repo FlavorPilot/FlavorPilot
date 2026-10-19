@@ -129,6 +129,13 @@ See [API.md](API.md) for quotas, timeout reservations and remaining reconciliati
 
 ## Rollback procedure
 
+For original ingredient quantities, apply `20261019232430_ingredient_amount_units.sql`
+before deploying its API/web. Three nullable scalar columns on dish_items retain input
+unit/quantity/factor with a bounded consistency check. Existing grams and records are not
+rewritten; grants, RLS and ownership rules are unchanged. The migration is repeatable and
+fresh schema has the same definition. Keep columns when reverting application code.
+See [INGREDIENT_UNITS.md](INGREDIENT_UNITS.md).
+
 Do not reverse grants automatically on a production database. Roll back the API application and
 review whether old clients still require direct Data API access. Keep private access closed until
 review. Restore from the tested backup only with an explicit data-loss/window decision. No

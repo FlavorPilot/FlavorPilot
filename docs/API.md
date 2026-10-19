@@ -20,6 +20,13 @@ must resolve in the kernel catalogue. Save requires 1–24 items; live analysis 
 composition. Per-row grams must be finite, positive and <=5000. Existing canonical IDs do not
 change with the interface language. Exact repeat ingredient/method rows are rejected.
 
+Ingredient rows may additionally contain `amount:{unit:'piece'|'ml',quantity,gramsPerUnit}`.
+Grams remain canonical; optional input metadata must match the mass rounded to 0.001 g and
+the ingredient must support the unit. A user may explicitly correct edible weight/factor.
+Responses, updates, snapshots and remixes preserve the metadata. Legacy gram-only rows
+remain valid. Apply the additive unit migration before the matching API/web release; see
+[INGREDIENT_UNITS.md](INGREDIENT_UNITS.md) for references, precision, limits and rollback.
+
 `POST /flavor/analyze` includes `composition` with six nutrient totals. Each total contains
 `coveredItems`, `totalItems`, and `contributions`: ingredient/preparation IDs, grams, nullable
 `per100g`/`amount`, nullable `fdcId`/`sourceDescription`. Contributions retain full precision;

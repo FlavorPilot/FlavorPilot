@@ -19,6 +19,8 @@ function load(relative) {
     const sandbox = { module, exports: module.exports, require: (name) => {
             if (name === '@/entities/dish')
                 return load('entities/dish/model/types.ts');
+            if (name === '@flavorpilot/flavor-engine')
+                return load('../../../packages/flavor-engine/src/amounts.ts');
             throw new Error('Pure-model test tried to load a non-model dependency: ' + name);
         } };
     vm.runInNewContext(outputText, sandbox, { filename: relative });

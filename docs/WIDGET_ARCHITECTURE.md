@@ -50,6 +50,12 @@ Local input strings (e.g. incomplete grams) may live inside a row until valid. S
 and collapsible help are UI-only state. Private/account identifiers remain in the draft entity,
 not public visual models. Data loading/error boundaries surround coherent widgets.
 
+Ingredient rows offer grams and reference-backed pieces/ml. The shared engine's pure unit
+helpers produce canonical edible grams; the same editor reducer retains optional original
+quantity/factor for Undo and persistence. A row's decimal text and open weight details remain
+presentation state. Read-only recipe/context views display the retained units beside gram
+equivalents. See [INGREDIENT_UNITS.md](INGREDIENT_UNITS.md) for sources and database rollout.
+
 ## Visual structure
 
 Desktop: composition and assessment side by side; recommendations below. Mobile: composition,

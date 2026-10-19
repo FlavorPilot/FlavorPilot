@@ -1,4 +1,5 @@
 export const en = {
+    portionLabels: {largeEgg:'Large egg, without shell',garlicClove:'Garlic clove',limeFruit:'Lime, reference fruit',peeledLemon:'Lemon, without peel',avocadoFlesh:'Avocado, edible portion of reference fruit',mediumOnion:'Medium onion',mediumTomato:'Medium tomato',peeledBanana:'Medium banana, without peel',wholeMilkDensity:'Whole milk, reference density',oliveOilDensity:'Olive oil, reference density'},
     "messages": {
         "aiMonthlyReset": "Monthly allowance renews",
         "aiDailyReset": "Daily allowance renews",
@@ -324,7 +325,15 @@ export const en = {
         "compositionHint": "Amounts and preparation belong to this dish, not to a generic pairing.",
         "ingredients": "Ingredients",
         "grams": "g",
-        "amount": "Amount, grams",
+        "amount": "Amount",
+        "amountUnit": "Input unit",
+        "pieces": "pcs",
+        "millilitres": "ml",
+        "adjustEdibleWeight": "Adjust edible weight",
+        "edibleWeight": "Edible weight, g",
+        "unitEstimateNote": "The weight is approximate and depends on size or density. Enter the measured edible weight without shells, stones or discarded peel. Calculations always use grams. A corrected weight is retained when you change the quantity.",
+        "amountSource": "USDA portion reference",
+        "invalidUnitAmount": "Enter a positive amount corresponding to 0.001–5,000 g.",
         "preparation": "Preparation",
         "remove": "Remove",
         "searchIngredients": "Search ingredients…",

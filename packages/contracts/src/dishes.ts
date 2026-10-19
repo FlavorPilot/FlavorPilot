@@ -15,7 +15,7 @@ export const updateDishRequestSchema = z.object({
 }).refine(value => Object.keys(value).some(key => key !== 'expectedVersionNumber'), { message: 'At least one field must be supplied' });
 export type UpdateDishRequest = z.input<typeof updateDishRequestSchema>;
 export type NormalizedUpdateDishRequest = z.output<typeof updateDishRequestSchema>;
-export const dishItemResponseSchema = dishItemSchema.extend({ id: uuidSchema, position: z.number().int().nonnegative(), note: z.string().nullable() });
+export const dishItemResponseSchema = dishItemSchema.safeExtend({ id: uuidSchema, position: z.number().int().nonnegative(), note: z.string().nullable() });
 export const dishOwnerSchema = z.object({ id: uuidSchema, username: z.string(), displayName: z.string().nullable(), avatarUrl: z.string().nullable() });
 export const dishResponseSchema = z.object({
     versionNumber: z.number().int().positive().default(1), moderationHidden:z.boolean().default(false), servings: recipeContentSchema.shape.servings, steps: recipeContentSchema.shape.steps,

@@ -1,5 +1,41 @@
 # Actual validation — widget-monorepo-r2
 
+## Original quantities with canonical edible grams — 2026-10-20
+
+Pieces are available for eight reference-backed foods (including large eggs and garlic
+cloves), and ml for milk/olive oil; all foods retain grams. Optional original quantity/unit/
+factor persists while scoring and nutrient calculations use only grams. Switching units
+preserves mass; editing uses a stored factor and one 0.001-g rounding, avoiding accumulated
+drift. Manual edible-weight correction survives quantity edits, reload, JSON, cloud snapshots
+and remixes. All new copy is EN/UK. See [INGREDIENT_UNITS.md](INGREDIENT_UNITS.md).
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed structure/layer checks, 16 pure editor/locale checks, 27 kernel checks, all workspace typechecks and 139 Vitest tests |
+| `npm run check:syntax` | Passed, 235 files; syntax only, separate from dependency-aware checks above |
+| Compiled API integration suite | 29 passed; includes identical gram/unit analyses, original/corrected quantities, non-owner denial, public remix, snapshots, inconsistent/unsupported units, old-schema upgrade with a pre-existing recipe, repeated migration and invalid SQL quantity rejection |
+| Browser coverage | 20 distinct cases passed across the initial run and focused rerun: core flows, feedback/discussion, exact recommendations, texture regressions and both new unit scenarios |
+| USDA source comparison | All 10 food/portion IDs, source gram weights and exact measure descriptions matched the downloaded SR Legacy 2018-04 CSV |
+| `npm run build` | Passed contracts, engine, Nest and Next production output, 27 generated pages; run after browser checks |
+
+The first new browser fixture had only one ingredient and incorrectly waited for a score
+that the UI deliberately hides in that state. The fixture now contains egg and milk; both
+unit scenarios passed the focused rerun. They check unit-only score invariance, Undo, comma
+input, corrected mass, reload/export, server weight and invalid input preservation. The
+inspected Ukrainian 375px capture `.local/amount-units-uk-mobile.png` has usable controls,
+visible gram equivalence, edible-weight details and no document overflow. Local checks used
+isolated PostgreSQL/Auth stubs through the temporary loopback bridge, without AI requests.
+
+Hosted migration `20261019232430_ingredient_amount_units` was applied after local upgrade/
+repeatability checks. It adds nullable input metadata and a consistency check to dish_items;
+existing grams, recipes, grants and row security remain. Row security was verified enabled.
+Security advisor results before/after are unchanged: ten intentional closed-table
+[RLS/no-policy informational findings](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)
+and the pre-existing
+[leaked-password protection warning](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+The CLI-created migration file was aligned to the actual hosted migration-history version.
+Reference weights remain estimates, not measured weights for a user's individual products.
+
 ## Mass-weighted texture and composition index — 2026-10-20
 
 Model 0.4.0-hypothesis replaces count/tag bonuses with mass-weighted structural contrast.

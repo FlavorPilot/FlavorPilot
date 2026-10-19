@@ -48,7 +48,7 @@ test('author feedback captures a private draft, survives a failed request and do
     expect(result.cooked).toBe(true);expect(result.concerns).toEqual(['balance']);
     expect(result.dishId).toBeNull();expect(result.analysis.overallScore).toBeGreaterThan(0);
     await expect(page.getByText('Feedback saved for this snapshot. It is not a public comment.')).toBeVisible();
-    await page.getByLabel('Salmon — Amount, grams').fill('160');
+    await page.getByLabel('Salmon — Amount').fill('160');
     await expect(page.getByText('Feedback saved for this snapshot. It is not a public comment.')).toHaveCount(0);
     await page.getByRole('button',{name:'Review this prediction',exact:true}).click();
     await expect(dialog.getByRole('textbox',{name:'What was different? (optional)'})).toHaveValue('');

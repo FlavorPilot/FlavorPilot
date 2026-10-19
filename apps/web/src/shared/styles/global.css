@@ -874,6 +874,17 @@ legend {
   align-items: center;
   position: relative;
 }
+.ingredient-row__amount { min-width: 0; }
+.amount-entry { display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
+.amount-entry input { width:0; min-width:35px; flex:1; padding:10px 5px; text-align:right; font-variant-numeric:tabular-nums; }
+.amount-entry select { flex:0 0 55px; width:55px; }
+.amount-entry > .field-error { flex-basis:100%; }
+.amount-entry > span { color:var(--subtle); font-size:11px; }
+.amount-equivalent { display:block; margin-top:4px; color:var(--subtle); font-size:11px; text-align:right; }
+.ingredient-row__conversion { grid-column:1/-1; font-size:12px; overflow-wrap:anywhere; }
+.ingredient-row__conversion summary { cursor:pointer; color:var(--accent); min-height:28px; }
+.ingredient-row__conversion p { margin:8px 0; }
+.ingredient-row__conversion label { display:block; max-width:240px; margin-bottom:10px; }
 
 .number-field input {
   text-align: right;
@@ -2761,3 +2772,7 @@ legend {
   }
 }
 
+
+@media(min-width:441px) {
+ .ingredient-row,.ingredient-columns { grid-template-columns:minmax(0,1fr) 114px 122px 34px; }
+}

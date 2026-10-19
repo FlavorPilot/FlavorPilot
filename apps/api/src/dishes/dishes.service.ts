@@ -81,7 +81,7 @@ export class DishesService {
         const existing = await this.getMine(ownerId, id);
         if (input.expectedVersionNumber !== undefined && input.expectedVersionNumber !== existing.versionNumber)
             throw new ConflictException({ code: 'DISH_UPDATE_CONFLICT', message: 'Reload the changed recipe before saving' });
-        const nextItems = input.items ?? existing.items.map(({ ingredientId, grams, preparationId }) => ({ ingredientId, grams, preparationId }));
+        const nextItems = input.items ?? existing.items.map(({ ingredientId, grams, preparationId,amount }) => ({ ingredientId, grams, preparationId,...(amount?{amount}:{}) }));
         assertValidDishItems(nextItems);
         const visibility = input.visibility ?? existing.visibility;
         // Keep existing private recipes private/editable after a downgrade. Limit only an increase.
@@ -121,7 +121,7 @@ export class DishesService {
         visibility: DishVisibility;
     }): Promise<DishResponse> {
         const source = await this.getPublic(sourceId);
-        return this.create(ownerId, { name: options.name ?? `${source.name} remix`, goal: source.goal, visibility: options.visibility, servings: source.servings, steps: source.steps, description: source.description, imageUrl: null, parentDishId: source.id, items: source.items.map(({ ingredientId, grams, preparationId }) => ({ ingredientId, grams, preparationId })) });
+        return this.create(ownerId, { name: options.name ?? `${source.name} remix`, goal: source.goal, visibility: options.visibility, servings: source.servings, steps: source.steps, description: source.description, imageUrl: null, parentDishId: source.id, items: source.items.map(({ ingredientId, grams, preparationId,amount }) => ({ ingredientId, grams, preparationId,...(amount?{amount}:{}) })) });
     }
     private async selectRows(db: FlavorPilotDatabase, condition: SQL, limit: number): Promise<DishSelectRow[]> {
         return db.select({ servings: dishes.servings, steps: dishes.steps, moderationHidden:dishes.moderationHidden, versionNumber: sql<number>`(select coalesce(max(v.version_number), 1)::int from public.dish_versions v where v.dish_id = ${dishes.id})`, id: dishes.id, ownerId: dishes.ownerId, name: dishes.name, goal: dishes.goal, visibility: dishes.visibility, shareToken: dishes.shareToken, parentDishId: dishes.parentDishId, description: dishes.description, imageUrl: dishes.imageUrl, publishedAt: dishes.publishedAt, createdAt: dishes.createdAt, updatedAt: dishes.updatedAt, ownerUsername: profiles.username, ownerDisplayName: profiles.displayName, ownerAvatarUrl: profiles.avatarUrl }).from(dishes).leftJoin(profiles, eq(profiles.id, dishes.ownerId)).where(condition).orderBy(desc(dishes.publishedAt), desc(dishes.updatedAt)).limit(limit);
@@ -146,7 +146,7 @@ export class DishesService {
         return result;
     }
     private serialize(row: DishSelectRow, items: DishItemRow[], exposeToken: boolean): DishResponse {
-        return { servings: row.servings, steps: row.steps, moderationHidden:row.moderationHidden, versionNumber: row.versionNumber, id: row.id, ownerId: row.ownerId, name: row.name, goal: row.goal, visibility: row.visibility, ...(exposeToken ? { shareToken: row.shareToken } : {}), parentDishId: row.parentDishId, description: row.description, imageUrl: row.imageUrl, publishedAt: row.publishedAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), owner: row.ownerUsername ? { id: row.ownerId, username: row.ownerUsername, displayName: row.ownerDisplayName, avatarUrl: row.ownerAvatarUrl } : undefined, items: items.map(item => ({ id: item.id, ingredientId: item.ingredientId, grams: Number(item.grams), preparationId: item.preparationId, position: item.position, note: item.note })) };
+        return { servings: row.servings, steps: row.steps, moderationHidden:row.moderationHidden, versionNumber: row.versionNumber, id: row.id, ownerId: row.ownerId, name: row.name, goal: row.goal, visibility: row.visibility, ...(exposeToken ? { shareToken: row.shareToken } : {}), parentDishId: row.parentDishId, description: row.description, imageUrl: row.imageUrl, publishedAt: row.publishedAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), owner: row.ownerUsername ? { id: row.ownerId, username: row.ownerUsername, displayName: row.ownerDisplayName, avatarUrl: row.ownerAvatarUrl } : undefined, items: items.map(item => ({ id: item.id, ingredientId: item.ingredientId, grams: Number(item.grams), preparationId: item.preparationId, position: item.position, note: item.note,...(item.inputUnit&&item.inputQuantity?{amount:{unit:item.inputUnit,quantity:Number(item.inputQuantity),gramsPerUnit:Number(item.inputGramsPerUnit)}}:{}) })) };
     }
     private async assertParent(ownerId: string, parentDishId: string | null) {
         if (!parentDishId)
@@ -173,7 +173,7 @@ export class DishesService {
         await tx.delete(dishItems).where(eq(dishItems.dishId, dishId));
         if (!items.length)
             return;
-        await tx.insert(dishItems).values(items.map((item, position) => ({ dishId, ingredientId: item.ingredientId, grams: item.grams.toString(), preparationId: item.preparationId, position })));
+        await tx.insert(dishItems).values(items.map((item, position) => ({ dishId, ingredientId: item.ingredientId, grams: item.grams.toString(), inputUnit:item.amount?.unit??null,inputQuantity:item.amount?.quantity.toString()??null,inputGramsPerUnit:item.amount?.gramsPerUnit.toString()??null, preparationId: item.preparationId, position })));
     }
     private snapshot(input: {
         servings?: number | null;

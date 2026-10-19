@@ -1,4 +1,5 @@
 'use client';
+import {formatItemAmount} from '@/entities/dish';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { analyzeDish } from '@flavorpilot/flavor-engine';
@@ -78,7 +79,7 @@ export function RecipeScreen({ locale, id, shared = false }: {
         {recipe.servings !== null && <p>{t.recipeServings}: {formatNumber(recipe.servings, locale, 0)}</p>}
         <ol>{recipe.steps.map(step => <li key={step.id} className="recipe-reading">{step.text}</li>)}</ol>
     </WidgetFrame>}
-    <div className="studio-grid"><WidgetFrame id="recipe-composition" title={t.composition} icon="flask"><div className="read-only-items">{recipe.items.map((item, index) => <div key={index}><span>{ingredientById.get(item.ingredientId)?.name[locale] ?? item.ingredientId}<small>{preparationById.get(item.preparationId)?.name[locale] ?? item.preparationId}</small></span><strong>{formatNumber(item.grams, locale)} {t.grams}</strong></div>)}</div></WidgetFrame><DishAnalysis locale={locale} analysis={analysis} itemCount={recipe.items.length} feedback={recipe.origin === 'cloud' && session && recipe.ownerId === session.user.id ? <ModelFeedback key={session.user.id} locale={locale} token={session.access_token} dishId={recipe.id} dishVersionNumber={recipe.versionNumber} recipe={{name:recipe.name,description:recipe.description,servings:recipe.servings,steps:recipe.steps,goal:recipe.goal,items:recipe.items}}/> : undefined}/></div>
+    <div className="studio-grid"><WidgetFrame id="recipe-composition" title={t.composition} icon="flask"><div className="read-only-items">{recipe.items.map((item, index) => <div key={index}><span>{ingredientById.get(item.ingredientId)?.name[locale] ?? item.ingredientId}<small>{preparationById.get(item.preparationId)?.name[locale] ?? item.preparationId}</small></span><strong>{formatItemAmount(item,locale)}</strong></div>)}</div></WidgetFrame><DishAnalysis locale={locale} analysis={analysis} itemCount={recipe.items.length} feedback={recipe.origin === 'cloud' && session && recipe.ownerId === session.user.id ? <ModelFeedback key={session.user.id} locale={locale} token={session.access_token} dishId={recipe.id} dishVersionNumber={recipe.versionNumber} recipe={{name:recipe.name,description:recipe.description,servings:recipe.servings,steps:recipe.steps,goal:recipe.goal,items:recipe.items}}/> : undefined}/></div>
     {discussionId && <RecipeComments discussion={discussion} locale={locale} userId={session?.user.id} versionNumber={recipe.versionNumber ?? 1} onRefreshRecipe={refreshRecipe}/>}
     <div className="studio-grid studio-grid--details"><SensoryProfile locale={locale} profile={analysis.profile}/><IngredientPairings locale={locale} pairs={analysis.pairResults}/></div>
   </div>;

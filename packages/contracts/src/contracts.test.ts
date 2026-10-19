@@ -2,6 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { createDishRequestSchema, updateDishRequestSchema, dishItemSchema, analyzeDishRequestSchema, aiExplainRequestSchema, localeSchema } from './index';
 const item = { ingredientId: 'salmon', grams: 180, preparationId: 'raw' };
 describe('external contract boundaries', () => {
+    it('retains original quantities and requires them to match the canonical edible grams',()=>{
+        const counted={...item,ingredientId:'egg',grams:150,amount:{unit:'piece',quantity:3,gramsPerUnit:50}};
+        expect(dishItemSchema.parse(counted)).toEqual(counted);
+        expect(dishItemSchema.safeParse({...counted,grams:180}).success).toBe(false);
+        for(const amount of [{unit:'cup',quantity:3,gramsPerUnit:50},{unit:'piece',quantity:0,gramsPerUnit:50},{unit:'piece',quantity:3,gramsPerUnit:Infinity}])expect(dishItemSchema.safeParse({...counted,amount}).success).toBe(false);
+    });
     it('requires positive finite amounts', () => { for (const grams of [0, -1, Infinity, NaN, 5001])
         expect(dishItemSchema.safeParse({ ...item, grams }).success).toBe(false); });
     it('accepts en and uk, not ua or ru', () => { expect(localeSchema.parse('uk')).toBe('uk'); for (const x of ['ua', 'ru'])

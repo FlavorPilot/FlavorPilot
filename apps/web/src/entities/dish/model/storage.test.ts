@@ -14,6 +14,14 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 describe('device recipes and scoped working drafts', () => {
+    it('preserves original units and a corrected edible weight through device storage and JSON',()=>{
+        const counted={ingredientId:'egg',grams:162,preparationId:'raw',amount:{unit:'piece' as const,quantity:3,gramsPerUnit:54}};
+        const draft={...emptyDraft(),name:'Three eggs',items:[counted]};
+        saveWorkingDraft(draft);expect(loadWorkingDraft()?.items).toEqual([counted]);
+        saveLocalRecipe(draft);expect(localRecipes()[0].items).toEqual([counted]);
+        const restored=importRecipe(recipeExport(draft,'Eggs'));expect(restored.items).toEqual([counted]);
+        expect(()=>importRecipe({...recipeExport(draft,'Eggs'),items:[{...counted,grams:150}]})).toThrow();
+    });
     it('preserves the cloud source version for feedback without exporting identity metadata', () => {
         const recipe={...emptyDraft(),id:'3f304f16-c0bc-41d3-8082-28298bbe3451',name:'Versioned dish',origin:'cloud' as const,createdAt:'2026-10-18T10:00:00.000Z',items,versionNumber:3};
         openRecipeDraft(recipe,'edit','version-test');

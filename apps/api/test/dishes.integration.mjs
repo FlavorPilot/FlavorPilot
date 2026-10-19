@@ -78,6 +78,37 @@ it('serves mass-weighted contrast without treating a smooth preparation as a bad
  assert.deepEqual(blended.body,analyzeDish([raw[0],{...raw[1],preparationId:'pureed'}],'balanced',false));
 });
 
+it('round-trips original units, corrected mass, snapshots and remixes while analysis uses grams',async()=>{
+ const owner=await signup('units'),other=await signup('units-other');
+ const legacy=await api('/dishes',{method:'POST',token:owner.token,body:{name:'Legacy grams',items:[{ingredientId:'egg',grams:150,preparationId:'raw'}]}});
+ assert.equal(legacy.status,201);
+ const migration=readFileSync(fileURLToPath(new URL('../../../supabase/migrations/20261019232430_ingredient_amount_units.sql',import.meta.url)),'utf8');
+ // Isolated resetTestDatabase fixture only: simulate the pre-unit schema with an existing recipe.
+ await sql.unsafe('alter table public.dish_items drop constraint dish_items_input_amount_check, drop column input_unit, drop column input_quantity, drop column input_grams_per_unit');
+ await sql.unsafe(migration);await sql.unsafe(migration);
+ const upgraded=await api(`/dishes/me/${legacy.body.id}`,{token:owner.token});
+ assert.equal(upgraded.status,200);assert.equal(upgraded.body.items[0].grams,150);assert.equal(upgraded.body.items[0].amount,undefined);
+ const unitItems=[{ingredientId:'egg',grams:162,preparationId:'raw',amount:{unit:'piece',quantity:3,gramsPerUnit:54}}];
+ const created=await api('/dishes',{method:'POST',token:owner.token,body:{name:'Three eggs',visibility:'private',items:unitItems}});
+ assert.equal(created.status,201);const id=created.body.id;
+ assert.deepEqual(created.body.items[0].amount,unitItems[0].amount);assert.equal(created.body.items[0].grams,162);
+ assert.equal((await api(`/dishes/me/${id}`,{token:other.token})).status,404);
+ const updated=await api(`/dishes/${id}`,{method:'PATCH',token:owner.token,body:{name:'Same quantities',visibility:'public'}});
+ assert.equal(updated.status,200);assert.deepEqual(updated.body.items[0].amount,unitItems[0].amount);
+ const remixed=await api(`/dishes/${id}/remix`,{method:'POST',token:other.token,body:{visibility:'private'}});
+ assert.equal(remixed.status,201);assert.deepEqual(remixed.body.items[0].amount,unitItems[0].amount);
+ const snapshots=await sql`select snapshot from public.dish_versions where dish_id=${id} order by version_number`;
+ for(const row of snapshots)assert.deepEqual(row.snapshot.items[0],unitItems[0]);
+ const analysis=await api('/flavor/analyze',{method:'POST',body:{items:unitItems,includeRecommendations:false}});
+ assert.equal(analysis.status,201);assert.deepEqual(analysis.body,JSON.parse(JSON.stringify(analyzeDish(unitItems.map(({amount,...item})=>item),'balanced',false))));
+ assert.equal((await api('/flavor/analyze',{method:'POST',body:{items:[{...unitItems[0],grams:150}]}})).status,400);
+ assert.equal((await api('/flavor/analyze',{method:'POST',body:{items:[{...unitItems[0],ingredientId:'salmon'}]}})).status,400);
+ await sql.unsafe(migration);await sql.unsafe(migration);
+ await assert.rejects(()=>sql`update public.dish_items set input_quantity=-1 where dish_id=${id}`);
+ const cleared=await api(`/dishes/${id}`,{method:'PATCH',token:owner.token,body:{items:[{ingredientId:'egg',grams:162,preparationId:'raw'}]}});
+ assert.equal(cleared.status,200);assert.equal(cleared.body.items[0].amount,undefined);
+});
+
 it('round-trips recipe steps, protects stale edits and preserves remix/snapshot contents',async()=>{
  const a=await signup('recipe-cloud'),b=await signup('recipe-other');
  const steps=[{id:randomUUID(),text:'Sear salmon, then add lime.'}];
