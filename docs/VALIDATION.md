@@ -30,6 +30,17 @@ recognition of every questionable dish. Written recipe steps do not enter this t
 Windows checks used the same temporary loopback 45429/WSL stdio test-database bridge and Auth
 port 45421 described below. No production database, SMTP, AI model, quota or budget was changed.
 
+Hosted commit 6419356 reached Railway SUCCESS (`64992a4c-91d4-4e95-a81d-599e9339c4cd`)
+and Vercel production READY (`dpl_Hyr7GphPAn8AThYQyd5uDVSrkNG8`). Four real public analysis
+requests returned 201 and matched the serialized local engine output exactly: the visible
+nine rows and their uniformly doubled amounts both gave index 69/contrast 36; milk/cucumber
+gave index 58 with contrast 35 raw and 0 after cucumber purée, without `flatTexture`.
+A separate Chromium session imported the nine-row recipe through the production library,
+verified index 69/contrast 36 and English explanatory copy, then switched to Ukrainian at
+375px and verified the index, translated note and absence of horizontal overflow. No account,
+GPT generation, AI unit or production recipe write was needed. Local test bridge/cluster
+were stopped after the checks.
+
 ## Grounded composition review — 2026-10-18
 
 The composition assistant now requests an ingredient/recipe-aware review with a verdict,
