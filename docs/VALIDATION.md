@@ -1,5 +1,36 @@
 # Actual validation — widget-monorepo-r2
 
+## Ingredient-stage evidence and unavailable indices — 2026-10-20
+
+Model 0.5.0-hypothesis separates authored pair hypotheses, unknown pairs, selected-profile
+fit, factual gram shares and descriptive texture potential. No source profiles, explicit
+adjustment values, nutrient data or unit references changed. The composition assistant receives
+this stage's evidence without recipe steps or the deprecated proportion grade. Recipe review
+and generation remain separate. See [INGREDIENT_ASSESSMENT.md](INGREDIENT_ASSESSMENT.md).
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed structure/layer checks, 16 pure editor/locale checks, 27 kernel checks, all workspace typechecks and 148 Vitest tests |
+| Final engine regression run | 42 passed after aligning candidate coverage weights with pair weights |
+| `npm run check:syntax` | Passed, 238 files; syntax only |
+| Compiled API integration suite | 30 passed against isolated PostgreSQL/Auth stubs, including null/partial/complete reports, ownership, units, feedback and AI context/quotas/refunds |
+| Browser coverage | Full suite: 41 passed; after presentation/history-label polish, all 10 focused administration, discussion, ingredient-evidence and recommendation cases passed again |
+| `npm run build` | Passed contracts, engine, Nest and Next production output, 27 generated pages; run after browser checks |
+
+The reported eight-ingredient chicken fixture returns no compatibility index and no assessed
+pair mean: 0 of 28 pairs have an explicit hypothesis. Its crunchy-profile fit remains 92,
+texture potential 27, and flour share 12.62% of 1189 g; none is a finished-dish approval.
+Known salmon/lime remains 92 independently of goal. Adding an unknown pair removes the full
+index without diluting the known subset. Explicit conflict signals remain visible separately.
+Tests cover scale/order invariance, missing versus explicit-zero rules, legacy snapshots,
+positive profile-fit recommendation deltas and exact preview/Apply amounts. EN/UK at 375px
+has no document overflow. Local checks made no GPT requests or production recipe writes.
+
+Nullable score fields require coordinated API/web publication and reloading old client tabs.
+Historical analyses remain readable and are labelled as historical metrics in CRM/feedback;
+they are not rewritten. No SQL migration is needed. Current pair rules remain unreviewed,
+so full hypothesis coverage is not evidence of calibrated taste accuracy.
+
 ## Original quantities with canonical edible grams — 2026-10-20
 
 Pieces are available for eight reference-backed foods (including large eggs and garlic

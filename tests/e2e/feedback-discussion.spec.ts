@@ -32,7 +32,7 @@ test('author feedback captures a private draft, survives a failed request and do
     await expect(dialog.getByRole('button',{name:'Send private feedback',exact:true})).toBeDisabled();
     await dialog.getByRole('radio',{name:'Yes, I cooked it',exact:true}).check();
     await dialog.getByRole('radio',{name:'Partly matches',exact:true}).check();
-    await dialog.getByRole('checkbox',{name:'Flavour balance',exact:true}).check();
+    await dialog.getByRole('checkbox',{name:'Fit to selected sensory profile',exact:true}).check();
     const note=dialog.getByRole('textbox',{name:'What was different? (optional)'});
     await note.fill('The lime was stronger than predicted.');
     await dialog.screenshot({path:'.local/model-feedback-en.png'});

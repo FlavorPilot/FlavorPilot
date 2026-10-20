@@ -42,7 +42,7 @@ describe('mass-weighted descriptive texture potential',()=>{
  });
  it('reproduces the visible nine rows without the old saturation at five ingredients',()=>{
   const a=analyzeDish(partialScreenshot,'balanced',false);
-  expect(a.textureScore).toBe(36);expect(a.overallScore).toBe(69);
+  expect(a.textureScore).toBe(36);expect(a.overallScore).toBeNull();
   expect(a.issues.some(i=>i.code==='flatTexture')).toBe(false);
   const scaled=analyzeDish(partialScreenshot.map(i=>({...i,grams:i.grams*2})),'balanced',false);
   expect(scaled.textureScore).toBe(a.textureScore);
@@ -66,7 +66,7 @@ describe('composition aggregation without a texture-quality bonus',()=>{
  });
  it('does not increase heuristic confidence just by adding unknown ingredient pairs',()=>{
   const a=analyzeDish(partialScreenshot.slice(0,2),'balanced',false);
-  expect(a.confidence).toBe(55);
+  expect(a.confidence).toBe(0);
   // The first four rows have no explicit pair adjustments, irrespective of their count.
   expect(analyzeDish(partialScreenshot.slice(0,4),'balanced',false).confidence).toBe(a.confidence);
  });

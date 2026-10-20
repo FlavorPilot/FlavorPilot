@@ -79,7 +79,8 @@ function BuilderWorkspace({ locale, scope, token }: {
         try {
             const server = await request('/flavor/analyze', value => dishAnalysisSchema.parse(value), { method: 'POST', body: { items: editor.draft.items, goal: editor.draft.goal, includeRecommendations: false } });
             if (latest.current === key) {
-                const same = server.overallScore === editor.analysis.overallScore && server.balanceScore === editor.analysis.balanceScore;
+                const comparable=({recommendations:_recommendations,...analysis}:typeof server)=>JSON.stringify(dishAnalysisSchema.parse({...analysis,recommendations:[]}));
+                const same = comparable(server)===comparable(editor.analysis);
                 setCheckResult({ key, text: same ? t.serverChecked : t.serverMismatch, ok: same });
             }
         }

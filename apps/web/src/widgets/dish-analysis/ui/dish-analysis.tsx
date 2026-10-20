@@ -30,16 +30,21 @@ export function DishAnalysis({ analysis, locale, itemCount, feedback }: {
 }) {
     const d = getDictionary(locale);
     const t = d.messages;
+    const coverage=analysis.ingredientAssessment;
+    const conflicts=analysis.pairResults.filter(pair=>pair.signal==='potentialConflict');
     const issue = analysis.issues.find(item => item.severity === 'critical') ?? analysis.issues.find(item => item.severity === 'warning') ?? analysis.issues.find(item => item.code !== 'emptyDish' && item.code !== 'singleIngredient');
     return <WidgetFrame id="assessment" title={t.analysis} subtitle={t.analysisHint} icon="compass" className="analysis-widget">
     {itemCount < 2 ? <EmptyState title={t.notEnough} icon="compass"/> : <>
-      <div className="assessment-hero"><div className="score-ring" style={{ '--score': `${Math.max(0, Math.min(100, analysis.overallScore))}%` } as CSSProperties} role="img" aria-label={`${t.overall}: ${analysis.overallScore} ${t.outOf}`}><div><strong>{analysis.overallScore}</strong><span>/ 100</span></div></div>
-        <div><Badge tone="green">{t.knowledge}</Badge><h3>{t.overall}</h3><p className="muted small">{t.modelEstimate}</p></div>
+      <div className="assessment-hero">{analysis.overallScore!==null&&<div className="score-ring" style={{ '--score': `${Math.max(0, Math.min(100, analysis.overallScore))}%` } as CSSProperties} role="img" aria-label={`${t.overall}: ${analysis.overallScore} ${t.outOf}`}><div><strong>{analysis.overallScore}</strong><span>/ 100</span></div></div>}
+        <div><Badge>{t.knowledge}</Badge><h3>{t.overall}</h3>{analysis.overallScore===null&&<p className="assessment-status" role="status">{coverage?.status==='partial'?t.partialIndex:t.insufficientIndex}</p>}<p className="muted small">{t.modelEstimate}</p></div>
       </div>
-      <dl className="metric-grid">{([['compatibility', analysis.compatibilityScore], ['balance', analysis.balanceScore], ['quantity', analysis.quantityScore], ['texture', analysis.textureScore]] as const).map(([key, value]) => <div key={key}><dt>{t[key]}</dt><dd>{value}<span>/100</span></dd></div>)}</dl>
+      <dl className="metric-grid">{([['assessedCompatibility', analysis.compatibilityScore], ['balance', analysis.balanceScore], ['texture', analysis.textureScore]] as const).map(([key, value]) => <div key={key}><dt>{t[key]}</dt><dd>{value===null?t.unknown:value}{value!==null&&<span>/100</span>}</dd>{key==='balance'&&coverage&&<small>{d.goals[coverage.goal]}</small>}</div>)}{coverage&&<div><dt>{t.pairCoverage}</dt><dd>{coverage.assessedPairs}<span> / {coverage.totalPairs}</span></dd><small>{t.weightedCoverage}: ≈ {formatNumber(coverage.weightedPercent,locale)}%</small></div>}</dl>
+      <p className="small muted">{t.pairCoverageNote}</p>
       <p className="small muted">{t.textureModelNote}</p>
-      <div className={`primary-issue ${issue ? 'primary-issue--warning' : ''}`}><Icon name={issue ? 'warning' : 'check'} size={18}/><div><strong>{issue ? t.attention : t.noIssues}</strong><p>{issue ? d.issues[issue.code] : t.noIssuesNote}</p>{issue?.ingredientId && <small>{ingredientById.get(issue.ingredientId)?.name[locale]}</small>}</div></div>
-      <details className="disclosure"><summary>{t.details}</summary><p>{t.scoreExplanation}</p><p><strong>{t.confidence}: {formatNumber(analysis.confidence, locale, 0)}</strong> / 100. {t.confidenceNote}</p><p>{t.knowledgeNote}</p></details>
+      {conflicts.length>0&&<section className="primary-issue primary-issue--warning"><Icon name="warning" size={18}/><div><strong>{t.potentialConflicts}</strong><ul>{conflicts.map((pair,index)=><li key={index}>{ingredientById.get(pair.ingredientAId)?.name[locale]} + {ingredientById.get(pair.ingredientBId)?.name[locale]}</li>)}</ul><p>{t.hypothesisOnly}</p></div></section>}
+      <div className={`primary-issue ${issue ? 'primary-issue--warning' : 'primary-issue--neutral'}`}><Icon name={issue ? 'warning' : 'info'} size={18}/><div><strong>{issue ? t.attention : t.noIssues}</strong><p>{issue ? d.issues[issue.code] : t.noIssuesNote}</p>{issue?.ingredientId && <small>{ingredientById.get(issue.ingredientId)?.name[locale]}</small>}</div></div>
+      {coverage&&<details className="disclosure ingredient-shares"><summary>{t.ingredientShares}</summary><p>{t.ingredientSharesNote}</p><dl>{coverage.shares.map((share,index)=><div key={index}><dt>{ingredientById.get(share.ingredientId)?.name[locale]}<small> · {preparationById.get(share.preparationId)?.name[locale]}</small>{share.catalogueRangeExceeded&&<p className="small muted">{d.issues.outsideRecommendedRange}</p>}</dt><dd>{formatNumber(share.percent,locale,2)}% · {formatNumber(share.grams,locale,3)} {t.grams}</dd></div>)}</dl></details>}
+      <details className="disclosure"><summary>{t.details}</summary><p>{t.scoreExplanation}</p><p>{t.knowledgeNote}</p></details>
     </>}
     {itemCount >= 2 && feedback}
     {analysis.composition.totalItems > 0 && <CompositionReference nutrients={analysis.composition.nutrients} locale={locale}/>}

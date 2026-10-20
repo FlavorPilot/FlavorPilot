@@ -1,11 +1,14 @@
 # API contract — widget rebuild r2
 
-Current scoring semantics are [0.4.0-hypothesis](SCORING_MODEL.md): mass-weighted descriptive
-texture potential, preparation-aware tag replacement for purée, and a weighted harmonic
-composition index over compatibility/balance/proportions. Texture is excluded from that index.
-Response field names/ranges are unchanged. Rebuild engine/API/web together; preserve old
-versioned feedback snapshots. No SQL migration. The recommendation section below records
-the 0.3.1 search/portion contract; its search remains, with the current index used for trials.
+Current semantics are [0.5.0-hypothesis](INGREDIENT_ASSESSMENT.md): unknown pair scores are
+null; partial compatibility describes assessed pairs only. The overall index appears only
+with complete pair-hypothesis coverage and excludes profile fit, proportion diagnostics and
+texture. `ingredientAssessment` includes coverage, goal and factual shares. Recommendations
+use positive profile-fit improvement (`basis:goalFit`); overallDelta/compatibility may be null.
+These nullable values require updated clients; never coerce them to zero. Rebuild contracts,
+engine, API and web together and reload old tabs. Historical feedback stays readable and is
+not rewritten. No SQL migration. The 0.3.1 section below records the historic search contract;
+trial amounts remain bounded, while selection/ranking and displayed deltas now use profile fit.
 
 Default prefix `/v1`; protected routes require a Supabase `Authorization: Bearer <access-token>`.
 The browser never sends a trusted user ID, plan or score. The API verifies bearer tokens via

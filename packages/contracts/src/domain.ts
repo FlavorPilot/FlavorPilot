@@ -122,7 +122,9 @@ export interface DishIssue {
 export interface PairResult {
     ingredientAId: string;
     ingredientBId: string;
-    score: number;
+    score: number | null;
+    evidence?: 'hypothesis' | 'unknown';
+    signal?: 'support' | 'potentialConflict' | 'neutral' | 'unknown';
     aromaOverlap: number;
     complementScore: number;
     explicitAdjustment: number;
@@ -131,12 +133,14 @@ export const recommendationReasons = ['strongPairing', 'addsAcidity', 'balancesF
 export type RecommendationReason = typeof recommendationReasons[number];
 export interface IngredientRecommendation {
     ingredientId: string;
-    compatibility: number;
+    compatibility: number | null;
     utility: number;
     recommendedGrams: number;
     preparationId: string;
     /** Difference between the same rounded scores shown in the actual preview. */
-    overallDelta: number;
+    overallDelta: number | null;
+    basis?: 'goalFit';
+    pairCoverage?: PairCoverage;
     balanceDelta: number;
     profileChanges: Array<{ dimension: SensoryDimension; before: number; after: number }>;
     reasons: RecommendationReason[];
@@ -167,8 +171,8 @@ export interface DishComposition {
     nutrients: CompositionAmount[];
 }
 export interface DishAnalysis {
-    overallScore: number;
-    compatibilityScore: number;
+    overallScore: number | null;
+    compatibilityScore: number | null;
     balanceScore: number;
     quantityScore: number;
     textureScore: number;
@@ -180,6 +184,17 @@ export interface DishAnalysis {
     issues: DishIssue[];
     recommendations: IngredientRecommendation[];
     composition: DishComposition;
+    ingredientAssessment?: PairCoverage & {
+        goal: DishGoal;
+        shares: Array<{ingredientId:string;preparationId:string;grams:number;percent:number;catalogueRangeExceeded?:boolean}>;
+    };
+}
+/** Coverage of authored catalogue pair hypotheses, not validated accuracy or a taste probability. */
+export interface PairCoverage {
+    status: 'insufficient' | 'partial' | 'complete';
+    assessedPairs: number;
+    totalPairs: number;
+    weightedPercent: number;
 }
 export const dishVisibilities = ['public', 'unlisted', 'private'] as const;
 export type DishVisibility = typeof dishVisibilities[number];

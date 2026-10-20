@@ -1,7 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { createDishRequestSchema, updateDishRequestSchema, dishItemSchema, analyzeDishRequestSchema, aiExplainRequestSchema, localeSchema } from './index';
+import { createDishRequestSchema, updateDishRequestSchema, dishItemSchema, analyzeDishRequestSchema, aiExplainRequestSchema, localeSchema,dishAnalysisSchema,sensoryDimensions,pairCoverageSchema } from './index';
 const item = { ingredientId: 'salmon', grams: 180, preparationId: 'raw' };
 describe('external contract boundaries', () => {
+    it('still reads versioned historical numerical analysis without rewriting it',()=>{
+        const historical={overallScore:70,compatibilityScore:54,balanceScore:92,quantityScore:97,textureScore:27,confidence:55,profile:Object.fromEntries(sensoryDimensions.map(k=>[k,0])),totalWeight:1189,pairResults:[],issues:[],recommendations:[],composition:{totalItems:0,nutrients:[]}};
+        expect(dishAnalysisSchema.parse(historical)).toEqual(historical);
+    });
+    it('does not accept contradictory coverage status or assessed-pair counts',()=>{
+        expect(pairCoverageSchema.safeParse({status:'complete',assessedPairs:0,totalPairs:3,weightedPercent:0}).success).toBe(false);
+        expect(pairCoverageSchema.safeParse({status:'partial',assessedPairs:4,totalPairs:3,weightedPercent:80}).success).toBe(false);
+    });
     it('retains original quantities and requires them to match the canonical edible grams',()=>{
         const counted={...item,ingredientId:'egg',grams:150,amount:{unit:'piece',quantity:3,gramsPerUnit:50}};
         expect(dishItemSchema.parse(counted)).toEqual(counted);

@@ -30,12 +30,17 @@ recommendation preview; Apply uses the exact candidate's identity, amount and me
 asks Nest to repeat analysis. Browser values are not trusted for access control or AI prompts.
 No separate Analysis store, Composition store or Recommendations store is allowed to drift.
 
+The ingredient-stage report separates pair-hypothesis coverage from profile fit, factual gram
+shares and texture potential. Nullable scores remain unavailable in assessment, pair tables,
+previews, feedback and CRM; they are not converted to zero. Recommendations expose positive
+goal-fit deltas, with missing compatibility visible. See [INGREDIENT_ASSESSMENT.md](INGREDIENT_ASSESSMENT.md).
+
 Recommendation cards consume only engine output: portion, exact preparation, conditional reason
 IDs and measured before/after changes. Text comes from EN/UK dictionaries. The editor takes the
 engine's preparation directly instead of inferring it again. The engine tries catalogue minimum
 and ideal shares for the current composition/goal, suppresses non-improving additions and repeated
 role/texture groups, and never fills six slots with a static list. See [API.md](API.md) for the
-0.3.1 response and coordinated rebuild instructions. This remains a deterministic hypothesis.
+0.5.0 response and coordinated rebuild instructions. This remains a deterministic hypothesis.
 
 The builder has Composition/Preparation tabs over that same reducer. The draft also owns
 description, optional servings, and ordered preparation steps with stable UUIDs. Consecutive
@@ -79,8 +84,8 @@ old suggestions. A confirmation applies the generated text as one reducer operat
 without changing selected ingredients, grams, preparation methods, goal or saved identity.
 Nothing is saved to the account or published by generation or preview application.
 
-The composition assistant requests a structured culinary review with the same recipe snapshot,
-including existing written preparation. Its presentation separates verdict, strengths, risks,
+The composition assistant requests a structured ingredient review from the same editor's
+ingredients and goal, excluding written recipe steps. Its presentation separates verdict, strengths, risks,
 priority actions (instruction/reason/effect) and missing context; legacy score explanations have
 a rollout fallback. Optional addition grams/preparation are server-owned engine metadata. Advice
 is read-only and never changes the composition or forces additional ingredients. EN/UK dictionaries

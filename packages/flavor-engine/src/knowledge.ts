@@ -4,8 +4,8 @@ import { sourcedIdentities } from './sourced-identities';
 import { nutrientHypotheses } from './nutrient-hypotheses';
 import { catalogueIngredients } from './scoring-catalogue';
 import { AI_HYPOTHESIS_VERSION, expandedHypothesisRationales } from './expanded-product-hypotheses';
-/** Mass-weighted descriptive contrast and harmonic composition index; still unvalidated. */
-export const MODEL_VERSION = '0.4.0-hypothesis';
+/** Evidence-gated ingredient compatibility; authored catalogue hypotheses remain unvalidated. */
+export const MODEL_VERSION = '0.5.0-hypothesis';
 export const CATALOGUE_VERSION = '2026-10-18-ai-2';
 /** Closed alpha aims for reviewed coverage, not a generated catalogue of this size. */
 export const ALPHA_REVIEW_TARGET = { min: 80, max: 120 } as const;

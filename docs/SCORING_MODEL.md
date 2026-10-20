@@ -1,5 +1,10 @@
 # Composition model 0.4.0-hypothesis — 2026-10-20
 
+Historical release description. Current ingredient-stage semantics are
+[0.5.0-hypothesis](INGREDIENT_ASSESSMENT.md): explicit pair evidence, unavailable rather than
+imputed scores, full-coverage compatibility index, descriptive shares and goal-fit trials.
+The texture repair below remains; harmonic aggregation is no longer used by the current engine.
+
 This release repairs count-dependent texture inflation. It does not calibrate culinary
 quality or assign an expert-approved replacement grade. Catalogue sensory profiles, shares,
 pair adjustments and intensity scales remain unreviewed hypotheses; no source data is edited.

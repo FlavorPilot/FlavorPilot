@@ -2417,6 +2417,8 @@ const entries: Array<[
 ];
 export const explicitPairAdjustments = new Map(entries.filter(([a, b]) => ingredientById.has(a) && ingredientById.has(b)).map(([a, b, value]) => [pairKey(a, b), value]));
 export const getPairAdjustment = (a: string, b: string) => explicitPairAdjustments.get(pairKey(a, b)) ?? 0;
+/** Presence is distinct from a neutral zero-valued hypothesis. */
+export const hasPairHypothesis = (a:string,b:string) => explicitPairAdjustments.has(pairKey(a,b));
 export interface GoalDefinition {
     targetBias: Partial<Record<keyof SensoryProfile, number>>;
     preferredRoles: IngredientRole[];

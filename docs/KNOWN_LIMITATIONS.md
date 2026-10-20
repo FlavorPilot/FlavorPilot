@@ -1,5 +1,15 @@
 # Known limitations — do not treat these as completed work
 
+## Ingredient assessment 0.5.0
+
+Only 64 authored, unreviewed pair hypotheses exist. Many ordinary recipes therefore have no
+whole-composition index; this is an explicit data gap, not evidence of incompatibility.
+Complete coverage also does not establish sensory accuracy. Profile fit and trial suggestions
+use unvalidated catalogue profiles/targets. Ingredient shares cannot establish consumed
+coating amounts or suitable proportions without purpose. The first stage does not infer
+cooking workflow; see [INGREDIENT_ASSESSMENT.md](INGREDIENT_ASSESSMENT.md). The 0.4 section
+below describes the retained texture method and superseded harmonic index.
+
 ## Composition scoring 0.4.0
 
 Count-dependent texture saturation is replaced by mass-weighted structural contrast, with

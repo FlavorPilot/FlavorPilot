@@ -875,6 +875,13 @@ legend {
   position: relative;
 }
 .ingredient-row__amount { min-width: 0; }
+.assessment-status { font-weight:600; }
+.primary-issue.primary-issue--neutral { background:transparent; border-color:var(--border); }
+.metric-grid small { display:block; margin-top:4px; color:var(--subtle); font-size:11px; line-height:1.4; }
+.ingredient-shares dl > div { display:flex; justify-content:space-between; gap:12px; padding:7px 0; }
+.ingredient-shares dt { min-width:0; overflow-wrap:anywhere; }
+.ingredient-shares dd { flex-shrink:0; margin:0; font-variant-numeric:tabular-nums; }
+.ingredient-shares small { color:var(--subtle); }
 .amount-entry { display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
 .amount-entry input { width:0; min-width:35px; flex:1; padding:10px 5px; text-align:right; font-variant-numeric:tabular-nums; }
 .amount-entry select { flex:0 0 55px; width:55px; }

@@ -48,7 +48,7 @@ describe('expanded culinary hypotheses and published composition', () => {
             expect(nutrients.has(id)).toBe(true);
             const result = analyzeDish([{ ingredientId: id, preparationId: 'raw', grams: 100 }], 'balanced', false);
             expect(result.totalWeight).toBe(100);
-            expect(Number.isFinite(result.overallScore)).toBe(true);
+            expect(result.overallScore).toBeNull();expect(Number.isFinite(result.balanceScore)).toBe(true);
             expect(result.composition.nutrients.every(row => row.contributions[0].fdcId === identities.get(id)?.fdcId)).toBe(true);
         }
     });
@@ -94,7 +94,7 @@ describe('expanded culinary hypotheses and published composition', () => {
         for (const suggestion of result.recommendations) {
             const preview = analyzeDish([...items, { ingredientId: suggestion.ingredientId, preparationId: suggestion.preparationId, grams: suggestion.recommendedGrams }], 'fresh', false);
             expect(preview.balanceScore - result.balanceScore).toBe(suggestion.balanceDelta);
-            expect(preview.overallScore - result.overallScore).toBe(suggestion.overallDelta);
+            expect(preview.overallScore===null||result.overallScore===null?null:preview.overallScore-result.overallScore).toBe(suggestion.overallDelta);expect(suggestion.balanceDelta).toBeGreaterThan(0);
         }
     });
 });

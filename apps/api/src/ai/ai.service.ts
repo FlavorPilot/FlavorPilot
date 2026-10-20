@@ -69,7 +69,7 @@ export class AiService {
     const parsed=aiExplainResponseSchema.parse(v);if(!parsed.composition)throw new Error('Missing composition review');return parsed;
    },COMPOSITION_TASK,value=>finalizeComposition(value,input,context))).value;
   }
-  const context={dishName:input.dishName,items:this.catalogue(input.items,input.locale),analysis:{overallScore:a.overallScore,compatibilityScore:a.compatibilityScore,balanceScore:a.balanceScore,quantityScore:a.quantityScore,textureScore:a.textureScore,confidence:a.confidence,profile:a.profile,issues:a.issues.slice(0,6),recommendations:a.recommendations.slice(0,3)}};
+  const context={dishName:input.dishName,items:this.catalogue(input.items,input.locale),analysis:{overallScore:a.overallScore,compatibilityScore:a.compatibilityScore,balanceScore:a.balanceScore,ingredientAssessment:a.ingredientAssessment,textureScore:a.textureScore,profile:a.profile,issues:a.issues.slice(0,6),recommendations:a.recommendations.slice(0,3)}};
   return (await this.run(userId,requestId,'explain',input.locale,context,explanationSchema,v=>aiExplainResponseSchema.parse(v),'Explain the main practical implication of the composition. Avoid repeating the score list or endorsing every candidate. Prioritize a concrete culinary interaction and useful action; additions are optional.')).value;
  }
  private catalogue(items:AiReviewRequest['recipe']['items'],locale:Locale){return items.map(i=>({...i,name:ingredientById.get(i.ingredientId)?.name[locale],preparation:preparationById.get(i.preparationId)?.name[locale]}));}
@@ -77,7 +77,7 @@ export class AiService {
   const r=input.recipe,index=r.steps.findIndex(s=>s.id===input.activeStepId);
   const steps=input.scope==='step'?r.steps.slice(Math.max(0,index-1),index+2):r.steps;
   const includeOutcome=input.scope==='full'&&input.includeOutcome===true;
-  const context={dishId:input.dishId??null,scope:input.scope,includeOutcome,activeStepId:input.activeStepId??null,name:r.name,description:r.description,servings:r.servings,steps,items:this.catalogue(r.items,input.locale),model:{overallScore:analysis.overallScore,profile:analysis.profile,issues:analysis.issues.slice(0,6)}};
+  const context={dishId:input.dishId??null,scope:input.scope,includeOutcome,activeStepId:input.activeStepId??null,name:r.name,description:r.description,servings:r.servings,steps,items:this.catalogue(r.items,input.locale),model:{overallScore:analysis.overallScore,ingredientAssessment:analysis.ingredientAssessment,profile:analysis.profile,issues:analysis.issues.slice(0,6)}};
   const result=await this.run(userId,input.requestId,input.scope,input.locale,context,includeOutcome?fullReviewFormat:reviewFormat,v=>{
    const parsed=aiReviewResultSchema.parse(v);
    if(parsed.comments.some(c=>(c.stepId!==null&&!steps.some(s=>s.id===c.stepId))||(c.suggestedText!==null&&c.stepId===null)||(input.scope==='step'&&c.stepId!==input.activeStepId)))throw new Error('Invalid step reference');

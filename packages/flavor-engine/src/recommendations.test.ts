@@ -15,8 +15,8 @@ describe('composition-specific recommendations', () => {
                 const ingredient = catalogueById.get(recommendation.ingredientId)!;
                 const after = analyzeDish([...defaultDish, { ingredientId: ingredient.id, grams: recommendation.recommendedGrams, preparationId: recommendation.preparationId }], goal, false);
                 expect(ingredient.preparations).toContain(recommendation.preparationId);
-                expect(after.overallScore - before.overallScore).toBe(recommendation.overallDelta);
-                expect(recommendation.overallDelta).toBeGreaterThan(0);
+                expect(after.overallScore===null||before.overallScore===null?null:after.overallScore-before.overallScore).toBe(recommendation.overallDelta);
+                expect(recommendation.basis).toBe('goalFit');expect(recommendation.balanceDelta).toBeGreaterThan(0);
                 expect(after.balanceScore - before.balanceScore).toBe(recommendation.balanceDelta);
                 for (const change of recommendation.profileChanges) {
                     expect(change.before).toBe(before.profile[change.dimension]);

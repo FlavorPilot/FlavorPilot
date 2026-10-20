@@ -15,14 +15,14 @@ export function DishRecommendations({ recommendations, locale, onPreview, disabl
       <header><span className="recommendation-number">{String(index + 1).padStart(2, '0')}</span><Badge>{formatNumber(recommendation.recommendedGrams, locale)} {t.grams}</Badge></header>
       <h3>{ingredientById.get(recommendation.ingredientId)?.name[locale]}</h3>
       <p>{recommendation.reasons.slice(0, 2).map(reason => d.reasons[reason]).join(' · ') || t.modelEstimate}</p>
-      <p>{t.overallChange}: +{formatNumber(recommendation.overallDelta, locale)}</p>
+      <p>{t.goalFitChange}: +{formatNumber(recommendation.balanceDelta, locale)}</p><p className="small muted">{t.goalTrialNote}</p>
       <details className="recommendation-details"><summary>{t.reason}</summary>
         <p>{t.recommendationTrialNote}</p>
         <dl>
           <div><dt>{t.preparationPreview}</dt><dd>{preparationById.get(recommendation.preparationId)?.name[locale]}</dd></div>
           <div><dt>{t.balanceChange}</dt><dd>{recommendation.balanceDelta > 0 ? '+' : ''}{formatNumber(recommendation.balanceDelta, locale)}</dd></div>
-          <div><dt>{t.compatibility}</dt><dd>{recommendation.compatibility}/100</dd></div>
-          <div><dt>{t.utility}</dt><dd>{recommendation.utility}/100</dd></div>
+          <div><dt>{recommendation.pairCoverage?t.assessedCompatibility:t.compatibility}</dt><dd>{recommendation.compatibility===null?t.unknown:`${recommendation.compatibility}/100`}{recommendation.pairCoverage&&<small> · {recommendation.pairCoverage.assessedPairs}/{recommendation.pairCoverage.totalPairs} {t.pairsAssessed}</small>}</dd></div>
+
           {recommendation.profileChanges.map(change => <div key={change.dimension}><dt>{d.dimensions[change.dimension]}</dt><dd>{formatNumber(change.before, locale, 2)} → {formatNumber(change.after, locale, 2)}</dd></div>)}
         </dl>
       </details>

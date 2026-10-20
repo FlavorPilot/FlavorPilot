@@ -5,15 +5,15 @@ test('reported visible rows have bounded descriptive contrast; browser and serve
  await page.goto('/en/library');
  await page.locator('input[type=file]').setInputFiles({name:'texture-report.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({format:'flavorpilot.recipe',version:2,name:'Reported visible rows',goal:'balanced',description:'',servings:null,steps:[],items:visibleRows}))});
  const panel=page.locator('.analysis-widget');
- await expect(panel.getByRole('heading',{name:'Composition index',exact:true})).toBeVisible();
- await expect(panel.locator('.score-ring strong')).toHaveText('69');
+ await expect(panel.getByRole('heading',{name:'Ingredient compatibility index',exact:true})).toBeVisible();
+ await expect(panel.locator('.assessment-status')).toBeVisible();await expect(panel.locator('.score-ring')).toHaveCount(0);
  await expect(panel.locator('.metric-grid > div').filter({has:page.getByText('Potential texture contrast',{exact:true})}).locator('dd')).toHaveText('36/100');
  await expect(panel).toContainText('More contrast does not mean better food.');
  const verification=page.waitForResponse(response=>response.url().includes('/v1/flavor/analyze')&&response.request().method()==='POST');
  await page.getByRole('button',{name:'Verify with server',exact:true}).click();
- const server=await (await verification).json();expect(server.textureScore).toBe(36);expect(server.overallScore).toBe(69);
+ const server=await (await verification).json();expect(server.textureScore).toBe(36);expect(server.overallScore).toBeNull();
  await page.setViewportSize({width:375,height:812});await page.getByRole('link',{name:'Switch language',exact:true}).click();
- await expect(panel.getByRole('heading',{name:'Індекс композиції',exact:true})).toBeVisible();
+ await expect(panel.getByRole('heading',{name:'Індекс сумісності складу',exact:true})).toBeVisible();
  await expect(panel).toContainText('Потенціал текстурного контрасту');
  await expect(panel).toContainText('Більший контраст не означає кращу страву.');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
@@ -26,5 +26,5 @@ test('explicit purée removes cucumber crunch without marking a smooth dish as a
  const metric=page.locator('.analysis-widget .metric-grid > div').filter({has:page.getByText('Potential texture contrast',{exact:true})}).locator('dd');
  await expect(metric).toHaveText('35/100');
  await page.getByTestId('ingredient-row').filter({has:page.getByText('Cucumber',{exact:true})}).locator('select').selectOption('pureed');
- await expect(metric).toHaveText('0/100');expect(Number(await page.locator('.score-ring strong').innerText())).toBeGreaterThan(0);
+ await expect(metric).toHaveText('0/100');await expect(page.locator('.analysis-widget .assessment-status')).toContainText('Insufficient pair data');
 });
