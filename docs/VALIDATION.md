@@ -31,6 +31,17 @@ Historical analyses remain readable and are labelled as historical metrics in CR
 they are not rewritten. No SQL migration is needed. Current pair rules remain unreviewed,
 so full hypothesis coverage is not evidence of calibrated taste accuracy.
 
+Hosted commit `0fc1cd5` reached Railway SUCCESS (`b1e4340e-5077-44ec-9c73-d548cf6dd6c0`)
+and Vercel production READY (`dpl_GpScDN7QMS3TAF5qzP6ab2WSaVCK`). Seven public API
+calculations matched the serialized local engine exactly: the reported chicken, complete
+salmon/lime under two goals, partial coverage, explicit conflict, recommendations and exact
+candidate application. The trial changed selected-profile fit from 61 to 86 (+25); adding an
+unknown pair correctly made the full index unavailable, without reducing the assessed subset.
+A production Chromium session imported the chicken composition, verified browser/server
+agreement, factual flour share, unavailable index and EN/UK at 375px without overflow.
+The inspected capture is `.local/ingredient-stage-production-uk.png`. No GPT request or
+production cloud recipe write was made. Temporary local test processes were stopped afterward.
+
 ## Original quantities with canonical edible grams — 2026-10-20
 
 Pieces are available for eight reference-backed foods (including large eggs and garlic
