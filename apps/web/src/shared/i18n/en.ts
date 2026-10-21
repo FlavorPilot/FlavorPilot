@@ -422,7 +422,7 @@ export const en = {
         "profile": "Flavour profile",
         "profileHint": "Relative sensory intensity, 0–10. Not nutritional data.",
         "pairings": "Ingredient relationships",
-        "pairingsHint": "Unknown pairs have no score. Support and conflict labels describe unreviewed catalogue hypotheses.",
+        "pairingsHint": "Model compatibility estimate for each ingredient pair. These are unverified culinary hypotheses.",
         "ingredientA": "First ingredient",
         "ingredientB": "Second ingredient",
         "pairScore": "Pair score",
