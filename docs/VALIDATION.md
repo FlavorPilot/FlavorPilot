@@ -31,6 +31,17 @@ assertion passed the focused rerun. The inspected 375px Ukrainian capture
 `.local/score-repair-uk-mobile.png` shows the overall ring and all four original metrics
 without document overflow. Tests use provider stubs and made no paid GPT requests.
 
+Hosted commit `9aa9319` reached Railway SUCCESS (`e3dca68c-b4cd-47ef-88d2-e88c54feb7e9`)
+and Vercel production READY (`dpl_4Zeoskwxjx1CBT8QEJFZqZ26U9V9`). Six public calculations
+matched the serialized local engine exactly: chicken, uniformly scaled chicken, raw milk/
+cucumber, explicit purée, the default and its exact recommendation. The default recommendation
+changed overall 72 to 76 (+4), with the displayed balance delta reproduced too. Production
+Chromium verified the overall ring and four original cards, full browser/server agreement,
+EN/UK and 375px without overflow. Inspected captures are
+`.local/score-repair-production-desktop-uk.png` and
+`.local/score-repair-production-mobile-uk.png`. No paid GPT request or production cloud recipe
+write was made. The temporary local bridge and isolated test cluster were stopped afterward.
+
 ## Ingredient-stage evidence and unavailable indices — 2026-10-20
 
 Model 0.5.0-hypothesis separates authored pair hypotheses, unknown pairs, selected-profile
