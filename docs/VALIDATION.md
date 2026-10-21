@@ -27,6 +27,20 @@ unit-conversion regressions also pass. Inspected mocked-response captures are
 `.local/composition-review-en.png` and `.local/composition-review-uk-mobile.png`; the 375px
 Ukrainian view has no document overflow. These checks made no paid provider calls.
 
+Hosted commit `2d307eb` reached Vercel production READY
+(`dpl_5NGH5nBH6rJpLD4b8FvADQmTv3np`). Railway skipped this frontend-only change; the
+existing composition API and its safeguards remained in use. A production Chromium session
+made one live, unmocked composition request for the reported chicken ingredients. The exact
+grams/preparations were sent without recipe text; the structured response supplied two
+strengths, two risks and two prioritized actions. It discussed the chicken/crumb pairing,
+moisture/acidity from ketchup/pickle/lemon and preserving the crunchy element. Every returned
+observation/action rendered within assessment. The four numerical metrics remained unchanged.
+At 375px there was no overflow. Editing chicken to 510 g hid the old comment and exposed
+Update without another automatic request. Inspected live captures are
+`.local/inline-comment-production-uk.png` and `.local/inline-comment-production-uk-mobile.png`.
+The existing cost is 2 units per composition check; limits/budgets were not modified. No
+production cloud recipe was written. Temporary local test processes were stopped afterward.
+
 ## Original assessment restored with calculation repair — 2026-10-21
 
 The 0.5.0 replacement below was rejected. Model 0.5.1-hypothesis restores the overall score
