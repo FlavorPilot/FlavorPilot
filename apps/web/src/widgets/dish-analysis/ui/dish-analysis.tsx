@@ -22,11 +22,12 @@ function CompositionReference({ nutrients, locale }: { nutrients: CompositionAmo
       </dd></div>)}</dl>
     </section>;
 }
-export function DishAnalysis({ analysis, locale, itemCount, feedback }: {
+export function DishAnalysis({ analysis, locale, itemCount, feedback, commentary }: {
     analysis: Analysis;
     locale: Locale;
     itemCount: number;
     feedback?: ReactNode;
+    commentary?: ReactNode;
 }) {
     const d = getDictionary(locale);
     const t = d.messages;
@@ -41,10 +42,12 @@ export function DishAnalysis({ analysis, locale, itemCount, feedback }: {
       <dl className="metric-grid">{([['compatibility', analysis.compatibilityScore], ['balance', analysis.balanceScore], ['quantity', analysis.quantityScore], ['texture', analysis.textureScore]] as const).map(([key, value]) => <div key={key}><dt>{t[key]}</dt><dd>{value===null?t.unknown:value}{value!==null&&<span>/100</span>}</dd></div>)}</dl>
       <p className="small muted">{t.textureModelNote}</p>
       {conflicts.length>0&&<section className="primary-issue primary-issue--warning"><Icon name="warning" size={18}/><div><strong>{t.potentialConflicts}</strong><ul>{conflicts.map((pair,index)=><li key={index}>{ingredientById.get(pair.ingredientAId)?.name[locale]} + {ingredientById.get(pair.ingredientBId)?.name[locale]}</li>)}</ul><p>{t.hypothesisOnly}</p></div></section>}
-      <div className={`primary-issue ${issue ? 'primary-issue--warning' : 'primary-issue--neutral'}`}><Icon name={issue ? 'warning' : 'info'} size={18}/><div><strong>{issue ? t.attention : t.noIssues}</strong><p>{issue ? d.issues[issue.code] : t.noIssuesNote}</p>{issue?.ingredientId && <small>{ingredientById.get(issue.ingredientId)?.name[locale]}</small>}</div></div>
+      {issue&&<div className="primary-issue primary-issue--warning"><Icon name="warning" size={18}/><div><strong>{t.attention}</strong><p>{d.issues[issue.code]}</p>{issue.ingredientId&&<small>{ingredientById.get(issue.ingredientId)?.name[locale]}</small>}</div></div>}
+      {commentary}
       {coverage&&<details className="disclosure ingredient-shares"><summary>{t.ingredientShares}</summary><p>{t.ingredientSharesNote}</p><dl>{coverage.shares.map((share,index)=><div key={index}><dt>{ingredientById.get(share.ingredientId)?.name[locale]}<small> · {preparationById.get(share.preparationId)?.name[locale]}</small>{share.catalogueRangeExceeded&&<p className="small muted">{d.issues.outsideRecommendedRange}</p>}</dt><dd>{formatNumber(share.percent,locale,2)}% · {formatNumber(share.grams,locale,3)} {t.grams}</dd></div>)}</dl></details>}
       <details className="disclosure"><summary>{t.details}</summary><p>{t.scoreExplanation}</p><p>{t.knowledgeNote}</p></details>
     </>}
+    {itemCount<2&&commentary}
     {itemCount >= 2 && feedback}
     {analysis.composition.totalItems > 0 && <CompositionReference nutrients={analysis.composition.nutrients} locale={locale}/>}
   </WidgetFrame>;

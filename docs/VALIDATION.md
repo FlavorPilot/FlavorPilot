@@ -1,5 +1,32 @@
 # Actual validation — widget-monorepo-r2
 
+## Individual ingredient commentary inside assessment — 2026-10-21
+
+BuilderScreen now composes the existing composition-review assistant into DishAnalysis's
+commentary slot below the four original metrics. The fixed no-warning verdict is removed;
+catalogue warnings remain separately visible. One shared controller and the existing
+`/ai/explain` structured result supply summary, strengths, risks and prioritized improvements.
+The ingredient-stage request includes exact items/grams/preparation/name/goal, with empty
+recipe text/steps and null servings. No new provider endpoint/schema, model, token limits,
+unit price, quota allowance, source coefficient or SQL migration was introduced.
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed structure/layer checks, 16 pure editor/locale checks, 27 kernel checks, all workspace typechecks and 148 Vitest tests |
+| `npm run check:syntax` | Passed, 237 files; syntax only |
+| `npm run test:e2e` | All 43 browser cases passed, using isolated PostgreSQL/Auth and provider stubs |
+| `npm run build` | Passed contracts, engine, Nest and Next production output, 27 generated pages; run after browser checks |
+
+Browser scenarios verify placement within assessment, a single composition control, EN/UK
+strength/risk/action sections, exact server-owned addition metadata, no score recitation,
+no request before consent/action and preserved draft inputs after failure. Recipe edits and
+step/full reviews keep a still-current ingredient comment. Changed grams/preparation hide
+its old prose until an explicit update. Unchanged ingredient context retains its request ID
+after recipe work; late answers for changed input cannot replace current output. Score and
+unit-conversion regressions also pass. Inspected mocked-response captures are
+`.local/composition-review-en.png` and `.local/composition-review-uk-mobile.png`; the 375px
+Ukrainian view has no document overflow. These checks made no paid provider calls.
+
 ## Original assessment restored with calculation repair — 2026-10-21
 
 The 0.5.0 replacement below was rejected. Model 0.5.1-hypothesis restores the overall score

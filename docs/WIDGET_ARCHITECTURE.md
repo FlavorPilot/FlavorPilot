@@ -85,13 +85,22 @@ old suggestions. A confirmation applies the generated text as one reducer operat
 without changing selected ingredients, grams, preparation methods, goal or saved identity.
 Nothing is saved to the account or published by generation or preview application.
 
-The composition assistant requests a structured ingredient review from the same editor's
-ingredients and goal, excluding written recipe steps. Its presentation separates verdict, strengths, risks,
+The composition assistant is embedded in DishAnalysis through an explicit ReactNode slot
+composed by BuilderScreen; widgets do not import each other. It replaces the static no-warning
+message below the four original metrics. Catalogue warnings remain separately visible.
+The same assistant controller requests a structured ingredient review from the editor's
+ingredients, amounts, selected preparation, name and goal, excluding written recipe steps. Its presentation separates verdict, strengths, risks,
 priority actions (instruction/reason/effect) and missing context; legacy score explanations have
 a rollout fallback. Optional addition grams/preparation are server-owned engine metadata. Advice
 is read-only and never changes the composition or forces additional ingredients. EN/UK dictionaries
-own all section labels. Consent, quotas, snapshot invalidation and the 2-unit charge stay shared
-with the existing assistant feature.
+own all section labels. Consent, quotas and the 2-unit charge stay shared with the existing
+assistant feature. Opening or editing a composition never starts a paid request. A separate
+composition snapshot/result survives recipe-step reviews and changes to recipe text/servings/
+generation preferences. Ingredient, amount, preparation, goal, name or locale edits mark it stale
+and hide its old prose until an explicit update. Pending answers are scoped to that snapshot;
+late answers cannot replace current comments. Repeated requests for unchanged composition use
+the same request ID even after recipe-step work. Generated prose is held only in the current
+workspace session; draft storage, scores and recipe persistence are unchanged.
 
 ## Feedback and public discussion
 

@@ -2766,6 +2766,12 @@ legend {
 .ai-comment { display: block; min-width: 0; }
 .ai-comment blockquote { margin: 12px 0; padding-inline-start: 12px; border-inline-start: 2px solid currentColor; }
 .ai-comment .dialog__actions { flex-wrap: wrap; }
+.composition-commentary { margin-top: 20px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-sunken); min-width: 0; overflow-wrap: anywhere; }
+.composition-commentary > h3 { display: flex; align-items: center; gap: 8px; margin-top: 0; }
+.composition-commentary .check-label { align-items: start; }
+.composition-commentary .dialog__actions { justify-content: flex-start; flex-wrap: wrap; }
+.composition-commentary .ai-comment { padding: 12px; }
+.composition-commentary h4 { margin: 0 0 8px; }
 @media(max-width:900px) { .recipe-workspace { grid-template-columns: 1fr; } }
 @media(max-width:480px) { .workspace-tabs [role=tab] { padding: 12px 8px; font-size: 13px; } .recipe-step { padding: 12px; } }
 

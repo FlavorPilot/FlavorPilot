@@ -110,8 +110,11 @@ quota and budget reservation. `requestId` is optional for legacy explain clients
 always send a UUID and retain it for retries. Response keeps `summary`, `main_problem`,
 `actions` (at most three). Text does not become a trusted recipe or score.
 
-New composition-review clients send `includeCompositionReview:true` and optional recipe
-description/servings/steps to the same `/ai/explain` endpoint. Nest supplies the selected goal,
+Composition-comment clients send `includeCompositionReview:true` to the same `/ai/explain`
+endpoint, with the current name, ingredients, exact grams, optional original units, preparation
+and goal. The current ingredient-stage UI sends empty description/steps and null servings;
+the contract still accepts those optional fields from older clients, but ingredient review
+does not use them. Nest supplies the selected goal,
 localized ingredient identities and intended preparations, roles/aromas/textures, per-item
 prepared heuristic profiles, dish scores/issues, up to three weakest/strongest model pairs,
 and at most six optional engine-calculated additions. These are unreviewed model hints, not
@@ -129,7 +132,12 @@ numbers are displayed from server-owned data. Reductions are requested as qualit
 dose or predicted score change. The UI does not mutate/apply any advice.
 Legacy callers retain summary/main_problem/actions without composition; old deployed clients
 can read the derived legacy fields while the matching UI rolls out. `culinary-review-6` separates
-the new context/prompt from cached older score recitations. Recipe edits affect the content hash.
+the new context/prompt from cached older score recitations. Ingredient-stage context changes
+affect its hash; changes to written recipe steps do not invalidate the composition comment.
+The client embeds the response directly below the four assessment metrics, removes the static
+no-warning verdict and keeps catalogue warnings separate. It uses one shared controller and
+explicit consent/button, retains separate composition versus step/full results, and reuses
+request IDs for unchanged ingredient context. Stale composition prose is hidden until updated.
 The richer context uses an 8000-input-token cap; output stays 2000 tokens and cost stays 2 units,
 with a worst-case monetary reservation of $0.0018. Token counting uses the complete JSON schema
 and messages; oversized context fails before generation. Structure validation cannot prove the

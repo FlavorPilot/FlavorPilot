@@ -10,29 +10,39 @@ export function useCulinaryAssistant(input:{recipe:AiRecipe;locale:Locale;token?
  const {recipe,locale,token,dishId,active}=input;
  const [generationBrief,setGenerationBrief]=useState('');
  const snapshot=JSON.stringify({recipe,locale,dishId,generationBrief});
+ const compositionSnapshot=JSON.stringify({name:recipe.name,items:recipe.items,goal:recipe.goal,locale});
  const [quota,setQuota]=useState<AiCapabilities|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const [consent,setConsent]=useState(false),[automatic,setAutomatic]=useState(false),[activeStep,setActiveStep]=useState('');
  const [editEpoch,setEditEpoch]=useState(0),previousEdit=useRef(0);
  const [result,setResult]=useState<Result|null>(null),[dismissed,setDismissed]=useState<string[]>([]);
+ const [composition,setComposition]=useState<{snapshot:string;value:AiExplainResponse}|null>(null);
  const [assessment,setAssessment]=useState<{snapshot:string;value:AiDishOutcome}|null>(null);
  const [generation,setGeneration]=useState<{snapshot:string;recipe:AiGeneratedRecipe;assumptions:string[]}|null>(null);
  const latest=useRef(snapshot),controller=useRef<AbortController|null>(null),lastAuto=useRef(0),ids=useRef(new Map<string,string>()),mounted=useRef(true);
+ const latestComposition=useRef(compositionSnapshot),pending=useRef<{kind:Kind;key:string}|null>(null);
  latest.current=snapshot;
+ latestComposition.current=compositionSnapshot;
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;controller.current?.abort();};},[]);
- useEffect(()=>{controller.current?.abort();setBusy(false);setError('');},[snapshot]);
+ useEffect(()=>{
+  if(pending.current&&pending.current.key!==(pending.current.kind==='explain'?latestComposition.current:latest.current)){
+   controller.current?.abort();pending.current=null;setBusy(false);
+  }
+  setError('');
+ },[snapshot,compositionSnapshot]);
  useEffect(()=>{setQuota(null);const c=new AbortController();void aiRepository.capabilities(token,c.signal).then(setQuota).catch(e=>{if(!c.signal.aborted)setError(e instanceof ApiError?e.code:'AI_PROVIDER_UNAVAILABLE');});return()=>c.abort();},[token]);
  const available=Boolean(quota?.enabled&&quota.access!=='none');
  async function run(kind:Kind){
-  if(!available||!consent||busy||!recipe.items.length)return;
+  if(!available||!consent||busy||pending.current||!recipe.items.length)return;
   const step=recipe.steps.find(s=>s.id===activeStep&&s.text.trim());
   if(kind==='step'&&!step)return;
-  const key=latest.current,idKey=`${kind}:${activeStep}:${key}`;
+  const key=kind==='explain'?latestComposition.current:latest.current,idKey=`${kind}:${kind==='step'?activeStep:''}:${key}`;
+  const current=()=>mounted.current&&(kind==='explain'?latestComposition.current:latest.current)===key;
   let requestId=ids.current.get(idKey);if(!requestId){requestId=crypto.randomUUID();ids.current.set(idKey,requestId);if(ids.current.size>20)ids.current.delete(ids.current.keys().next().value!);}
-  controller.current?.abort();const c=new AbortController();controller.current=c;setBusy(true);setError('');lastAuto.current=Date.now();
+  controller.current?.abort();const c=new AbortController();controller.current=c;pending.current={kind,key};setBusy(true);setError('');lastAuto.current=Date.now();
   try{
    if(kind==='explain'){
-    const explanation=await aiRepository.explain({requestId,locale,dishName:recipe.name,items:recipe.items,goal:recipe.goal,includeRecommendations:true,includeCompositionReview:true,description:recipe.description,servings:recipe.servings,steps:recipe.steps},token,c.signal);
-    if(mounted.current&&latest.current===key&&!c.signal.aborted){setResult({snapshot:key,kind,comments:[],explanation});setDismissed([]);}
+    const explanation=await aiRepository.explain({requestId,locale,dishName:recipe.name,items:recipe.items,goal:recipe.goal,includeRecommendations:true,includeCompositionReview:true,description:'',servings:null,steps:[]},token,c.signal);
+    if(current()&&!c.signal.aborted)setComposition({snapshot:key,value:explanation});
    }else if(kind==='generate'){
     const value=await aiRepository.generate({requestId,locale,...(token&&dishId?{dishId}:{}),recipe,brief:generationBrief},token,c.signal);
     if(mounted.current&&latest.current===key&&!c.signal.aborted){setGeneration({snapshot:key,recipe:value.recipe,assumptions:value.assumptions});setQuota(value.quota);}
@@ -42,9 +52,9 @@ export function useCulinaryAssistant(input:{recipe:AiRecipe;locale:Locale;token?
    }
   }catch(e){
    if(e instanceof ApiError&&['AI_RESPONSE_INVALID','AI_RESPONSE_INCOMPLETE','AI_INPUT_TOO_LARGE','AI_QUOTA_EXCEEDED','AI_RATE_LIMITED','AI_BUDGET_EXCEEDED','AI_PLAN_REQUIRED','AI_DISABLED'].includes(e.code))ids.current.delete(idKey);
-   if(mounted.current&&latest.current===key&&!c.signal.aborted)setError(e instanceof ApiError?e.code:'AI_PROVIDER_UNAVAILABLE');
+   if(current()&&!c.signal.aborted)setError(e instanceof ApiError?e.code:'AI_PROVIDER_UNAVAILABLE');
   }
-  finally{if(mounted.current&&controller.current===c){setBusy(false);if(!c.signal.aborted)void aiRepository.capabilities(token).then(q=>{if(mounted.current)setQuota(q);}).catch(()=>{});}}
+  finally{if(mounted.current&&controller.current===c){pending.current=null;setBusy(false);if(!c.signal.aborted)void aiRepository.capabilities(token).then(q=>{if(mounted.current)setQuota(q);}).catch(()=>{});}}
  }
  const runRef=useRef(run);runRef.current=run;
  useEffect(()=>{
@@ -55,11 +65,12 @@ export function useCulinaryAssistant(input:{recipe:AiRecipe;locale:Locale;token?
  },[snapshot,editEpoch,active,automatic,consent,available]);
  function apply(comment:AiComment){if(result?.snapshot!==latest.current||!comment.stepId||!comment.suggestedText)return;input.onApply(comment.stepId,comment.suggestedText);}
  return {signedIn:Boolean(token),quota,busy,error,consent,automatic,available,activeStep,setActiveStep,editedStep:(id:string)=>{setActiveStep(id);setEditEpoch(v=>v+1);},result,stale:Boolean(result&&result.snapshot!==snapshot),
+  composition:composition?.value??null,compositionStale:Boolean(composition&&composition.snapshot!==compositionSnapshot),
   assessment:assessment?.value??null,assessmentStale:Boolean(assessment&&assessment.snapshot!==snapshot),
   generation,generationStale:Boolean(generation&&generation.snapshot!==snapshot),generationBrief,setGenerationBrief,
   applyRecipe:()=>{if(generation&&generation.snapshot===latest.current&&!busy){input.onApplyRecipe(generation.recipe);setGeneration(null);setAutomatic(false);}},
   comments:result?.comments.filter(c=>!dismissed.includes(c.id))??[],run,apply,dismiss:(id:string)=>setDismissed(v=>[...v,id]),
-  setConsent:(v:boolean)=>{setConsent(v);if(!v){setAutomatic(false);controller.current?.abort();setBusy(false);}},
-  setAutomatic:(v:boolean)=>{setAutomatic(v);if(!v){controller.current?.abort();setBusy(false);}},
+  setConsent:(v:boolean)=>{setConsent(v);if(!v){setAutomatic(false);controller.current?.abort();pending.current=null;setBusy(false);}},
+  setAutomatic:(v:boolean)=>{setAutomatic(v);if(!v&&pending.current?.kind==='step'){controller.current?.abort();pending.current=null;setBusy(false);}},
  };
 }

@@ -115,12 +115,12 @@ function BuilderWorkspace({ locale, scope, token }: {
     <div className="studio-grid">
       <WidgetBoundary fallback={fallback}><DishComposition locale={locale} items={editor.draft.items} totalWeight={editor.analysis.totalWeight} onAdd={editor.add} onUpdate={editor.update} onRemove={editor.remove} onExample={editor.loadExample}/></WidgetBoundary>
       <WidgetBoundary fallback={fallback}><DishAnalysis locale={locale} analysis={editor.analysis} itemCount={editor.draft.items.length}
+        commentary={editor.draft.items.length>0?<CulinaryAssistant locale={locale} state={assistant} view="explain" embedded steps={editor.draft.steps} hasItems/>:undefined}
         feedback={<ModelFeedback locale={locale} token={token} dishId={editor.draft.linkedOrigin==='cloud' ? editor.draft.linkedId : undefined}
           dishVersionNumber={editor.draft.linkedOrigin==='cloud' ? editor.draft.linkedVersionNumber : undefined}
           recipe={{name:editor.draft.name,description:editor.draft.description,servings:editor.draft.servings,steps:editor.draft.steps,goal:editor.draft.goal,items:editor.draft.items}}/>}/></WidgetBoundary>
     </div>
     <WidgetBoundary fallback={fallback}><DishRecommendations locale={locale} recommendations={editor.analysis.recommendations} onPreview={editor.preview} disabled={editor.draft.items.length >= 24}/></WidgetBoundary>
-    <WidgetBoundary fallback={fallback}><CulinaryAssistant locale={locale} state={assistant} view="explain" steps={editor.draft.steps} hasItems={editor.draft.items.length>0}/></WidgetBoundary>
     <div className="detail-toolbar"><div className="segmented" role="group" aria-label={t.viewMode}><button type="button" aria-pressed={!detail} onClick={() => toggleDetail(false)}>{t.focused}</button><button type="button" aria-pressed={detail} onClick={() => toggleDetail(true)}><Icon name="sliders" size={15}/>{t.detailed}</button></div>{hasApi && <Button variant="ghost" disabled={checking} onClick={verify}>{checking ? t.serverChecking : t.serverCheck}</Button>}</div>
     {checkResult && checkResult.key === latest.current && <Notice tone={checkResult.ok ? 'success' : 'warning'}>{checkResult.text}</Notice>}
     {detail && <div className="studio-grid studio-grid--details"><WidgetBoundary fallback={fallback}><SensoryProfile locale={locale} profile={editor.analysis.profile}/></WidgetBoundary><WidgetBoundary fallback={fallback}><IngredientPairings locale={locale} pairs={editor.analysis.pairResults}/></WidgetBoundary></div>}
