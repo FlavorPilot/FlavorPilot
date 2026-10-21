@@ -1,5 +1,36 @@
 # Actual validation — widget-monorepo-r2
 
+## Original assessment restored with calculation repair — 2026-10-21
+
+The 0.5.0 replacement below was rejected. Model 0.5.1-hypothesis restores the overall score
+and original compatibility/balance/proportions/texture panel. It scores all ingredient pairs
+from the existing profiles instead of requiring complete manual-rule coverage. The existing
+harmonic composition aggregate is capped by compatibility; mass-weighted texture is retained
+and cannot raise the total. See [SCORING_REPAIR.md](SCORING_REPAIR.md).
+
+| Check | Result |
+|---|---|
+| `npm run validate` | Passed structure/layer checks, 16 pure editor/locale checks, 27 kernel checks, all workspace typechecks and 148 Vitest tests |
+| `npm run check:syntax` | Passed, 237 files; syntax only |
+| Compiled API integration suite | 30 passed on isolated PostgreSQL/Auth stubs; includes all-profile scores, compatibility bound, historical parsing, ownership, units, feedback and server-owned AI context |
+| Browser coverage | 41 distinct cases passed: 40 in the full run plus the rosemary-warning case in a focused rerun after updating its stale expected sentence |
+| `npm run build` | Passed contracts, engine, Nest and Next production output, 27 generated pages; run after browser checks |
+
+The reported chicken fixture again returns five separate numeric metrics: overall 54,
+compatibility 54, balance 92, proportions 97, texture 27, with all 28 pair hypotheses scored.
+The default is overall 72/compatibility 76/balance 61/proportions 97/texture 0. The nine-row
+visible milk/cucumber fixture retains texture 36 and now overall 55. Tests cover uniform scale,
+ordering, explicit purée, trace ingredients, a compatibility ceiling despite perfect other
+criteria, positive overall recommendation deltas and exact preview/Apply quantities.
+Old 0.5 reports with nulls remain readable and are not rewritten. No catalogue source values,
+unit references, nutrient data, production recipes, AI quotas or budgets were changed.
+There is no SQL migration or professionally calibrated taste accuracy claim.
+The full browser run's only failure was the restored warning test expecting the pre-0.5
+sentence; the actual localized range warning was present for rosemary. Its updated text
+assertion passed the focused rerun. The inspected 375px Ukrainian capture
+`.local/score-repair-uk-mobile.png` shows the overall ring and all four original metrics
+without document overflow. Tests use provider stubs and made no paid GPT requests.
+
 ## Ingredient-stage evidence and unavailable indices — 2026-10-20
 
 Model 0.5.0-hypothesis separates authored pair hypotheses, unknown pairs, selected-profile

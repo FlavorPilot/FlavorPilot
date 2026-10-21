@@ -25,16 +25,17 @@ consider all 620 ingredients, so suggestion ordering can change. The subsequent
 [0.4.0 assessment policy](SCORING_MODEL.md) replaces count-dependent contrast and arithmetic
 aggregation while retaining those source profiles. Its default composition index is 72
 (balance 61; weight 313 g), compared with 74 under the inherited policy. Neither is a tasting
-grade; the data remain unreviewed. The current [0.5.0 ingredient stage](INGREDIENT_ASSESSMENT.md)
-uses only explicit pair hypotheses for compatibility. The default four-food composition has
-all six pairs covered and therefore an index of 76; ordinary compositions without full
-coverage have no whole-composition index. These indices have different semantics from 0.4.
+grade; the data remain unreviewed. Current [0.5.1 scoring](SCORING_REPAIR.md) restores all
+profile-based pair calculations and the original metrics after the rejected 0.5.0 replacement.
+The harmonic overall score is capped by compatibility. The default is again 72, with separate
+compatibility 76, balance 61, proportions 97 and texture 0. Manual-rule coverage does not
+disable scoring for other pairs.
 
 The editor's initial amount now uses the existing kernel recommendation helper, including
 fractional grams for concentrated spices. Selecting saffron no longer forces a 1 g minimum;
-the existing helper proposes 0.3 g for a 240 g working dish. The 0.5 trial search retains its
-bounded portions and exact preview/apply, but ranks positive fit to the selected profile
-rather than promising overall score improvement.
+the existing helper proposes 0.3 g for a 240 g working dish. The 0.5.1 trial search retains
+bounded portions and exact preview/apply, and again ranks positive overall model improvement.
+This is a model change rather than a promise of objectively better taste.
 
 The **published composition is factual reference data**: protein, total fat, carbohydrate,
 sugars, sodium and energy from the exact USDA record, scaled from 100 g to dish grams. There

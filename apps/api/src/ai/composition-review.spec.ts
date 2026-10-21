@@ -11,7 +11,7 @@ describe('grounded composition review',()=>{
  it('includes prepared profiles, named product state, goal, recipe and bounded pair/candidate evidence',()=>{
   expect(context.goal).toBe('fresh');expect('recipe' in context).toBe(false);expect(context.items.find(i=>i.ingredientId==='dill_pickle')?.name).toBe('Dill pickle');
   expect(context.items[0].preparedModelProfile).toEqual(analyzeDish([input.items[0]],input.goal,false).profile);
-  expect(context.evidence.pairs.lowest).toHaveLength(0);expect(context.evidence.pairs.unknownCount).toBe(10);expect(context.evidence.scores.compatibilityIndex).toBeNull();
+  expect(context.evidence.pairs.lowest).toHaveLength(3);expect(context.evidence.pairs.inferredCount).toBe(10);expect(context.evidence.scores.overall).toBe(analysis.overallScore);
   expect(context.optionalAdditionTrials.length).toBeLessThanOrEqual(6);
  });
  it('accepts existing-ingredient advice and a genuine no-change result without filling additions',()=>{
@@ -24,7 +24,7 @@ describe('grounded composition review',()=>{
   const result=finalizeComposition({...draft(),actions:[action]},input,context);
   expect(result.composition?.actions[0].addition).toEqual({ingredientId:candidate.ingredientId,preparationId:candidate.preparationId,grams:candidate.grams});
   const after=analyzeDish([...input.items,result.composition!.actions[0].addition!],input.goal,false);
-  expect(candidate.modelChanges.overall).toBeNull();expect(after.balanceScore-analysis.balanceScore).toBe(candidate.modelChanges.goalFit);
+  expect(candidate.modelChanges.overall).toBe(after.overallScore-analysis.overallScore);expect(after.balanceScore-analysis.balanceScore).toBe(candidate.modelChanges.goalFit);
   expect(()=>finalizeComposition({...draft(),actions:[{...action,riskIndex:null}]},input,context)).toThrow();
   expect(()=>finalizeComposition({...draft(),actions:[{...action,candidateId:'invented'}]},input,context)).toThrow();
   expect(()=>finalizeComposition({...draft(),actions:[{...action,grams:999}]},input,context)).toThrow();

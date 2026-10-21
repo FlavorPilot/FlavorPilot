@@ -1,14 +1,14 @@
 # API contract — widget rebuild r2
 
-Current semantics are [0.5.0-hypothesis](INGREDIENT_ASSESSMENT.md): unknown pair scores are
-null; partial compatibility describes assessed pairs only. The overall index appears only
-with complete pair-hypothesis coverage and excludes profile fit, proportion diagnostics and
-texture. `ingredientAssessment` includes coverage, goal and factual shares. Recommendations
-use positive profile-fit improvement (`basis:goalFit`); overallDelta/compatibility may be null.
-These nullable values require updated clients; never coerce them to zero. Rebuild contracts,
-engine, API and web together and reload old tabs. Historical feedback stays readable and is
-not rewritten. No SQL migration. The 0.3.1 section below records the historic search contract;
-trial amounts remain bounded, while selection/ranking and displayed deltas now use profile fit.
+Current semantics are [0.5.1-hypothesis](SCORING_REPAIR.md): all profile-based pairs receive
+numerical scores, with optional evidence `hypothesis` (explicit adjustment) or `inferred`
+(profile calculation, signal `modelled`). The overall harmonic score is capped by compatibility;
+balance, proportions and descriptive texture remain separate original metrics. Recommendations
+again require positive overall improvement using the bounded search described below. Current
+responses do not emit the interim 0.5.0 `ingredientAssessment` gate or `basis:goalFit`.
+Contracts retain nullable scores and optional old coverage metadata for historical 0.5 records;
+never coerce those historical nulls to zero. Publish contracts, engine, API and web together,
+reload old tabs, and preserve historical feedback unchanged. No SQL migration is required.
 
 Default prefix `/v1`; protected routes require a Supabase `Authorization: Bearer <access-token>`.
 The browser never sends a trusted user ID, plan or score. The API verifies bearer tokens via

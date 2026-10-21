@@ -5,16 +5,16 @@ import { isReviewedRecordComplete, knowledgeCoverage } from './knowledge';
 import { sourcedIdentities } from './sourced-identities';
 const p = (id: string) => { const ingredient = ingredientById.get(id)!; return { ingredient, profile: ingredient.profile, intensity: ingredient.intensity, aromas: ingredient.aromas, textures: ingredient.textures }; };
 describe('deterministic composition model', () => {
-    it('records the 0.5 fully covered compatibility index and unchanged source profile', () => { const a = analyzeDish(defaultDish, 'fresh'); expect([a.overallScore, a.balanceScore, a.totalWeight,a.textureScore]).toEqual([76, 61, 313,0]); });
+    it('records the 0.4 default index while retaining the source profile and weight', () => { const a = analyzeDish(defaultDish, 'fresh'); expect([a.overallScore, a.balanceScore, a.totalWeight,a.textureScore]).toEqual([72, 61, 313,0]); });
     it('pair score is symmetric', () => { expect(calculatePair(p('duck'), p('cherry')).score).toBe(calculatePair(p('cherry'), p('duck')).score); });
     it('does not mutate the source composition', () => { const before = JSON.stringify(defaultDish); analyzeDish(defaultDish, 'fresh'); expect(JSON.stringify(defaultDish)).toBe(before); });
-    it('supports an empty editor without NaN', () => { expect(analyzeDish([]).overallScore).toBeNull(); expect(analyzeDish([]).issues[0].code).toBe('emptyDish'); });
+    it('supports an empty editor without NaN', () => { expect(analyzeDish([]).overallScore).toBe(0); expect(analyzeDish([]).issues[0].code).toBe('emptyDish'); });
     it('CUL-001: warns that rosemary is above its working maximum without treating impact dominance as the same fact', () => {
         const items = [{ ingredientId: 'duck', grams: 220, preparationId: 'seared' }, { ingredientId: 'cherry', grams: 70, preparationId: 'sauce' }];
         const normal = analyzeDish([...items, { ingredientId: 'rosemary', grams: 1.2, preparationId: 'roasted' }], 'rich');
         const excess = analyzeDish([...items, { ingredientId: 'rosemary', grams: 35, preparationId: 'roasted' }], 'rich');
         expect(excess.quantityScore).toBeLessThan(normal.quantityScore);
-        expect(excess.issues.find(issue => issue.code === 'outsideRecommendedRange')).toMatchObject({ code: 'outsideRecommendedRange', ingredientId: 'rosemary' });
+        expect(excess.issues.find(issue => issue.severity === 'warning')).toMatchObject({ code: 'outsideRecommendedRange', ingredientId: 'rosemary' });
         expect(excess.dominantIngredientId).not.toBe('rosemary');
         expect(normal.issues.some(issue => issue.code === 'outsideRecommendedRange' && issue.ingredientId === 'rosemary')).toBe(false);
     });

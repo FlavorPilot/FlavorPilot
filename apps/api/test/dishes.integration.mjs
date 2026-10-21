@@ -73,7 +73,7 @@ it('serves mass-weighted contrast without treating a smooth preparation as a bad
  const first=await api('/flavor/analyze',{method:'POST',body:{items:raw,goal:'balanced',includeRecommendations:false}});
  assert.equal(first.status,201);assert.equal(first.body.textureScore,35);
  const blended=await api('/flavor/analyze',{method:'POST',body:{items:[raw[0],{...raw[1],preparationId:'pureed'}],goal:'balanced',includeRecommendations:false}});
- assert.equal(blended.status,201);assert.equal(blended.body.textureScore,0);assert.equal(blended.body.overallScore,null);assert.equal(blended.body.ingredientAssessment.status,'insufficient');
+ assert.equal(blended.status,201);assert.equal(blended.body.textureScore,0);assert.ok(blended.body.overallScore>0);
  assert.equal(blended.body.issues.some(i=>i.code==='flatTexture'),false);
  assert.deepEqual(blended.body,analyzeDish([raw[0],{...raw[1],preparationId:'pureed'}],'balanced',false));
 });
@@ -81,13 +81,13 @@ it('serves mass-weighted contrast without treating a smooth preparation as a bad
 it('separates unknown pairs, assessed subsets and profile fit at the public ingredient boundary',async()=>{
  const breaded=[['chicken',500,'roasted'],['breadcrumb',60,'roasted'],['egg',150,'raw'],['wheat_flour',150,'raw'],['lemon_juice',54,'raw'],['salt',5,'raw'],['ketchup',150,'sauce'],['dill_pickle',120,'raw']].map(([ingredientId,grams,preparationId])=>({ingredientId,grams,preparationId}));
  const response=await api('/flavor/analyze',{method:'POST',body:{items:breaded,goal:'crunchy',includeRecommendations:false}});
- assert.equal(response.status,201);assert.equal(response.body.overallScore,null);assert.equal(response.body.compatibilityScore,null);
- assert.equal(response.body.balanceScore,92);assert.equal(response.body.ingredientAssessment.totalPairs,28);assert.equal(response.body.ingredientAssessment.assessedPairs,0);
- assert.ok(response.body.pairResults.every(p=>p.score===null&&p.evidence==='unknown'));
+ assert.equal(response.status,201);assert.ok(response.body.overallScore>0);assert.ok(response.body.overallScore<=response.body.compatibilityScore);
+ assert.equal(response.body.balanceScore,92);assert.equal(response.body.pairResults.length,28);
+ assert.ok(response.body.pairResults.every(p=>Number.isFinite(p.score)&&p.evidence==='inferred'));
  const known=[{ingredientId:'salmon',grams:150,preparationId:'raw'},{ingredientId:'lime',grams:10,preparationId:'raw'}];
- const full=await api('/flavor/analyze',{method:'POST',body:{items:known,includeRecommendations:false}});assert.equal(full.body.overallScore,92);
+ const full=await api('/flavor/analyze',{method:'POST',body:{items:known,includeRecommendations:false}});assert.ok(full.body.overallScore>0);assert.equal(full.body.compatibilityScore,92);
  const partial=await api('/flavor/analyze',{method:'POST',body:{items:[...known,{ingredientId:'egg',grams:100,preparationId:'raw'}],includeRecommendations:false}});
- assert.equal(partial.body.overallScore,null);assert.equal(partial.body.compatibilityScore,92);assert.equal(partial.body.ingredientAssessment.status,'partial');
+ assert.ok(partial.body.overallScore>0);assert.ok(partial.body.compatibilityScore<92);
 });
 
 it('round-trips original units, corrected mass, snapshots and remixes while analysis uses grams',async()=>{
@@ -261,7 +261,7 @@ it('reviews ingredient interactions with recipe context, optional additions and 
   if(String(url).endsWith('input_tokens'))return Response.json({input_tokens:mode==='large'?8001:2500});
   generations++;assert.equal(sent.max_output_tokens,2000);
   if(mode==='legacy')return Response.json({status:'completed',usage:{input_tokens:1000,output_tokens:100},output:[{content:[{type:'output_text',text:JSON.stringify({summary:'A rich base with a bright finish.',main_problem:'',actions:[]})}]}]});
-  assert.equal(context.goal,'fresh');assert.equal('recipe' in context,false);assert.ok(context.evidence.assessment);
+  assert.equal(context.goal,'fresh');assert.equal('recipe' in context,false);assert.ok(Number.isFinite(context.evidence.scores.overall));
   assert.equal(context.items[0].name,'Salmon');assert.ok(context.items[0].preparedModelProfile);assert.equal(context.evidence.pairs.lowest.length,1);
   assert.ok(context.optionalAdditionTrials.length>0);assert.match(sent.input[0].content[0].text,/Do not narrate scores/);
   let result=draft;

@@ -184,7 +184,7 @@ test('warns when rosemary is above its working maximum', async ({ page }) => {
         await page.getByRole('option').filter({ has: page.getByText(name, { exact: true }) }).click();
         await page.getByLabel(`${name} — Amount`).fill(grams);
     }
-    await page.getByText('Ingredient shares',{exact:true}).click();const issue=page.locator('.ingredient-shares');
+    const issue = page.locator('.primary-issue');
     await expect(issue).toContainText('This share exceeds an unreviewed catalogue trial range.');
     await expect(issue).toContainText('Rosemary');
 });

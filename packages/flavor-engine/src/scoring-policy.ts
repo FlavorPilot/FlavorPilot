@@ -28,12 +28,13 @@ export function textureContrastPotential(items:Array<{grams:number;textures:Text
  // E|X-Y| <= 1/2 for i.i.d. X,Y in [0,1]. Unordered pairs need a further factor 2.
  return Math.max(0,Math.min(100,400*separation));
 }
-/** @deprecated Historical 0.4 helper retained for compatibility; the 0.5 index does not use it.
- * Keep the historic relative weights of the three composition criteria.
+/** Keep the historic relative weights of the three composition criteria.
  * Harmonic aggregation limits compensation of a weak criterion. Contrast is descriptive,
  * not evidence of taste quality, so it has no weight in this index. Not a calibrated grade. */
 export function compositionIndex(compatibility:number,balance:number,quantity:number):number {
  const components=[[compatibility,.38],[balance,.32],[quantity,.16]];
  if(components.some(([score])=>score<=0))return 0;
- return components.reduce((sum,[,weight])=>sum+weight,0)/components.reduce((sum,[score,weight])=>sum+weight/Math.min(100,score),0);
+ const harmonic=components.reduce((sum,[,weight])=>sum+weight,0)/components.reduce((sum,[score,weight])=>sum+weight/Math.min(100,score),0);
+ // Compatibility is a prerequisite: strong balance/proportions cannot hide weak pairing.
+ return Math.min(compatibility,harmonic);
 }

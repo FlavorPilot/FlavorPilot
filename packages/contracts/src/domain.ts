@@ -123,8 +123,8 @@ export interface PairResult {
     ingredientAId: string;
     ingredientBId: string;
     score: number | null;
-    evidence?: 'hypothesis' | 'unknown';
-    signal?: 'support' | 'potentialConflict' | 'neutral' | 'unknown';
+    evidence?: 'hypothesis' | 'inferred' | 'unknown';
+    signal?: 'support' | 'potentialConflict' | 'neutral' | 'modelled' | 'unknown';
     aromaOverlap: number;
     complementScore: number;
     explicitAdjustment: number;

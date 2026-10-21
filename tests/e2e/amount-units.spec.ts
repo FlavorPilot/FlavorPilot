@@ -5,7 +5,7 @@ test('pieces preserve grams, Undo, measured weight, reload and exported quantiti
  await page.goto('/en/library');
  await page.locator('input[type=file]').setInputFiles({name:'eggs.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({format:'flavorpilot.recipe',version:2,name:'Three eggs',goal:'balanced',items:[egg,{ingredientId:'milk',grams:100,preparationId:'raw'}]}))});
  const row=page.getByTestId('ingredient-row').first(),quantity=row.getByLabel('Egg — Amount',{exact:true});
- const score=page.locator('.analysis-widget .assessment-status');await expect(score).toBeVisible();const before=await score.innerText();
+ const score=page.locator('.score-ring strong'),before=await score.innerText();
  await row.getByLabel('Egg — Input unit').selectOption('piece');
  await expect(quantity).toHaveValue('3');await expect(row).toContainText('≈ 150 g');await expect(score).toHaveText(before);
  await quantity.fill('4');await expect(row).toContainText('≈ 200 g');

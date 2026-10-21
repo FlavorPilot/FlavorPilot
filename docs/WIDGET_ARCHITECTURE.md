@@ -30,17 +30,18 @@ recommendation preview; Apply uses the exact candidate's identity, amount and me
 asks Nest to repeat analysis. Browser values are not trusted for access control or AI prompts.
 No separate Analysis store, Composition store or Recommendations store is allowed to drift.
 
-The ingredient-stage report separates pair-hypothesis coverage from profile fit, factual gram
-shares and texture potential. Nullable scores remain unavailable in assessment, pair tables,
-previews, feedback and CRM; they are not converted to zero. Recommendations expose positive
-goal-fit deltas, with missing compatibility visible. See [INGREDIENT_ASSESSMENT.md](INGREDIENT_ASSESSMENT.md).
+The ingredient-stage panel retains the overall score and original compatibility, balance,
+proportion and texture metrics. All profile pairs are scored; manual-rule coverage does not
+disable the model or replace a metric. Texture remains descriptive and cannot raise the total;
+the harmonic total cannot exceed compatibility. Historical nullable 0.5 scores remain readable
+in feedback and CRM. See [SCORING_REPAIR.md](SCORING_REPAIR.md).
 
 Recommendation cards consume only engine output: portion, exact preparation, conditional reason
 IDs and measured before/after changes. Text comes from EN/UK dictionaries. The editor takes the
 engine's preparation directly instead of inferring it again. The engine tries catalogue minimum
 and ideal shares for the current composition/goal, suppresses non-improving additions and repeated
 role/texture groups, and never fills six slots with a static list. See [API.md](API.md) for the
-0.5.0 response and coordinated rebuild instructions. This remains a deterministic hypothesis.
+0.5.1 response and coordinated rebuild instructions. This remains a deterministic hypothesis.
 
 The builder has Composition/Preparation tabs over that same reducer. The draft also owns
 description, optional servings, and ordered preparation steps with stable UUIDs. Consecutive

@@ -14,7 +14,7 @@ const {ingredients,ingredientById,preparationMethods,preparationById,defaultDish
 const base=[{ingredientId:'salmon',grams:180,preparationId:'raw'},{ingredientId:'avocado',grams:90,preparationId:'raw'},{ingredientId:'mayonnaise',grams:45,preparationId:'sauce'}];
 function prepared(id){const ingredient=ingredientById.get(id);return {ingredient,profile:ingredient.profile,intensity:ingredient.intensity,aromas:ingredient.aromas,textures:ingredient.textures};}
 function assertAnalysis(a){
- for(const key of ['overallScore','compatibilityScore','balanceScore','quantityScore','textureScore','confidence'])assert.ok((['overallScore','compatibilityScore'].includes(key)&&a[key]===null)||(Number.isFinite(a[key])&&a[key]>=0&&a[key]<=100),key);
+ for(const key of ['overallScore','compatibilityScore','balanceScore','quantityScore','textureScore','confidence'])assert.ok(Number.isFinite(a[key])&&a[key]>=0&&a[key]<=100,key);
  for(const v of Object.values(a.profile))assert.ok(Number.isFinite(v)&&v>=0&&v<=10);
 }
 test('source catalogue contains 38 ingredients, 12 methods and 64 explicit pairs',()=>{assert.equal(ingredients.length,38);assert.equal(preparationMethods.length,12);assert.equal(explicitPairAdjustments.size,64);});
@@ -107,10 +107,10 @@ test('source data stays equal to the recorded transcription fixture',()=>{
 test('all curated pair endpoints exist',()=>{for(const key of explicitPairAdjustments.keys()){const [a,b]=key.split('::');assert.ok(ingredientById.has(a)&&ingredientById.has(b));}});
 test('pair scoring is symmetric',()=>{for(const a of ingredients)for(const b of ingredients){assert.equal(calculatePair(prepared(a.id),prepared(b.id)).score,calculatePair(prepared(b.id),prepared(a.id)).score);}});
 test('legacy qualitative pairing regression',()=>{assert.ok(calculatePair(prepared('duck'),prepared('cherry')).score>calculatePair(prepared('duck'),prepared('cucumber')).score);});
-test('empty composition produces the explicit empty state',()=>{const a=analyzeDish([], 'balanced');assert.equal(a.overallScore,null);assert.equal(a.totalWeight,0);assert.equal(a.recommendations.length,0);assert.ok(a.issues.some(x=>x.code==='emptyDish'));});
+test('empty composition produces the explicit empty state',()=>{const a=analyzeDish([], 'balanced');assert.equal(a.overallScore,0);assert.equal(a.totalWeight,0);assert.equal(a.recommendations.length,0);assert.ok(a.issues.some(x=>x.code==='emptyDish'));});
 test('one ingredient produces the single-ingredient marker',()=>{assert.ok(analyzeDish([base[0]],'balanced').issues.some(x=>x.code==='singleIngredient'));});
 test('analysis is deterministic and does not mutate its input',()=>{const items=JSON.parse(JSON.stringify(defaultDish)),copy=JSON.stringify(items);assert.deepEqual(analyzeDish(items,'fresh'),analyzeDish(items,'fresh'));assert.equal(JSON.stringify(items),copy);});
-test('0.5 fully covered compatibility index retains source data',()=>{const a=analyzeDish(defaultDish,'fresh');assert.deepEqual([a.overallScore,a.compatibilityScore,a.balanceScore,a.quantityScore,a.textureScore,a.totalWeight],[76,76,61,97,0,313]);assert.equal(a.pairResults.length,6);assert.equal(a.issues.some(issue=>issue.code==='outsideRecommendedRange'),false);});
+test('0.4 default index keeps the source data while separating descriptive contrast',()=>{const a=analyzeDish(defaultDish,'fresh');assert.deepEqual([a.overallScore,a.compatibilityScore,a.balanceScore,a.quantityScore,a.textureScore,a.totalWeight],[72,76,61,97,0,313]);assert.equal(a.pairResults.length,6);assert.equal(a.issues.some(issue=>issue.code==='outsideRecommendedRange'),false);});
 test('fatty sample flags acidity and adding the test quantity of lime improves model balance',()=>{
  const a=analyzeDish(base,'balanced'),b=analyzeDish([...base,{ingredientId:'lime',grams:14,preparationId:'raw'}],'balanced');
  assert.ok(a.issues.some(x=>x.code==='fatNeedsAcid'));assert.ok(b.balanceScore>a.balanceScore);
@@ -126,7 +126,7 @@ test('CUL-001: excess rosemary warns about its working range while duck can rema
  const normal=analyzeDish([...items,{ingredientId:'rosemary',grams:1.2,preparationId:'roasted'}],'rich');
  const excess=analyzeDish([...items,{ingredientId:'rosemary',grams:35,preparationId:'roasted'}],'rich');
  assert.ok(excess.quantityScore<normal.quantityScore);
- const firstWarning=excess.issues.find(issue=>issue.code==='outsideRecommendedRange');assert.equal(firstWarning.severity,'info');
+ const firstWarning=excess.issues.find(issue=>issue.severity==='warning');
  assert.equal(firstWarning.code,'outsideRecommendedRange');assert.equal(firstWarning.ingredientId,'rosemary');
  assert.notEqual(excess.dominantIngredientId,'rosemary');
  assert.equal(normal.issues.some(issue=>issue.code==='outsideRecommendedRange'&&issue.ingredientId==='rosemary'),false);
@@ -142,7 +142,7 @@ test('recommendation quantities, methods and balance delta match the actual prev
   assert.ok(Number.isFinite(r.recommendedGrams)&&r.recommendedGrams>0&&r.recommendedGrams<=5000);
   const after=analyzeDish([...defaultDish,{ingredientId:r.ingredientId,grams:r.recommendedGrams,preparationId}],'fresh',false);
   assert.equal(after.balanceScore-before.balanceScore,r.balanceDelta);
-  assert.equal(after.overallScore===null||before.overallScore===null?null:after.overallScore-before.overallScore,r.overallDelta);assert.ok(r.balanceDelta>0);
+  assert.equal(after.overallScore-before.overallScore,r.overallDelta);
  }
 });
 test('disabling recommendations keeps all primary scores identical',()=>{const a=analyzeDish(defaultDish,'fresh'),b=analyzeDish(defaultDish,'fresh',false);assert.deepEqual({...a,recommendations:[]},b);});

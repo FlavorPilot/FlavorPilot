@@ -1,5 +1,9 @@
 # Ingredient-stage assessment — model 0.5.0-hypothesis
 
+Historical, rejected replacement. Current scoring and the original assessment panel are
+restored in [SCORING_REPAIR.md](SCORING_REPAIR.md), version 0.5.1-hypothesis. The full-coverage
+gate, unscored profile pairs and substitution of coverage for proportions below no longer apply.
+
 Composition is an ingredient workspace. It does not infer coating, marinade, serving groups,
 final blending or a cooking workflow. Finished-dish forecasting stays in the recipe stage.
 This release changes assessment semantics, not source sensory profiles, explicit adjustments,

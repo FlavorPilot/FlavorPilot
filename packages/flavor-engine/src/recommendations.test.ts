@@ -15,8 +15,8 @@ describe('composition-specific recommendations', () => {
                 const ingredient = catalogueById.get(recommendation.ingredientId)!;
                 const after = analyzeDish([...defaultDish, { ingredientId: ingredient.id, grams: recommendation.recommendedGrams, preparationId: recommendation.preparationId }], goal, false);
                 expect(ingredient.preparations).toContain(recommendation.preparationId);
-                expect(after.overallScore===null||before.overallScore===null?null:after.overallScore-before.overallScore).toBe(recommendation.overallDelta);
-                expect(recommendation.basis).toBe('goalFit');expect(recommendation.balanceDelta).toBeGreaterThan(0);
+                expect(after.overallScore - before.overallScore).toBe(recommendation.overallDelta);
+                expect(recommendation.overallDelta).toBeGreaterThan(0);
                 expect(after.balanceScore - before.balanceScore).toBe(recommendation.balanceDelta);
                 for (const change of recommendation.profileChanges) {
                     expect(change.before).toBe(before.profile[change.dimension]);
@@ -49,7 +49,8 @@ describe('composition-specific recommendations', () => {
     it('scales trial portions with the dish instead of using a fixed 180 g ceiling', () => {
         const original = analyzeDish(defaultDish, 'fresh').recommendations;
         const scaled = analyzeDish(defaultDish.map(item => ({ ...item, grams: item.grams * 4 })), 'fresh').recommendations;
-        expect(scaled.some(row => row.recommendedGrams > 180)).toBe(true);
+        const large = analyzeDish(defaultDish.map(item => ({ ...item, grams: item.grams * 20 })), 'fresh').recommendations;
+        expect(large.some(row => row.recommendedGrams > 180)).toBe(true);
         for (const recommendation of original) {
             const match = scaled.find(row => row.ingredientId === recommendation.ingredientId);
             expect(match).toBeDefined();

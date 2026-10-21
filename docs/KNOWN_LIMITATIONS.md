@@ -1,14 +1,14 @@
 # Known limitations — do not treat these as completed work
 
-## Ingredient assessment 0.5.0
+## Restored composition scoring 0.5.1
 
-Only 64 authored, unreviewed pair hypotheses exist. Many ordinary recipes therefore have no
-whole-composition index; this is an explicit data gap, not evidence of incompatibility.
-Complete coverage also does not establish sensory accuracy. Profile fit and trial suggestions
-use unvalidated catalogue profiles/targets. Ingredient shares cannot establish consumed
-coating amounts or suitable proportions without purpose. The first stage does not infer
-cooking workflow; see [INGREDIENT_ASSESSMENT.md](INGREDIENT_ASSESSMENT.md). The 0.4 section
-below describes the retained texture method and superseded harmonic index.
+The coverage-gated 0.5.0 replacement was rejected. All profile pairs again receive numerical
+hypotheses, and the original overall/compatibility/balance/proportions/texture panel is restored.
+The compatibility ceiling prevents high balance/proportions from concealing low compatibility.
+It does not validate the underlying culinary profiles, 64 manual adjustments or working ranges,
+infer consumed coating amounts, or calibrate scores against tasting data. See
+[SCORING_REPAIR.md](SCORING_REPAIR.md). Null scores remain only in readable historical 0.5
+reports. The first stage still cannot interpret a cooking workflow or final blending.
 
 ## Composition scoring 0.4.0
 
